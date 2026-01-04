@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Monad Staking Vault - Lightning Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.10.0/dist/ethers.umd.min.js"></script>
+  <style>
+    /* --- Your police siren CSS and effects here (unchanged) --- */
+    /* ... (copy your CSS from previous version) ... */
+  </style>
+</head>
+<body class="gradient-bg min-h-screen text-white overflow-x-hidden">
+  <!-- --- Your HTML content here (unchanged) --- -->
+  <!-- ... (copy your HTML from previous version) ... -->
+
+  <script>
+    // ========== CONFIG ==========
+    const MONAD_CHAIN_ID = 143;
+    const MONAD_CHAIN_ID_HEX = "0x8f";
+    const VAULT_V2_PROXY = "0x2C18eb6708cb7c03C19c7C793345bd22E9d261b8";
+    const VAULT_V2_IMPL = "0x4B69B14c81327E9C70e5d95Ab11776425E51b721";
+    const VAULT_V1_PROXY = "0x12b3C66EE272B4FBC4fb935983C1BbB958e3f969";
+    const VAULT_V1_IMPL = "0x06b91F034a9013A0b3DF14435DAbf2eB71c781a9";
+    const WMON_ADDRESS = "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A";
+    const USDC_ADDRESS = "0x754704Bc059F8C67012fEd69BC8A327a5aafb603";
+    const RPC_URL = "https://monad-mainnet.g.alchemy.com/v2/Uwb7T0DbXMQHjiJBNf9_b005qYjLmJqk";
+
+    // ========== ABIs ==========
+    // --- Staking Vault V2 Proxy (ERC1967/UUPS) ---
+    const VAULT_V2_PROXY_ABI = [
+      {"inputs":[{"internalType":"address","name":"implementation","type":"address"},{"internalType":"bytes","name":"_data","type":"bytes"}],"stateMutability":"payable","type":"constructor"},
+      {"inputs":[{"internalType":"address","name":"target","type":"address"}],"name":"AddressEmptyCode","type":"error"},
+      {"inputs":[{"internalType":"address","name":"implementation","type":"address"}],"name":"ERC1967InvalidImplementation","type":"error"},
+      {"inputs":[],"name":"ERC1967NonPayable","type":"error"},
+      {"inputs":[],"name":"FailedCall","type":"error"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"implementation","type":"address"}],"name":"Upgraded","type":"event"},
+      {"stateMutability":"payable","type":"fallback"}
+    ];
+    // --- Staking Vault V2 Implementation ---
+    const VAULT_V2_IMPL_ABI = [/* PASTE YOUR FULL VAULT V2 IMPLEMENTATION ABI HERE (as provided above) */];
+
+    // --- Staking Vault V1 Proxy (ERC1967/UUPS) ---
+    const VAULT_V1_PROXY_ABI = [
+      {"inputs":[{"internalType":"address","name":"implementation","type":"address"},{"internalType":"bytes","name":"_data","type":"bytes"}],"stateMutability":"payable","type":"constructor"},
+      {"inputs":[{"internalType":"address","name":"target","type":"address"}],"name":"AddressEmptyCode","type":"error"},
+      {"inputs":[{"internalType":"address","name":"implementation","type":"address"}],"name":"ERC1967InvalidImplementation","type":"error"},
+      {"inputs":[],"name":"ERC1967NonPayable","type":"error"},
+      {"inputs":[],"name":"FailedCall","type":"error"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"implementation","type":"address"}],"name":"Upgraded","type":"event"},
+      {"stateMutability":"payable","type":"fallback"}
+    ];
+    // --- Staking Vault V1 Implementation ---
+    const VAULT_V1_IMPL_ABI = [/* PASTE YOUR FULL VAULT V1 IMPLEMENTATION ABI HERE (as provided above) */];
+
+    // --- WMON (ERC20) ---
+    const WMON_ABI = [
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":true,"internalType":"address","name":"guy","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Approval","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"dst","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Deposit","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":true,"internalType":"address","name":"dst","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Transfer","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Withdrawal","type":"event"},
+      {"payable":true,"stateMutability":"payable","type":"fallback"},
+      {"constant":true,"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},
+      {"constant":false,"inputs":[{"internalType":"address","name":"guy","type":"address"},{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},
+      {"constant":true,"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},
+      {"constant":true,"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},
+      {"constant":false,"inputs":[],"name":"deposit","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},
+      {"constant":true,"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},
+      {"constant":true,"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},
+      {"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},
+      {"constant":false,"inputs":[{"internalType":"address","name":"dst","type":"address"},{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},
+      {"constant":false,"inputs":[{"internalType":"address","name":"src","type":"address"},{"internalType":"address","name":"dst","type":"address"},{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},
+      {"constant":false,"inputs":[{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"withdraw","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}
+    ];
+
+    // --- USDC (Proxy) ---
+    const USDC_ABI = [
+      {"inputs":[{"internalType":"address","name":"implementationContract","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},
+      {"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"previousAdmin","type":"address"},{"indexed":false,"internalType":"address","name":"newAdmin","type":"address"}],"name":"AdminChanged","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"implementation","type":"address"}],"name":"Upgraded","type":"event"},
+      {"stateMutability":"payable","type":"fallback"},
+      {"inputs":[],"name":"admin","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"newAdmin","type":"address"}],"name":"changeAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[],"name":"implementation","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"newImplementation","type":"address"}],"name":"upgradeTo","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"address","name":"newImplementation","type":"address"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"upgradeToAndCall","outputs":[],"stateMutability":"payable","type":"function"}
+    ];
+
+    // ========== STATE ==========
+    let provider, signer, userAddress, vault, wmon;
+
+    // ========== UI HELPERS ==========
+    function shortAddr(addr) {
+      return addr ? addr.slice(0, 6) + "..." + addr.slice(-4) : "";
+    }
+
+    function showAlert(msg, type = "info") {
+      alert(msg); // Replace with custom modal if desired
+    }
+
+    // ========== WALLET CONNECTION ==========
+    async function connectWallet() {
+      if (!window.ethereum) {
+        showAlert("MetaMask not found. Please install MetaMask!");
+        return;
+      }
+      try {
+        // Request account access
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        provider = new ethers.BrowserProvider(window.ethereum);
+        signer = await provider.getSigner();
+        userAddress = await signer.getAddress();
+
+        // Check network
+        const { chainId } = await provider.getNetwork();
+        if (Number(chainId) !== MONAD_CHAIN_ID) {
+          await window.ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [{
+              chainId: MONAD_CHAIN_ID_HEX,
+              chainName: "Monad Mainnet",
+              nativeCurrency: { name: "Monad", symbol: "MON", decimals: 18 },
+              rpcUrls: [RPC_URL],
+              blockExplorerUrls: ["https://explorer.monad.xyz"]
+            }]
+          });
+        }
+
+        // Contract instances (use V2 proxy for main UI)
+        vault = new ethers.Contract(VAULT_V2_PROXY, VAULT_V2_IMPL_ABI, signer);
+        wmon = new ethers.Contract(WMON_ADDRESS, WMON_ABI, signer);
+
+        // Update UI
+        document.getElementById("connectWallet").textContent = "✅ " + shortAddr(userAddress);
+
+        // Fetch and show balance
+        updateWalletBalance();
+        // Fetch user stakes
+        updateUserStakes();
+      } catch (err) {
+        showAlert("Wallet connection failed: " + (err.message || err));
+      }
+    }
+
+    // ========== FETCH WALLET BALANCE ==========
+    async function updateWalletBalance() {
+      if (!wmon || !userAddress) return;
+      try {
+        const bal = await wmon.balanceOf(userAddress);
+        const decimals = await wmon.decimals();
+        document.getElementById("walletBalance").textContent = ethers.formatUnits(bal, decimals);
+      } catch (err) {
+        document.getElementById("walletBalance").textContent = "0";
+      }
+    }
+
+    // ========== STAKE FUNCTION ==========
+    async function stakeTokens() {
+      if (!vault || !wmon || !userAddress) {
+        showAlert("Connect your wallet first!");
+        return;
+      }
+      const amount = document.getElementById("stakeAmount").value;
+      const durationDays = document.getElementById("lockDuration").value;
+      const referrer = document.getElementById("referrerAddress").value || ethers.ZeroAddress;
+      if (!amount || isNaN(amount) || Number(amount) <= 0) {
+        showAlert("Enter a valid amount to stake.");
+        return;
+      }
+      try {
+        const decimals = await wmon.decimals();
+        const amountWei = ethers.parseUnits(amount, decimals);
+        const durationSec = Number(durationDays) * 24 * 60 * 60;
+
+        // 1. Approve WMON
+        const allowance = await wmon.allowance(userAddress, VAULT_V2_PROXY);
+        if (allowance < amountWei) {
+          const tx1 = await wmon.approve(VAULT_V2_PROXY, amountWei);
+          await tx1.wait();
+        }
+
+        // 2. Stake
+        const tx2 = await vault.stake(
+          WMON_ADDRESS,
+          amountWei,
+          durationSec,
+          referrer
+        );
+        await tx2.wait();
+        showAlert("✅ Staked successfully!");
+        updateWalletBalance();
+        updateUserStakes();
+      } catch (err) {
+        showAlert("Stake failed: " + (err.reason || err.message || err));
+      }
+    }
+
+    // ========== WITHDRAW FUNCTION ==========
+    async function withdrawStake(stakeId) {
+      if (!vault || !userAddress) {
+        showAlert("Connect your wallet first!");
+        return;
+      }
+      try {
+        const tx = await vault.withdraw(stakeId);
+        await tx.wait();
+        showAlert("✅ Withdrawn successfully!");
+        updateWalletBalance();
+        updateUserStakes();
+      } catch (err) {
+        showAlert("Withdraw failed: " + (err.reason || err.message || err));
+      }
+    }
+
+    // ========== FETCH USER STAKES ==========
+    async function updateUserStakes() {
+      if (!vault || !userAddress) return;
+      try {
+        const stakeIds = await vault.getUserStakes(userAddress);
+        const stakes = [];
+        for (let id of stakeIds) {
+          const info = await vault.getStakeInfo(userAddress, id);
+          stakes.push({
+            id: id,
+            amount: ethers.formatUnits(info[1], 18),
+            unlockTime: new Date(Number(info[3]) * 1000).toLocaleDateString(),
+            reward: ethers.formatUnits(info[5], 18),
+            locked: !info[6], // canWithdraw
+          });
+        }
+        renderStakes(stakes);
+      } catch (err) {
+        renderStakes([]);
+      }
+    }
+
+    function renderStakes(stakes) {
+      const grid = document.getElementById("stakesGrid");
+      if (!grid) return;
+      grid.innerHTML = stakes.map(s => `
+        <div class="police-border bg-black bg-opacity-60 backdrop-blur-lg rounded-lg p-6 border-2">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <p class="text-white text-2xl font-bold">${s.amount} WMON</p>
+              <p class="text-gray-400 text-sm">Stake ID: #${s.id}</p>
+            </div>
+            <span class="px-3 py-1 rounded-full text-xs font-bold ${s.locked ? 'bg-yellow-500 bg-opacity-20 text-yellow-400' : 'bg-green-500 bg-opacity-20 text-green-400'}">
+              ${s.locked ? '🔒 LOCKED' : '💰 UNLOCKED'}
+            </span>
+          </div>
+          <div class="space-y-3 mb-4">
+            <div class="flex justify-between">
+              <span class="text-gray-400">Unlock Date</span>
+              <span class="text-white font-bold">${s.unlockTime}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Rewards</span>
+              <span class="text-green-400 font-bold">+${s.reward} WMON</span>
+            </div>
+          </div>
+          <button class="${s.locked ? 'bg-gray-700 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'} w-full py-3 text-black font-bold rounded-lg transition-all"
+            ${s.locked ? 'disabled' : ''}
+            onclick="${!s.locked ? `withdrawStake('${s.id}')` : ''}">
+            ${s.locked ? '🔒 LOCKED UNTIL ' + s.unlockTime : '💰 WITHDRAW NOW'}
+          </button>
+        </div>
+      `).join('');
+    }
+
+    // ========== EVENT LISTENERS ==========
+    document.getElementById("connectWallet").addEventListener("click", connectWallet);
+    document.getElementById("stakeBtn").addEventListener("click", stakeTokens);
+
+    // ========== TAB SWITCHING (unchanged) ==========
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach(b => {
+          b.classList.remove('active', 'police-border');
+          b.classList.add('border-gray-700');
+        });
+        btn.classList.add('active', 'police-border');
+        btn.classList.remove('border-gray-700');
+        document.querySelectorAll('.tab-content').forEach(content => {
+          content.style.display = 'none';
+        });
+        document.getElementById(tab).style.display = 'block';
+      });
+    });
+
+    // ========== DUMMY DATA UPDATES (unchanged) ==========
+    // ... (your live data, activity feed, etc.)
+
+    // ========== INIT ==========
+    // Optionally, auto-connect if already authorized
+    if (window.ethereum && window.ethereum.selectedAddress) {
+      connectWallet();
+    }
+    console.log('⚡ STAKING VAULT DASHBOARD LOADED ⚡');
+  </script>
+</body>
+</html>
