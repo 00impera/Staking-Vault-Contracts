@@ -385,7 +385,7 @@ A: No. Owners can only configure, pause/unpause, and add/remove other owners. Th
 - [Uniswap V3 Docs](https://docs.uniswap.org/protocol/V3)
 - [OpenZeppelin Contracts](https://docs.openzeppelin.com)
 - **Owner**: `0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e`
-- **Donate**: [moon.monad.xyz/donate/0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e](https://moon.monad.xyz/donate/0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e)
+- **Donate**: [https://moon.monad.xyz/donate/0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e](https://moon.monad.xyz/donate/0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e)
 
 ## ⚠️ Disclaimer
 
