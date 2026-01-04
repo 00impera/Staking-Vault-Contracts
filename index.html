@@ -824,32 +824,33 @@ function renderStakes(stakes) {
     document.getElementById("connectWallet").addEventListener("click", connectWallet);
     document.getElementById("stakeBtn").addEventListener("click", stakeTokens);
 
-    // ========== TAB SWITCHING (unchanged) ==========
+    // ========== TAB SWITCHING ==========
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const tab = btn.dataset.tab;
         document.querySelectorAll('.tab-btn').forEach(b => {
-          b.classList.remove('active', 'police-border');
-          b.classList.add('border-gray-700');
+          b.classList.remove('active');
         });
-        btn.classList.add('active', 'police-border');
-        btn.classList.remove('border-gray-700');
+        btn.classList.add('active');
         document.querySelectorAll('.tab-content').forEach(content => {
           content.style.display = 'none';
         });
         document.getElementById(tab).style.display = 'block';
+
+        // Load DEX data when tab is clicked
+        if (tab === 'dex') {
+          fetchLiveDexData();
+        }
       });
     });
+// ========== AUTO-REFRESH ==========
+    setInterval(() => {
+      if (userAddress) {
+        fetchLiveDexData();
+      }
+    }, 15000); // Refresh every 15 seconds
 
-    // ========== DUMMY DATA UPDATES (unchanged) ==========
-    // ... (your live data, activity feed, etc.)
-
-    // ========== INIT ==========
-    // Optionally, auto-connect if already authorized
-    if (window.ethereum && window.ethereum.selectedAddress) {
-      connectWallet();
-    }
-    console.log('⚡ STAKING VAULT DASHBOARD LOADED ⚡');
+    console.log('⚡ STAKING VAULT DASHBOARD LOADED ⚡')
   </script>
 </body>
 </html>
