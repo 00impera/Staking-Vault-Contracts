@@ -1,19 +1,556 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Monad Staking Vault - Lightning Dashboard</title>
+  <title>Monad Staking Vault - Premium Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.10.0/dist/ethers.umd.min.js"></script>
   <style>
-    /* --- Your police siren CSS and effects here (unchanged) --- */
-    /* ... (copy your CSS from previous version) ... */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #2a1f4a 100%);
+      min-height: 100vh;
+      color: #e2e8f0;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Animated gradient overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(circle at 20% 50%, rgba(147, 51, 234, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 20%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+      pointer-events: none;
+      animation: gradientShift 15s ease infinite;
+    }
+
+    @keyframes gradientShift {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 0.8; }
+    }
+
+    /* Glass morphism cards */
+    .glass-card {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-card:hover {
+      background: rgba(15, 23, 42, 0.7);
+      border-color: rgba(148, 163, 184, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Premium gradient borders */
+    .gradient-border {
+      position: relative;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(16px);
+    }
+
+    .gradient-border::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 2px;
+      background: linear-gradient(135deg, #9333ea, #3b82f6, #10b981);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      opacity: 0.6;
+      transition: opacity 0.3s;
+    }
+
+    .gradient-border:hover::before {
+      opacity: 1;
+    }
+
+    /* Smooth toggle switch */
+    .toggle-switch {
+      position: relative;
+      width: 56px;
+      height: 28px;
+      background: rgba(71, 85, 105, 0.5);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .toggle-switch.active {
+      background: linear-gradient(135deg, #9333ea, #3b82f6);
+    }
+
+    .toggle-knob {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      background: white;
+      border-radius: 50%;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .toggle-switch.active .toggle-knob {
+      left: 31px;
+    }
+
+    /* Smooth tab transitions */
+    .tab-btn {
+      position: relative;
+      transition: all 0.3s;
+      overflow: hidden;
+    }
+
+    .tab-btn::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #9333ea, #3b82f6);
+      transform: translateX(-50%);
+      transition: width 0.3s;
+    }
+
+    .tab-btn.active::after {
+      width: 80%;
+    }
+
+    /* Live indicator pulse */
+    .live-pulse {
+      animation: livePulse 2s ease-in-out infinite;
+    }
+
+    @keyframes livePulse {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.6;
+        transform: scale(1.1);
+      }
+    }
+
+    /* Stat number counter animation */
+    .stat-number {
+      font-variant-numeric: tabular-nums;
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Premium button styles */
+    .btn-primary {
+      background: linear-gradient(135deg, #9333ea, #3b82f6);
+      box-shadow: 0 4px 24px rgba(147, 51, 234, 0.3);
+      transition: all 0.3s;
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 8px 32px rgba(147, 51, 234, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: rgba(71, 85, 105, 0.4);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      transition: all 0.3s;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(71, 85, 105, 0.6);
+      border-color: rgba(148, 163, 184, 0.4);
+    }
+
+    /* Activity feed items */
+    .activity-item {
+      transition: all 0.3s;
+    }
+
+    .activity-item:hover {
+      background: rgba(30, 41, 59, 0.5);
+      transform: translateX(4px);
+    }
+
+    /* Trusted by section */
+    .trusted-logo {
+      filter: grayscale(100%) brightness(0.8);
+      opacity: 0.5;
+      transition: all 0.3s;
+    }
+
+    .trusted-logo:hover {
+      filter: grayscale(0%) brightness(1);
+      opacity: 1;
+    }
+
+    /* Loading spinner */
+    .spinner {
+      border: 3px solid rgba(148, 163, 184, 0.2);
+      border-top: 3px solid #3b82f6;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Dark mode adjustments */
+    body.light-mode {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
+      color: #1e293b;
+    }
+
+    body.light-mode .glass-card {
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    body.light-mode .gradient-border {
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Overlap navigation */
+    .nav-overlap {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(12px);
+      background: rgba(10, 14, 39, 0.8);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    body.light-mode .nav-overlap {
+      background: rgba(248, 250, 252, 0.8);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    /* Scroll smooth */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* Action section with shared borders */
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 0;
+    }
+
+    .action-item {
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-right: none;
+      border-bottom: none;
+    }
+
+    .action-item:nth-child(3n) {
+      border-right: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .action-item:nth-last-child(-n+3) {
+      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    }
   </style>
 </head>
-<body class="gradient-bg min-h-screen text-white overflow-x-hidden">
-  <!-- --- Your HTML content here (unchanged) --- -->
-  <!-- ... (copy your HTML from previous version) ... -->
+<body>
+  <!-- Navigation with overlap -->
+  <nav class="nav-overlap py-4">
+    <div class="container mx-auto px-4">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center font-bold text-lg">
+            M
+          </div>
+          <div>
+            <h1 class="text-xl font-bold">Monad Vault</h1>
+            <p class="text-xs text-gray-400">Chain ID: 143</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <!-- Dark mode toggle -->
+          <div class="flex items-center gap-2">
+            <span class="text-sm">🌙</span>
+            <div class="toggle-switch" id="darkModeToggle">
+              <div class="toggle-knob"></div>
+            </div>
+            <span class="text-sm">☀️</span>
+          </div>
+
+          <!-- Live status -->
+          <div class="flex items-center gap-2">
+            <span class="live-pulse text-green-400 text-2xl">●</span>
+            <span class="text-sm">Live</span>
+          </div>
+
+          <!-- Connect wallet -->
+          <button id="connectWallet" class="btn-primary px-6 py-2 rounded-lg font-semibold text-white">
+            🔌 Connect Wallet
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Trusted by section -->
+  <section class="py-8 border-b border-gray-800">
+    <div class="container mx-auto px-4">
+      <p class="text-center text-sm text-gray-400 mb-4">Trusted by the world's most innovative teams</p>
+      <div class="flex justify-center items-center gap-8 flex-wrap">
+        <div class="trusted-logo text-2xl">🏦 DeFi Protocol</div>
+        <div class="trusted-logo text-2xl">🚀 Web3 Startup</div>
+        <div class="trusted-logo text-2xl">💎 DAO Treasury</div>
+        <div class="trusted-logo text-2xl">🌐 Multi-chain</div>
+        <div class="trusted-logo text-2xl">⚡ Lightning Fast</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="container mx-auto px-4 py-8">
+    <!-- Tab Navigation -->
+    <div class="flex gap-1 mb-8 overflow-x-auto pb-2">
+      <button class="tab-btn active px-6 py-3 rounded-lg font-semibold" data-tab="overview">
+        📊 Overview
+      </button>
+      <button class="tab-btn px-6 py-3 rounded-lg font-semibold" data-tab="stake">
+        🔒 Stake
+      </button>
+      <button class="tab-btn px-6 py-3 rounded-lg font-semibold" data-tab="mystakes">
+        📈 My Stakes
+      </button>
+      <button class="tab-btn px-6 py-3 rounded-lg font-semibold" data-tab="dex">
+        💹 Live DEX
+      </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div id="tabContent">
+      <!-- Overview Tab -->
+      <div class="tab-content" id="overview">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div class="glass-card rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="text-4xl">💰</div>
+              <span class="text-xs px-3 py-1 rounded-full bg-green-500 bg-opacity-20 text-green-400 font-semibold">WMON</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-2">Your Balance</p>
+            <p class="stat-number text-3xl font-bold" id="walletBalance">0.00</p>
+          </div>
+
+          <div class="glass-card rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="text-4xl">📈</div>
+              <span class="text-xs px-3 py-1 rounded-full bg-purple-500 bg-opacity-20 text-purple-400 font-semibold">TOTAL</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-2">Total Staked</p>
+            <p class="stat-number text-3xl font-bold" id="totalStaked">0.00</p>
+          </div>
+
+          <div class="glass-card rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="text-4xl">👥</div>
+              <span class="text-xs px-3 py-1 rounded-full bg-blue-500 bg-opacity-20 text-blue-400 font-semibold">USERS</span>
+            </div>
+            <p class="text-gray-400 text-sm mb-2">Total Stakers</p>
+            <p class="stat-number text-3xl font-bold" id="totalUsers">0</p>
+          </div>
+        </div>
+
+        <!-- Actions with shared borders -->
+        <div class="gradient-border rounded-2xl overflow-hidden mb-8">
+          <div class="action-grid">
+            <div class="action-item p-6 hover:bg-gray-800 hover:bg-opacity-30 transition-all cursor-pointer">
+              <div class="text-3xl mb-3">🔒</div>
+              <h3 class="font-bold mb-2">Stake Tokens</h3>
+              <p class="text-sm text-gray-400">Lock your WMON and earn rewards</p>
+            </div>
+            <div class="action-item p-6 hover:bg-gray-800 hover:bg-opacity-30 transition-all cursor-pointer">
+              <div class="text-3xl mb-3">💸</div>
+              <h3 class="font-bold mb-2">Earn Rewards</h3>
+              <p class="text-sm text-gray-400">Up to 20% APY on locked stakes</p>
+            </div>
+            <div class="action-item p-6 hover:bg-gray-800 hover:bg-opacity-30 transition-all cursor-pointer">
+              <div class="text-3xl mb-3">🤝</div>
+              <h3 class="font-bold mb-2">Refer Friends</h3>
+              <p class="text-sm text-gray-400">Earn 20% of referral fees</p>
+            </div>
+            <div class="action-item p-6 hover:bg-gray-800 hover:bg-opacity-30 transition-all cursor-pointer">
+              <div class="text-3xl mb-3">⚡</div>
+              <h3 class="font-bold mb-2">Instant Withdraw</h3>
+              <p class="text-sm text-gray-400">Access unlocked funds anytime</p>
+            </div>
+            <div class="action-item p-6 hover:bg-gray-800 hover:bg-opacity-30 transition-all cursor-pointer">
+              <div class="text-3xl mb-3">🔐</div>
+              <h3 class="font-bold mb-2">Secure Vault</h3>
+              <p class="text-sm text-gray-400">Audited smart contracts</p>
+            </div>
+            <div class="action-item p-6 hover:bg-gray-800 hover:bg-opacity-30 transition-all cursor-pointer">
+              <div class="text-3xl mb-3">📊</div>
+              <h3 class="font-bold mb-2">Real-time Stats</h3>
+              <p class="text-sm text-gray-400">Track your performance live</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity Feed -->
+        <div class="glass-card rounded-2xl p-6">
+          <h2 class="text-2xl font-bold mb-6">⚡ Live Activity Feed</h2>
+          <div id="activityFeed" class="space-y-3">
+            <div class="activity-item flex items-center justify-between p-4 rounded-lg bg-gray-800 bg-opacity-30">
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">⚡</span>
+                <div>
+                  <p class="font-semibold text-yellow-400">System Initialized</p>
+                  <p class="text-xs text-gray-500">Ready to connect</p>
+                </div>
+              </div>
+              <span class="text-xs text-gray-500">Just now</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stake Tab -->
+      <div class="tab-content" id="stake" style="display: none;">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="gradient-border rounded-2xl p-8">
+            <h2 class="text-3xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              🔒 Stake WMON
+            </h2>
+            <div class="space-y-6">
+              <div>
+                <label class="text-sm text-gray-400 mb-2 block">Amount to Stake</label>
+                <div class="relative">
+                  <input type="text" id="stakeAmount" placeholder="0.00"
+                    class="w-full bg-gray-900 bg-opacity-50 border border-gray-700 rounded-xl px-4 py-4 text-xl font-bold focus:border-purple-500 focus:outline-none transition-all">
+                  <button class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-purple-400 hover:text-purple-300 font-semibold">
+                    MAX
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="text-sm text-gray-400 mb-2 block">Lock Duration</label>
+                <select id="lockDuration" class="w-full bg-gray-900 bg-opacity-50 border border-gray-700 rounded-xl px-4 py-4 font-semibold focus:border-purple-500 focus:outline-none transition-all">
+                  <option value="7">7 days (APY: 8%)</option>
+                  <option value="30">30 days (APY: 10%)</option>
+                  <option value="90">90 days (APY: 12%)</option>
+                  <option value="180">180 days (APY: 15%)</option>
+                  <option value="365">365 days (APY: 20%)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="text-sm text-gray-400 mb-2 block">Referrer Address (Optional)</label>
+                <input type="text" id="referrerAddress" placeholder="0x..."
+                  class="w-full bg-gray-900 bg-opacity-50 border border-gray-700 rounded-xl px-4 py-4 font-mono text-sm focus:border-purple-500 focus:outline-none transition-all">
+              </div>
+
+              <button id="stakeBtn" class="btn-primary w-full py-4 text-white font-bold text-lg rounded-xl">
+                🚀 Stake Tokens Now
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-6">
+            <div class="glass-card rounded-2xl p-6">
+              <h3 class="text-xl font-bold mb-4">💸 Fee Structure</h3>
+              <div class="space-y-3">
+                <div class="flex justify-between items-center p-4 bg-gray-800 bg-opacity-30 rounded-lg">
+                  <span class="text-gray-400">Deposit Fee</span>
+                  <span class="font-bold text-green-400">1%</span>
+                </div>
+                <div class="flex justify-between items-center p-4 bg-gray-800 bg-opacity-30 rounded-lg">
+                  <span class="text-gray-400">Early Withdraw</span>
+                  <span class="font-bold text-red-400">5%</span>
+                </div>
+                <div class="flex justify-between items-center p-4 bg-gray-800 bg-opacity-30 rounded-lg">
+                  <span class="text-gray-400">Performance Fee</span>
+                  <span class="font-bold">10%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass-card rounded-2xl p-6">
+              <h3 class="text-xl font-bold mb-4">⚠️ Important Info</h3>
+              <ul class="space-y-3 text-sm">
+                <li class="flex items-start gap-2">
+                  <span class="text-purple-400">•</span>
+                  <span>Tokens locked for selected duration</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-purple-400">•</span>
+                  <span>Early withdrawal incurs 5% penalty</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-purple-400">•</span>
+                  <span>Max per user: 100,000 WMON</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-purple-400">•</span>
+                  <span>Total vault cap: 1,000,000 WMON</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- My Stakes Tab -->
+      <div class="tab-content" id="mystakes" style="display: none;">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+            📈 My Active Stakes
+          </h2>
+        </div>
+        <div id="stakesGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="glass-card rounded-2xl p-8 text-center">
+            <div class="text-6xl mb-4">🔌</div>
+            <p class="text-gray-400 text-lg">Connect your wallet to view your stakes</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live DEX Tab -->
+      <div class="tab-content" id="dex" style="display: none;">
+        <div class="glass-card rounded-2xl p-6 mb-6">
+          <h2 class="text-3xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+            💹 Live DEX Data
+          </h2>
+          <div id="dexData" class="space-y-4">
+            <div class="flex items-center justify-center py-8">
+              <div class="spinner"></div>
+              <span class="ml-3 text-gray-400">Loading live data...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     // ========== CONFIG ==========
@@ -25,7 +562,7 @@
     const VAULT_V1_IMPL = "0x06b91F034a9013A0b3DF14435DAbf2eB71c781a9";
     const WMON_ADDRESS = "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A";
     const USDC_ADDRESS = "0x754704Bc059F8C67012fEd69BC8A327a5aafb603";
-    const RPC_URL = "https://monad-mainnet.g.alchemy.com/v2/Uwb7T0DbXMQHjiJBNf9_b005qYjLmJqk";
+    const RPC_URL = "https://rpc.monad.xyz";
 
     // ========== ABIs ==========
     // --- Staking Vault V2 Proxy (ERC1967/UUPS) ---
@@ -39,7 +576,15 @@
       {"stateMutability":"payable","type":"fallback"}
     ];
     // --- Staking Vault V2 Implementation ---
-    const VAULT_V2_IMPL_ABI = [/* PASTE YOUR FULL VAULT V2 IMPLEMENTATION ABI HERE (as provided above) */];
+    const VAULT_V2_IMPL_ABI = [
+  "function stake(address token, uint256 amount, uint256 duration, address referrer) external",
+  "function withdraw(uint256 stakeId) external",
+  "function getUserStakes(address user) external view returns (uint256[])",
+  "function getStakeInfo(address user, uint256 stakeId) external view returns (tuple(address,uint256,uint256,uint256,uint256,uint256,address,bool,bool))",
+  "function totalStaked(address token) external view returns (uint256)",
+  "function totalUsers() external view returns (uint256)",
+];
+
 
     // --- Staking Vault V1 Proxy (ERC1967/UUPS) ---
     const VAULT_V1_PROXY_ABI = [
@@ -52,7 +597,14 @@
       {"stateMutability":"payable","type":"fallback"}
     ];
     // --- Staking Vault V1 Implementation ---
-    const VAULT_V1_IMPL_ABI = [/* PASTE YOUR FULL VAULT V1 IMPLEMENTATION ABI HERE (as provided above) */];
+    const VAULT_V1_IMPL_ABI = [
+  "function stake(address token, uint256 amount, uint256 duration, address referrer) external",
+  "function withdraw(uint256 stakeId) external",
+  "function getUserStakes(address user) external view returns (uint256[])",
+  "function getStakeInfo(address user, uint256 stakeId) external view returns (tuple(address,uint256,uint256,uint256,uint256,uint256,address,bool,bool))",
+  "function totalStaked(address token) external view returns (uint256)",
+  "function totalUsers() external view returns (uint256)",
+];
 
     // --- WMON (ERC20) ---
     const WMON_ABI = [
@@ -99,63 +651,56 @@
       alert(msg); // Replace with custom modal if desired
     }
 
-    // ========== WALLET CONNECTION ==========
-    async function connectWallet() {
-      if (!window.ethereum) {
-        showAlert("MetaMask not found. Please install MetaMask!");
-        return;
-      }
-      try {
-        // Request account access
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        provider = new ethers.BrowserProvider(window.ethereum);
-        signer = await provider.getSigner();
-        userAddress = await signer.getAddress();
+ // ========== WALLET CONNECTION ==========
+// async function initWeb3Auth() { ... }
 
-        // Check network
-        const { chainId } = await provider.getNetwork();
-        if (Number(chainId) !== MONAD_CHAIN_ID) {
-          await window.ethereum.request({
-            method: "wallet_addEthereumChain",
-            params: [{
-              chainId: MONAD_CHAIN_ID_HEX,
-              chainName: "Monad Mainnet",
-              nativeCurrency: { name: "Monad", symbol: "MON", decimals: 18 },
-              rpcUrls: [RPC_URL],
-              blockExplorerUrls: ["https://explorer.monad.xyz"]
-            }]
-          });
-        }
+// Use this simple MetaMask connection:
+async function connectWallet() {
+  if (!window.ethereum) {
+    alert("Please install MetaMask!");
+    return;
+  }
 
-        // Contract instances (use V2 proxy for main UI)
-        vault = new ethers.Contract(VAULT_V2_PROXY, VAULT_V2_IMPL_ABI, signer);
-        wmon = new ethers.Contract(WMON_ADDRESS, WMON_ABI, signer);
+  try {
+    // Request account access
+    await window.ethereum.request({ method: "eth_requestAccounts" });
+    provider = new ethers.BrowserProvider(window.ethereum);
+    signer = await provider.getSigner();
+    userAddress = await signer.getAddress();
 
-        // Update UI
-        document.getElementById("connectWallet").textContent = "✅ " + shortAddr(userAddress);
-
-        // Fetch and show balance
-        updateWalletBalance();
-        // Fetch user stakes
-        updateUserStakes();
-      } catch (err) {
-        showAlert("Wallet connection failed: " + (err.message || err));
-      }
+    // Check network
+    const { chainId } = await provider.getNetwork();
+    if (Number(chainId) !== MONAD_CHAIN_ID) {
+      await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [{
+          chainId: MONAD_CHAIN_ID_HEX,
+          chainName: "Monad Mainnet",
+          nativeCurrency: { name: "Monad", symbol: "MON", decimals: 18 },
+          rpcUrls: [RPC_URL],
+          blockExplorerUrls: ["https://explorer.monad.xyz"]
+        }]
+      });
     }
 
-    // ========== FETCH WALLET BALANCE ==========
-    async function updateWalletBalance() {
-      if (!wmon || !userAddress) return;
-      try {
-        const bal = await wmon.balanceOf(userAddress);
-        const decimals = await wmon.decimals();
-        document.getElementById("walletBalance").textContent = ethers.formatUnits(bal, decimals);
-      } catch (err) {
-        document.getElementById("walletBalance").textContent = "0";
-      }
-    }
+    // Initialize contracts
+    vault = new ethers.Contract(VAULT_V2_PROXY, VAULT_V2_IMPL_ABI, signer);
+    wmon = new ethers.Contract(WMON_ADDRESS, WMON_ABI, signer);
 
-    // ========== STAKE FUNCTION ==========
+    // Update UI
+    document.getElementById("connectWallet").textContent = "✅ " + shortAddr(userAddress);
+
+    // Fetch data
+    await updateWalletBalance();
+    await updateUserStakes();
+    await fetchLiveDexData();
+
+    console.log("✅ Wallet connected:", userAddress);
+  } catch (err) {
+    console.error("Connection error:", err);
+    alert("Connection failed: " + err.message);
+  }
+}
     async function stakeTokens() {
       if (!vault || !wmon || !userAddress) {
         showAlert("Connect your wallet first!");
@@ -214,59 +759,66 @@
     }
 
     // ========== FETCH USER STAKES ==========
-    async function updateUserStakes() {
-      if (!vault || !userAddress) return;
-      try {
-        const stakeIds = await vault.getUserStakes(userAddress);
-        const stakes = [];
-        for (let id of stakeIds) {
-          const info = await vault.getStakeInfo(userAddress, id);
-          stakes.push({
-            id: id,
-            amount: ethers.formatUnits(info[1], 18),
-            unlockTime: new Date(Number(info[3]) * 1000).toLocaleDateString(),
-            reward: ethers.formatUnits(info[5], 18),
-            locked: !info[6], // canWithdraw
-          });
-        }
-        renderStakes(stakes);
-      } catch (err) {
-        renderStakes([]);
-      }
+async function updateUserStakes() {
+  if (!vault || !userAddress) return;
+  try {
+    const stakeIds = await vault.getUserStakes(userAddress);
+    const stakes = [];
+    for (let id of stakeIds) {
+      const info = await vault.getStakeInfo(userAddress, id);
+      // info: [token, amount, stakedAt, unlockTime, duration, reward, referrer, withdrawn, canWithdraw]
+      stakes.push({
+        id: id.toString(),
+        amount: ethers.formatUnits(info[1], 18),
+        stakedAt: new Date(Number(info[2]) * 1000).toLocaleDateString(),
+        unlockTime: new Date(Number(info[3]) * 1000).toLocaleDateString(),
+        reward: ethers.formatUnits(info[5], 18),
+        locked: Math.floor(Date.now() / 1000) < Number(info[3]), // locked if now < unlockTime
+      });
     }
-
-    function renderStakes(stakes) {
-      const grid = document.getElementById("stakesGrid");
-      if (!grid) return;
-      grid.innerHTML = stakes.map(s => `
-        <div class="police-border bg-black bg-opacity-60 backdrop-blur-lg rounded-lg p-6 border-2">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <p class="text-white text-2xl font-bold">${s.amount} WMON</p>
-              <p class="text-gray-400 text-sm">Stake ID: #${s.id}</p>
-            </div>
-            <span class="px-3 py-1 rounded-full text-xs font-bold ${s.locked ? 'bg-yellow-500 bg-opacity-20 text-yellow-400' : 'bg-green-500 bg-opacity-20 text-green-400'}">
-              ${s.locked ? '🔒 LOCKED' : '💰 UNLOCKED'}
-            </span>
-          </div>
-          <div class="space-y-3 mb-4">
-            <div class="flex justify-between">
-              <span class="text-gray-400">Unlock Date</span>
-              <span class="text-white font-bold">${s.unlockTime}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-400">Rewards</span>
-              <span class="text-green-400 font-bold">+${s.reward} WMON</span>
-            </div>
-          </div>
-          <button class="${s.locked ? 'bg-gray-700 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'} w-full py-3 text-black font-bold rounded-lg transition-all"
-            ${s.locked ? 'disabled' : ''}
-            onclick="${!s.locked ? `withdrawStake('${s.id}')` : ''}">
-            ${s.locked ? '🔒 LOCKED UNTIL ' + s.unlockTime : '💰 WITHDRAW NOW'}
-          </button>
+    renderStakes(stakes);
+  } catch (err) {
+    renderStakes([]);
+  }
+}
+function renderStakes(stakes) {
+  const grid = document.getElementById("stakesGrid");
+  if (!grid) return;
+  grid.innerHTML = stakes
+    .map(
+      (s) => `
+    <div class="police-border bg-black bg-opacity-60 backdrop-blur-lg rounded-lg p-6 border-2">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <p class="text-white text-2xl font-bold">${s.amount} WMON</p>
+          <p class="text-gray-400 text-sm">Stake ID: #${s.id}</p>
         </div>
-      `).join('');
-    }
+        <span class="px-3 py-1 rounded-full text-xs font-bold ${s.locked ? "bg-yellow-500 bg-opacity-20 text-yellow-400" : "bg-green-500 bg-opacity-20 text-green-400"}">
+          ${s.locked ? "🔒 LOCKED" : "💰 UNLOCKED"}
+        </span>
+      </div>
+      <div class="space-y-3 mb-4">
+        <div class="flex justify-between">
+          <span class="text-gray-400">Unlock Date</span>
+          <span class="text-white font-bold">${s.unlockTime}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-400">Rewards</span>
+          <span class="text-green-400 font-bold">+${s.reward} WMON</span>
+        </div>
+      </div>
+      <button class="${s.locked ? "bg-gray-700 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"} w-full py-3 text-black font-bold rounded-lg transition-all"
+        ${s.locked ? "disabled" : ""}
+        onclick="${!s.locked ? `withdrawStake('${s.id}')` : ""}">
+        ${s.locked ? "🔒 LOCKED UNTIL " + s.unlockTime : "💰 WITHDRAW NOW"}
+      </button>
+    </div>
+  `,
+    )
+    .join("");
+}
+
+
 
     // ========== EVENT LISTENERS ==========
     document.getElementById("connectWallet").addEventListener("click", connectWallet);
