@@ -757,7 +757,19 @@ async function connectWallet() {
         showAlert("Withdraw failed: " + (err.reason || err.message || err));
       }
     }
-
+// ========== FETCH WALLET BALANCE ==========
+    async function updateWalletBalance() {
+      if (!wmon || !userAddress) return;
+      try {
+        const bal = await wmon.balanceOf(userAddress);
+        const decimals = await wmon.decimals();
+        document.getElementById("walletBalance").textContent = parseFloat(
+          ethers.formatUnits(bal, decimals)
+        ).toFixed(2);
+      } catch (err) {
+        document.getElementById("walletBalance").textContent = "0.00";
+      }
+    }
     // ========== FETCH USER STAKES ==========
 async function updateUserStakes() {
   if (!vault || !userAddress) return;
@@ -775,19 +787,33 @@ async function updateUserStakes() {
         reward: ethers.formatUnits(info[5], 18),
         locked: Math.floor(Date.now() / 1000) < Number(info[3]), // locked if now < unlockTime
       });
+
     }
     renderStakes(stakes);
   } catch (err) {
     renderStakes([]);
   }
 }
+
+// ========== RENDER STAKES ==========
 function renderStakes(stakes) {
   const grid = document.getElementById("stakesGrid");
   if (!grid) return;
+
+  if (stakes.length === 0) {
+    grid.innerHTML = `
+      <div class="glass-card rounded-2xl p-8 text-center">
+        <div class="text-6xl mb-4">📭</div>
+        <p class="text-gray-400 text-lg">No active stakes found</p>
+      </div>
+    `;
+    return;
+  }
+
   grid.innerHTML = stakes
     .map(
       (s) => `
-    <div class="police-border bg-black bg-opacity-60 backdrop-blur-lg rounded-lg p-6 border-2">
+    <div class="glass-card rounded-xl p-6 border-2 ${s.locked ? 'border-yellow-500 border-opacity-20' : 'border-green-500 border-opacity-20'}">
       <div class="flex justify-between items-start mb-4">
         <div>
           <p class="text-white text-2xl font-bold">${s.amount} WMON</p>
@@ -807,50 +833,141 @@ function renderStakes(stakes) {
           <span class="text-green-400 font-bold">+${s.reward} WMON</span>
         </div>
       </div>
-      <button class="${s.locked ? "bg-gray-700 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"} w-full py-3 text-black font-bold rounded-lg transition-all"
+      <button
+        class="${s.locked ? "bg-gray-700 cursor-not-allowed" : "btn-primary"} w-full py-3 text-white font-bold rounded-lg transition-all"
         ${s.locked ? "disabled" : ""}
-        onclick="${!s.locked ? `withdrawStake('${s.id}')` : ""}">
-        ${s.locked ? "🔒 LOCKED UNTIL " + s.unlockTime : "💰 WITHDRAW NOW"}
+        onclick="withdrawStake(${s.id})">
+        ${s.locked ? "🔒 LOCKED" : "💰 WITHDRAW NOW"}
       </button>
     </div>
   `,
     )
     .join("");
 }
+// ========== FETCH LIVE DEX DATA ==========
+async function fetchLiveDexData() {
+  try {
+    const vaultProvider = new ethers.JsonRpcProvider(RPC_URL);
+    const vaultContract = new ethers.Contract(
+      VAULT_V2_PROXY,
+      VAULT_V2_IMPL_ABI,
+      vaultProvider
+    );
 
+    const totalStaked = await vaultContract.totalStaked(WMON_ADDRESS);
+    const totalUsers = await vaultContract.totalUsers();
 
+    // Update overview stats
+    document.getElementById("totalStaked").textContent = parseFloat(
+      ethers.formatUnits(totalStaked, 18)
+    ).toFixed(2);
+    document.getElementById("totalUsers").textContent = totalUsers.toString();
 
-    // ========== EVENT LISTENERS ==========
-    document.getElementById("connectWallet").addEventListener("click", connectWallet);
-    document.getElementById("stakeBtn").addEventListener("click", stakeTokens);
+    // Update DEX tab content
+    const dexContainer = document.getElementById("dexData");
+    if (dexContainer) {
+      const tvl = parseFloat(ethers.formatUnits(totalStaked, 18)).toFixed(2);
+      dexContainer.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div class="glass-card rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-bold">Total Value Locked</h3>
+              <span class="text-xs px-2 py-1 rounded bg-purple-500 bg-opacity-20 text-purple-400">TVL</span>
+            </div>
+            <p class="text-3xl font-bold mb-2">${tvl} WMON</p>
+            <p class="text-sm text-gray-400">≈ $${(parseFloat(tvl) * 1.24).toFixed(2)}</p>
+          </div>
 
-    // ========== TAB SWITCHING ==========
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tab = btn.dataset.tab;
-        document.querySelectorAll('.tab-btn').forEach(b => {
-          b.classList.remove('active');
-        });
-        btn.classList.add('active');
-        document.querySelectorAll('.tab-content').forEach(content => {
-          content.style.display = 'none';
-        });
-        document.getElementById(tab).style.display = 'block';
+          <div class="glass-card rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-bold">Total Stakers</h3>
+              <span class="text-xs px-2 py-1 rounded bg-blue-500 bg-opacity-20 text-blue-400">Users</span>
+            </div>
+            <p class="text-3xl font-bold mb-2">${totalUsers.toString()}</p>
+            <p class="text-sm text-green-400">Active vault</p>
+          </div>
 
-        // Load DEX data when tab is clicked
-        if (tab === 'dex') {
-          fetchLiveDexData();
-        }
-      });
+          <div class="glass-card rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-bold">Vault Status</h3>
+              <span class="live-pulse text-green-400 text-xl">●</span>
+            </div>
+            <p class="text-3xl font-bold mb-2 text-green-400">Active</p>
+            <p class="text-sm text-gray-400">All systems operational</p>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-xl p-6">
+          <h3 class="font-bold mb-4">Contract Information</h3>
+          <div class="space-y-3">
+            <div class="flex justify-between items-center p-3 bg-gray-800 bg-opacity-30 rounded-lg text-sm">
+              <span class="text-gray-400">Vault Contract</span>
+              <span class="font-mono text-xs">${VAULT_V2_PROXY.slice(0, 10)}...${VAULT_V2_PROXY.slice(-8)}</span>
+            </div>
+            <div class="flex justify-between items-center p-3 bg-gray-800 bg-opacity-30 rounded-lg text-sm">
+              <span class="text-gray-400">WMON Token</span>
+              <span class="font-mono text-xs">${WMON_ADDRESS.slice(0, 10)}...${WMON_ADDRESS.slice(-8)}</span>
+            </div>
+            <div class="flex justify-between items-center p-3 bg-gray-800 bg-opacity-30 rounded-lg text-sm">
+              <span class="text-gray-400">Network</span>
+              <span class="font-semibold">Monad Mainnet (143)</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    console.log("✅ DEX data updated");
+  } catch (err) {
+    console.error("DEX data error:", err);
+    const dexContainer = document.getElementById("dexData");
+    if (dexContainer) {
+      dexContainer.innerHTML = `
+        <div class="text-center py-8">
+          <div class="text-6xl mb-4">⚠️</div>
+          <p class="text-red-400 text-lg mb-4">Failed to load DEX data</p>
+          <p class="text-gray-500 text-sm mb-4">${err.message || "Connection error"}</p>
+          <button onclick="fetchLiveDexData()" class="btn-secondary px-6 py-3 rounded-lg font-semibold">
+            🔄 Retry
+          </button>
+        </div>
+      `;
+    }
+  }
+}
+
+// ========== EVENT LISTENERS ==========
+document.getElementById("connectWallet").addEventListener("click", connectWallet);
+document.getElementById("stakeBtn").addEventListener("click", stakeTokens);
+
+// ========== TAB SWITCHING ==========
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.remove('active');
     });
-// ========== AUTO-REFRESH ==========
-    setInterval(() => {
-      if (userAddress) {
-        fetchLiveDexData();
-      }
-    }, 15000); // Refresh every 15 seconds
+    btn.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(content => {
+      content.style.display = 'none';
+    });
+    document.getElementById(tab).style.display = 'block';
 
-    console.log('⚡ STAKING VAULT DASHBOARD LOADED ⚡')
+    // Load DEX data when tab is clicked
+    if (tab === 'dex') {
+      fetchLiveDexData();
+    }
+  });
+});
+
+// ========== AUTO-REFRESH ==========
+setInterval(() => {
+  if (userAddress) {
+    fetchLiveDexData();
+  }
+}, 15000); // Refresh every 15 seconds
+
+console.log('⚡ STAKING VAULT DASHBOARD LOADED ⚡');
   </script>
 </body>
 </html>
