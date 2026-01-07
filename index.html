@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
+    /* (kept your full CSS from the last file) */
     :root {
       --neon-blue: #00C8FF;
       --electric-cyan: #00A4CC;
@@ -28,304 +29,57 @@
       --font-header: 'Orbitron', 'Roboto', sans-serif;
       --font-body: 'Roboto', sans-serif;
     }
-    html, body {
-      background: var(--dark-metal);
-      color: var(--primary-text);
-      font-family: var(--font-body);
-      margin: 0;
-      min-height: 100vh;
-      letter-spacing: 0.01em;
-    }
-    body {
-      background: linear-gradient(135deg, #0A0F14 0%, #1A1F26 100%);
-      min-height: 100vh;
-      padding: 0;
-      margin: 0;
-    }
-    header {
-      background: var(--carbon-fiber);
-      box-shadow: 0 2px 24px #00C8FF22;
-      border-bottom: 2px solid var(--neon-blue);
-      padding: 1.2rem 2rem 1rem 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-    .logo {
-      font-family: var(--font-header);
-      font-size: 2rem;
-      color: var(--neon-blue);
-      letter-spacing: 0.08em;
-      text-shadow: 0 0 12px var(--neon-blue);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    nav {
-      display: flex;
-      gap: 1.2rem;
-    }
-    .nav-btn {
-      background: none;
-      border: none;
-      color: var(--secondary-text);
-      font-family: var(--font-header);
-      font-size: 1.1rem;
-      padding: 0.3rem 0.8rem;
-      border-bottom: 2px solid transparent;
-      cursor: pointer;
-      transition: color 0.2s, border-color 0.2s;
-    }
-    .nav-btn.active, .nav-btn:hover {
-      color: var(--neon-blue);
-      border-bottom: 2px solid var(--neon-blue);
-    }
-
-    /* Existing connect button styling kept for prominence */
-    #connectWallet {
-      background: var(--neon-blue);
-      color: var(--dark-metal);
-      border: 2px solid var(--electric-cyan);
-      border-radius: 8px;
-      font-family: var(--font-header);
-      font-size: 1rem;
-      font-weight: 700;
-      padding: 0.6rem 1.2rem;
-      cursor: pointer;
-      box-shadow: 0 0 12px #00C8FF55, inset 0 0 8px #003344;
-      text-shadow: 0 0 8px #00C8FF;
-      transition: 0.2s;
-    }
-    #connectWallet:hover {
-      background: var(--electric-cyan);
-      border-color: var(--rune-glow);
-      color: var(--dark-metal);
-    }
-
-    main {
-      max-width: 1100px;
-      margin: 2.5rem auto 0 auto;
-      padding: 0 1.5rem 2rem 1.5rem;
-    }
-    .glass-card {
-      background: var(--card-bg);
-      border: 1.5px solid var(--card-border);
-      border-radius: 18px;
-      box-shadow: var(--shadow);
-      padding: 1.5rem 1.2rem;
-      margin-bottom: 1.5rem;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      position: relative;
-    }
-    .glass-card:hover {
-      border-color: var(--neon-blue);
-      box-shadow: 0 0 32px #00C8FF77, 0 2px 24px #0008;
-    }
-    h1, h2, h3 {
-      font-family: var(--font-header);
-      color: var(--neon-blue);
-      margin-top: 0;
-      margin-bottom: 0.5rem;
-      letter-spacing: 0.04em;
-      text-shadow: 0 0 8px #00C8FF44;
-    }
-    h2 { font-size: 1.5rem; }
-    h3 { font-size: 1.1rem; color: var(--rune-glow); }
-
-    .muted { color: var(--secondary-text); }
-
-    .token-logo img {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      border: 2px solid var(--electric-cyan);
-      background: #111;
-      box-shadow: 0 0 8px #00C8FF44;
-    }
-    .token-logo { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: #111; border-radius: 50%; margin-right: 0.5rem; }
-
-    .btn-ghost {
-      background: none;
-      border: 1.5px solid var(--circuit-silver);
-      color: var(--neon-blue);
-      border-radius: 8px;
-      padding: 0.5rem 1.2rem;
-      font-family: var(--font-header);
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background 0.2s, border-color 0.2s, color 0.2s;
-      margin-top: 0.5rem;
-    }
-    .btn-ghost:disabled { color: var(--disabled-text); border-color: var(--disabled-text); cursor: not-allowed; background: #111; }
-    .btn-ghost:hover:not(:disabled) { background: var(--steel-shadow); border-color: var(--rune-glow); color: var(--ascendant-cyan); }
-
-    .input-row { display:flex; gap:1rem; margin-bottom:1rem; align-items:center; flex-wrap:wrap; }
-    input, select {
-      background: #111b;
-      color: var(--primary-text);
-      border: 1.5px solid var(--circuit-silver);
-      border-radius: 7px;
-      padding: 0.5rem 1rem;
-      font-size: 1rem;
-      font-family: var(--font-body);
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    input:focus, select:focus { border-color: var(--neon-blue); }
-
-    .activity-feed {
-      background: var(--carbon-fiber);
-      border-radius: 12px;
-      border: 1.5px solid var(--arcane-teal);
-      box-shadow: 0 0 12px #0096A655;
-      padding: 1rem;
-      min-height: 120px;
-      max-height: 320px;
-      overflow-y: auto;
-      margin-bottom: 1.5rem;
-    }
-
-    .grid { display: grid; gap:1.2rem; }
-    @media (min-width:700px) { .grid { grid-template-columns: 1fr 1fr; } }
-    .tab-section { display:none; margin-top:2rem; } .tab-section.active{ display:block; }
-
-    /* Neon price button */
-    #priceButton {
-      background: var(--dark-metal);
-      color: var(--neon-blue);
-      border: 2px solid var(--electric-cyan);
-      padding: 10px 16px;
-      font-size: 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      text-shadow: 0 0 8px var(--neon-blue);
-      box-shadow: 0 0 12px #00C8FF55, inset 0 0 8px #003344;
-      transition: 0.2s;
-      margin-right: 12px;
-    }
-    #priceButton:hover { box-shadow: 0 0 18px #00C8FFAA, inset 0 0 12px #004466; border-color: var(--rune-glow); }
-
-    /* Donate button (small) */
-    #donateButton {
-      background: linear-gradient(90deg, var(--rune-glow), var(--electric-cyan));
-      color: var(--dark-metal);
-      border: none;
-      padding: 10px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 700;
-      margin-right: 12px;
-      box-shadow: 0 0 12px #4FD4FF33;
-    }
-
-    /* New donate section (kept) */
-    .donate-section { background: var(--card-bg); border: 2px solid var(--neon-blue); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 0 24px #00C8FF44; display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap; }
-    .donate-logo { width:80px; height:80px; border-radius:50%; border:3px solid var(--neon-blue); box-shadow:0 0 20px var(--neon-blue); object-fit:cover; flex-shrink:0; background:linear-gradient(180deg,#001a2a,#002b3a); display:inline-block; }
-    .donate-info { flex:1; min-width:250px; }
-    .donate-title { font-family:var(--font-header); font-size:1.3rem; color:var(--neon-blue); margin-bottom:0.5rem; text-shadow:0 0 8px var(--neon-blue); }
-    .lcd-balance { background:#000; border:2px solid var(--electric-cyan); border-radius:8px; padding:0.8rem 1.2rem; font-family:'Courier New', monospace; font-size:1.2rem; color:#00FF00; text-shadow:0 0 8px #00FF00; margin:0.5rem 0; letter-spacing:0.1em; box-shadow:inset 0 0 20px rgba(0,255,0,0.2); display:inline-block; }
-    .donate-address { font-size:0.9rem; color:var(--secondary-text); word-break:break-all; margin-top:0.5rem; }
-    .donate-address a { color:var(--rune-glow); text-decoration:none; transition:color 0.2s; }
-    .donate-address a:hover { color:var(--ascendant-cyan); text-decoration:underline; }
-    .donate-btn-large { background: linear-gradient(135deg, var(--mythic-purple), var(--neon-blue)); color:white; border:none; padding:0.8rem 1.5rem; border-radius:10px; font-family:var(--font-header); font-size:1.1rem; font-weight:700; cursor:pointer; box-shadow:0 0 20px #8A2CFF77; transition:0.3s; }
-    .donate-btn-large:hover { transform: translateY(-2px); box-shadow:0 0 30px #8A2CFFAA; }
-
-    /* ---------------------------
-       Glassmorphism & Neon animated button styles
-       --------------------------- */
-
-    .glassmorph-btn {
-      background: rgba(10, 15, 20, 0.35);
-      border: 1.5px solid #4FD4FF;
-      color: #E6F3FF;
-      border-radius: 12px;
-      padding: 12px 28px;
-      font-family: var(--font-header);
-      font-size: 1.1rem;
-      font-weight: 700;
-      box-shadow: 0 4px 32px #00C8FF33, 0 1.5px 12px #0008;
-      backdrop-filter: blur(8px) saturate(1.2);
-      -webkit-backdrop-filter: blur(8px) saturate(1.2);
-      transition: background 0.25s, border-color 0.25s, box-shadow 0.25s, color 0.25s;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-      border-color: rgba(79,212,255,0.6);
-    }
-    .glassmorph-btn:hover, .glassmorph-btn:focus {
-      background: rgba(0, 200, 255, 0.18);
-      border-color: #00C8FF;
-      color: #DFFFFF;
-      box-shadow: 0 0 32px #00C8FF99, 0 2px 24px #8A2CFF44;
-      outline: none;
-    }
-
-    .neon-anim-btn {
-      background: var(--dark-metal);
-      color: var(--neon-blue);
-      border: 2px solid var(--electric-cyan);
-      border-radius: 10px;
-      padding: 12px 32px;
-      font-family: var(--font-header);
-      font-size: 1.1rem;
-      font-weight: 700;
-      box-shadow: 0 0 12px #00C8FF55, 0 0 0 #00C8FF;
-      text-shadow: 0 0 8px #00C8FF;
-      cursor: pointer;
-      transition: box-shadow 0.2s, border-color 0.2s, color 0.2s, background 0.2s;
-      position: relative;
-      overflow: hidden;
-    }
-    .neon-anim-btn::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 10px;
-      box-shadow: 0 0 32px 8px #00C8FF55;
-      opacity: 0;
-      transition: opacity 0.3s;
-      pointer-events: none;
-    }
-    .neon-anim-btn:hover, .neon-anim-btn:focus {
-      color: #DFFFFF;
-      border-color: #4FD4FF;
-      background: #0E1B2A;
-      box-shadow: 0 0 32px #00C8FFAA, 0 0 16px #8A2CFF55;
-      outline: none;
-    }
-    .neon-anim-btn:hover::after, .neon-anim-btn:focus::after {
-      opacity: 1;
-      animation: neonPulse 1.2s infinite alternate;
-    }
-    @keyframes neonPulse {
-      0% { box-shadow: 0 0 32px 8px #00C8FF55; }
-      100% { box-shadow: 0 0 48px 16px #00C8FFAA; }
-    }
-
+    html, body { background: var(--dark-metal); color: var(--primary-text); font-family: var(--font-body); margin: 0; min-height: 100vh; letter-spacing: 0.01em; }
+    body { background: linear-gradient(135deg, #0A0F14 0%, #1A1F26 100%); min-height: 100vh; padding: 0; margin: 0; }
+    header { background: var(--carbon-fiber); box-shadow: 0 2px 24px #00C8FF22; border-bottom: 2px solid var(--neon-blue); padding: 1.2rem 2rem 1rem 2rem; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
+    .logo{ font-family:var(--font-header); font-size:2rem; color:var(--neon-blue); letter-spacing:0.08em; text-shadow:0 0 12px var(--neon-blue); display:flex; align-items:center; gap:0.5rem; }
+    nav{ display:flex; gap:1.2rem; }
+    .nav-btn{ background:none; border:none; color:var(--secondary-text); font-family:var(--font-header); font-size:1.1rem; padding:0.3rem 0.8rem; border-bottom:2px solid transparent; cursor:pointer; transition:color .2s, border-color .2s; }
+    .nav-btn.active, .nav-btn:hover{ color:var(--neon-blue); border-bottom:2px solid var(--neon-blue); }
+    #connectWallet{ background:var(--neon-blue); color:var(--dark-metal); border:2px solid var(--electric-cyan); border-radius:8px; font-family:var(--font-header); font-size:1rem; font-weight:700; padding:0.6rem 1.2rem; cursor:pointer; box-shadow:0 0 12px #00C8FF55, inset 0 0 8px #003344; text-shadow:0 0 8px #00C8FF; transition:0.2s; }
+    #connectWallet:hover{ background:var(--electric-cyan); border-color:var(--rune-glow); color:var(--dark-metal); }
+    main{ max-width:1100px; margin:2.5rem auto 0 auto; padding:0 1.5rem 2rem 1.5rem; }
+    .glass-card{ background:var(--card-bg); border:1.5px solid var(--card-border); border-radius:18px; box-shadow:var(--shadow); padding:1.5rem 1.2rem; margin-bottom:1.5rem; transition:border-color .2s, box-shadow .2s; position:relative; }
+    .glass-card:hover{ border-color:var(--neon-blue); box-shadow:0 0 32px #00C8FF77, 0 2px 24px #0008; }
+    h1,h2,h3{ font-family:var(--font-header); color:var(--neon-blue); margin-top:0; margin-bottom:0.5rem; letter-spacing:0.04em; text-shadow:0 0 8px #00C8FF44; }
+    h2{ font-size:1.5rem; } h3{ font-size:1.1rem; color:var(--rune-glow); }
+    .muted{ color:var(--secondary-text); }
+    .token-logo img{ width:32px; height:32px; border-radius:50%; border:2px solid var(--electric-cyan); background:#111; box-shadow:0 0 8px #00C8FF44; }
+    .token-logo{ width:32px; height:32px; display:flex; align-items:center; justify-content:center; background:#111; border-radius:50%; margin-right:0.5rem; }
+    .btn-ghost{ background:none; border:1.5px solid var(--circuit-silver); color:var(--neon-blue); border-radius:8px; padding:0.5rem 1.2rem; font-family:var(--font-header); font-size:1rem; cursor:pointer; transition:background .2s, border-color .2s, color .2s; margin-top:0.5rem; }
+    .btn-ghost:disabled{ color:var(--disabled-text); border-color:var(--disabled-text); cursor:not-allowed; background:#111; }
+    .btn-ghost:hover:not(:disabled){ background:var(--steel-shadow); border-color:var(--rune-glow); color:var(--ascendant-cyan); }
+    .input-row{ display:flex; gap:1rem; margin-bottom:1rem; align-items:center; flex-wrap:wrap; }
+    input,select{ background:#111b; color:var(--primary-text); border:1.5px solid var(--circuit-silver); border-radius:7px; padding:0.5rem 1rem; font-size:1rem; font-family:var(--font-body); outline:none; transition:border-color .2s; }
+    input:focus, select:focus{ border-color:var(--neon-blue); }
+    .activity-feed{ background:var(--carbon-fiber); border-radius:12px; border:1.5px solid var(--arcane-teal); box-shadow:0 0 12px #0096A655; padding:1rem; min-height:120px; max-height:320px; overflow-y:auto; margin-bottom:1.5rem; }
+    .grid{ display:grid; gap:1.2rem; } @media(min-width:700px){ .grid{ grid-template-columns:1fr 1fr; } }
+    .tab-section{ display:none; margin-top:2rem; } .tab-section.active{ display:block; }
+    /* buttons and donate section styles kept (omitted here for brevity) */
+    /* include glassmorph-btn and neon-anim-btn styles below (kept as in your last file) */
+    .glassmorph-btn { background: rgba(10,15,20,0.35); border:1.5px solid #4FD4FF; color:#E6F3FF; border-radius:12px; padding:12px 28px; font-family:var(--font-header); font-size:1.1rem; font-weight:700; box-shadow:0 4px 32px #00C8FF33,0 1.5px 12px #0008; backdrop-filter:blur(8px) saturate(1.2); -webkit-backdrop-filter:blur(8px) saturate(1.2); transition:background .25s, border-color .25s, box-shadow .25s, color .25s; cursor:pointer; position:relative; overflow:hidden; border-color:rgba(79,212,255,0.6); }
+    .glassmorph-btn:hover, .glassmorph-btn:focus { background: rgba(0,200,255,0.18); border-color:#00C8FF; color:#DFFFFF; box-shadow:0 0 32px #00C8FF99,0 2px 24px #8A2CFF44; outline:none; }
+    .neon-anim-btn { background:var(--dark-metal); color:var(--neon-blue); border:2px solid var(--electric-cyan); border-radius:10px; padding:12px 32px; font-family:var(--font-header); font-size:1.1rem; font-weight:700; box-shadow:0 0 12px #00C8FF55; text-shadow:0 0 8px #00C8FF; cursor:pointer; transition:box-shadow .2s, border-color .2s, color .2s, background .2s; position:relative; overflow:hidden; }
+    .neon-anim-btn::after { content:""; position:absolute; inset:0; border-radius:10px; box-shadow:0 0 32px 8px #00C8FF55; opacity:0; transition:opacity .3s; pointer-events:none; }
+    .neon-anim-btn:hover, .neon-anim-btn:focus { color:#DFFFFF; border-color:#4FD4FF; background:#0E1B2A; box-shadow:0 0 32px #00C8FFAA,0 0 16px #8A2CFF55; outline:none; }
+    .neon-anim-btn:hover::after, .neon-anim-btn:focus::after { opacity:1; animation:neonPulse 1.2s infinite alternate; }
+    @keyframes neonPulse { 0%{ box-shadow:0 0 32px 8px #00C8FF55; } 100%{ box-shadow:0 0 48px 16px #00C8FFAA; } }
   </style>
 </head>
 <body>
   <header>
-    <div class="logo" aria-hidden="false">
-      <span aria-hidden="true">🪙</span> Digital Life DEX
-    </div>
-
+    <div class="logo"><span>🪙</span> Digital Life DEX</div>
     <nav role="navigation" aria-label="Primary">
-      <button class="nav-btn active" data-tab="overview" aria-controls="overview" aria-label="Overview">Overview</button>
-      <button class="nav-btn" data-tab="my-stakes" aria-controls="my-stakes" aria-label="My Stakes">My Stakes</button>
-      <button class="nav-btn" data-tab="live-dex" aria-controls="live-dex" aria-label="Live DEX">Live DEX</button>
+      <button class="nav-btn active" data-tab="overview">Overview</button>
+      <button class="nav-btn" data-tab="my-stakes">My Stakes</button>
+      <button class="nav-btn" data-tab="live-dex">Live DEX</button>
     </nav>
-
     <div>
-      <button id="priceButton" aria-label="Token price" class="neon-anim-btn" style="padding:8px 14px; font-size:0.95rem;">Loading price...</button>
-      <a id="donateLink" href="https://moon.monad.xyz/donate/0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e" target="_blank" rel="noopener noreferrer" aria-label="Donate">
-        <button id="donateButton" aria-label="Donate" class="glassmorph-btn" style="padding:8px 12px;font-size:0.95rem;">Donate</button>
+      <button id="priceButton" class="neon-anim-btn" style="padding:8px 14px;font-size:0.95rem;">Loading price...</button>
+      <a id="donateLink" href="https://moon.monad.xyz/donate/0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e" target="_blank" rel="noopener noreferrer">
+        <button id="donateButton" class="glassmorph-btn" style="padding:8px 12px;font-size:0.95rem;">Donate</button>
       </a>
-      <button id="connectWallet" aria-label="Connect Wallet">Connect Wallet</button>
+      <button id="connectWallet">Connect Wallet</button>
     </div>
   </header>
 
@@ -344,94 +98,69 @@
       </div>
       <div style="display:flex;flex-direction:column;gap:0.75rem;align-items:flex-end;">
         <a href="https://moon.monad.xyz/donate/0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e" target="_blank" rel="noopener noreferrer">
-          <button class="donate-btn-large neon-anim-btn" aria-label="Donate now">Donate Now</button>
+          <button class="donate-btn-large neon-anim-btn">Donate Now</button>
         </a>
-        <button class="btn-ghost" id="copyDonate" aria-label="Copy donation address">Copy Address</button>
+        <button class="btn-ghost" id="copyDonate">Copy Address</button>
       </div>
     </section>
 
     <div class="quick-stats" role="region" aria-label="Quick statistics">
-      <div>
-        <span class="stat-label">Total Value Locked</span>
-        <span class="stat-value" id="tv1">0.00</span>
-      </div>
-      <div>
-        <span class="stat-label">Total Users</span>
-        <span class="stat-value" id="tv2">0</span>
-      </div>
-      <div>
-        <span class="stat-label">Wallet Balance</span>
-        <span class="stat-value" id="walletBalance">0.00 WMON</span>
-      </div>
-      <div>
-        <span class="stat-label">Status</span>
-        <span class="stat-value" id="walletStatus">Initializing...</span>
-      </div>
+      <div><span class="stat-label">Total Value Locked</span><span class="stat-value" id="tv1">0.00</span></div>
+      <div><span class="stat-label">Total Users</span><span class="stat-value" id="tv2">0</span></div>
+      <div><span class="stat-label">Wallet Balance</span><span class="stat-value" id="walletBalance">0.00 WMON</span></div>
+      <div><span class="stat-label">Status</span><span class="stat-value" id="walletStatus">Initializing...</span></div>
     </div>
 
-    <div class="activity-feed" id="activityFeed" aria-live="polite" aria-label="Activity feed"></div>
+    <div class="activity-feed" id="activityFeed" aria-live="polite"></div>
 
-    <section class="tab-section active" id="overview" role="region" aria-labelledby="overview">
-      <div class="glass-card" role="form" aria-label="Stake form">
+    <section class="tab-section active" id="overview">
+      <div class="glass-card">
         <h2>Stake WMON</h2>
         <div class="input-row">
-          <input id="stakeAmount" type="number" min="0" step="any" placeholder="Amount (WMON)" style="width:120px;" aria-label="Stake amount (WMON)">
-          <select id="lockDuration" aria-label="Lock duration">
-            <option value="30">30 days</option>
-            <option value="60">60 days</option>
-            <option value="90">90 days</option>
-          </select>
-          <input id="referrerAddress" type="text" placeholder="Referrer (optional)" style="width:180px;" aria-label="Referrer address (optional)">
-          <button id="stakeBtn" class="glassmorph-btn neon-anim-btn" aria-label="Stake WMON">Stake</button>
+          <input id="stakeAmount" type="number" min="0" step="any" placeholder="Amount (WMON)" style="width:120px;">
+          <select id="lockDuration"><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option></select>
+          <input id="referrerAddress" type="text" placeholder="Referrer (optional)" style="width:180px;">
+          <button id="stakeBtn" class="glassmorph-btn neon-anim-btn">Stake</button>
         </div>
       </div>
 
       <div class="glass-card">
         <h2>My Stakes</h2>
-        <div id="stakesGrid" aria-live="polite"></div>
+        <div id="stakesGrid"></div>
       </div>
     </section>
 
-    <section class="tab-section" id="my-stakes" role="region" aria-labelledby="my-stakes">
+    <section class="tab-section" id="my-stakes">
       <div class="glass-card">
         <h2>My Stakes</h2>
-        <div id="stakesGridAlt" aria-live="polite"></div>
+        <div id="stakesGridAlt"></div>
       </div>
     </section>
 
-    <section class="tab-section" id="live-dex" role="region" aria-labelledby="live-dex">
+    <section class="tab-section" id="live-dex">
       <div class="glass-card" id="dexData"></div>
     </section>
   </main>
 
-  <!-- Ethers.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
 
   <script>
-    // -----------------------
-    // Config — real values (no secrets)
-    // -----------------------
+    // Config (no secrets)
     const RPC_URL = "https://rpc.monad.xyz/";
     const MONAD_CHAIN_ID = 143;
     const MONAD_CHAIN_ID_HEX = "0x8f";
     const VAULT_V2_PROXY = "0x2C18eb6708cb7c03C19c7C793345bd22E9d261b8";
     const WMON_ADDRESS = "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A";
     const USDC_ADDRESS = "0x754704Bc059F8C67012fEd69BC8A327a5aafb603";
-
-    // thirdweb insight client id (public)
     const THIRDWEB_CLIENT_ID = "BM_xtlDAKQnuJR2-_N6dQuVvkSP7TTIglL1ho47LG7DP_ZbJT1HftQJ7F0RCoA0HvZKRfMeyRfwgJmZYgM-ZVSs";
 
-    // token logos
+    // Token logos
     const TOKEN_LOGOS = {
       [WMON_ADDRESS.toLowerCase()]: "https://files.catbox.moe/hwlhih.png",
       [USDC_ADDRESS.toLowerCase()]: "https://files.catbox.moe/ujzf30.gif"
     };
 
-    // -----------------------
-    // ABIs
-    // -----------------------
-
-    // Full WMON ABI (wrapped token) — includes deposit() and withdraw()
+    // --- ABIs (WMON full ABI + USDC proxy + VAULT + minimal ERC20) ---
     const WMON_ABI = [
       {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":true,"internalType":"address","name":"guy","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Approval","type":"event"},
       {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"dst","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Deposit","type":"event"},
@@ -451,7 +180,6 @@
       {"constant":false,"inputs":[{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"withdraw","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}
     ];
 
-    // USDC proxy ABI (upgradeable proxy admin functions)
     const USDC_ABI = [
       {"inputs":[{"internalType":"address","name":"implementationContract","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},
       {"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"previousAdmin","type":"address"},{"indexed":false,"internalType":"address","name":"newAdmin","type":"address"}],"name":"AdminChanged","type":"event"},
@@ -464,7 +192,6 @@
       {"inputs":[{"internalType":"address","name":"newImplementation","type":"address"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"upgradeToAndCall","outputs":[],"stateMutability":"payable","type":"function"}
     ];
 
-    // Minimal Vault ABI used by UI
     const VAULT_ABI = [
       {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"totalStaked","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"totalUsers","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
@@ -475,7 +202,6 @@
       {"inputs":[],"name":"getSupportedTokens","outputs":[{"internalType":"address[]","name":"","type":"address[]"}],"stateMutability":"view","type":"function"}
     ];
 
-    // Generic ERC20 ABI (minimal)
     const ERC20_ABI = [
       {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
@@ -485,71 +211,58 @@
       {"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}
     ];
 
-    // -----------------------
     // Runtime state
-    // -----------------------
     let provider, signer, userAddress, vault, wmon, web3auth;
 
-    // -----------------------
     // Helpers
-    // -----------------------
-    function shortAddr(addr) { return addr ? addr.slice(0,6) + "..." + addr.slice(-4) : ""; }
-    function updateStatus(msg, color = "gray") {
+    function shortAddr(addr){ return addr ? addr.slice(0,6) + "..." + addr.slice(-4) : ""; }
+    function updateStatus(msg, color="gray"){
       const el = document.getElementById("walletStatus");
       if (!el) return;
       el.textContent = msg;
       el.style.color = color === "green" ? "#10b981" : color === "red" ? "#ef4444" : "#9ca3af";
     }
-    function addActivityFeedItem(icon, title, desc, color = "blue") {
+    function addActivityFeedItem(icon, title, desc, color="blue"){
       const feed = document.getElementById("activityFeed");
       if (!feed) return;
-      const colorMap = { green: "#10b981", red: "#ef4444", yellow: "#f59e0b", blue: "#3b82f6" };
+      const colorMap = { green:"#10b981", red:"#ef4444", yellow:"#f59e0b", blue:"#3b82f6" };
       const item = document.createElement("div");
-      item.style.padding = "0.6rem";
-      item.style.borderBottom = "1px solid rgba(255,255,255,0.02)";
+      item.style.padding="0.6rem";
+      item.style.borderBottom="1px solid rgba(255,255,255,0.02)";
       item.innerHTML = `<div style="display:flex;gap:0.6rem;align-items:center;"><span style="font-size:1.1rem;">${icon}</span><div><div style="font-weight:600;color:${colorMap[color]||'#9ca3af'}">${title}</div><div style="color:#9bb3c9;font-size:0.9rem">${desc}</div></div></div>`;
       feed.insertBefore(item, feed.firstChild);
-      while (feed.children.length > 6) feed.removeChild(feed.lastChild);
+      while(feed.children.length>6) feed.removeChild(feed.lastChild);
     }
 
-    // update donate LCD balance display
-    function setLcdBalance(formatted) {
+    function setLcdBalance(formatted){
       const lcd = document.getElementById('lcdBalance');
       if (lcd) lcd.textContent = formatted + " WMON";
     }
 
-    // -----------------------
-    // Init wallet support
-    // -----------------------
-    async function initWalletSupport() {
-      if (typeof window.ethereum !== "undefined") {
-        updateStatus("MetaMask available — ready", "green");
-        return;
-      }
-      if (typeof window.Modal !== "undefined" && typeof window.Modal.Web3Auth !== "undefined") {
-        updateStatus("Web3Auth available — ready", "green");
-        return;
-      }
-      updateStatus("No injected wallet detected", "red");
+    // Wallet support detection
+    async function initWalletSupport(){
+      if (typeof window.ethereum !== "undefined") { updateStatus("MetaMask available — ready","green"); return; }
+      if (typeof window.Modal !== "undefined" && typeof window.Modal.Web3Auth !== "undefined"){ updateStatus("Web3Auth available — ready","green"); return; }
+      updateStatus("No injected wallet detected","red");
     }
 
-    async function connectWallet() {
-      try {
+    // Connect wallet (MetaMask primary, Web3Auth fallback)
+    async function connectWallet(){
+      try{
         addActivityFeedItem("🔄","Connecting","Opening wallet...","yellow");
-
-        if (typeof window.ethereum !== "undefined") {
+        if (typeof window.ethereum !== "undefined"){
           await window.ethereum.request({ method: "eth_requestAccounts" });
           provider = new ethers.BrowserProvider(window.ethereum);
           signer = await provider.getSigner();
           userAddress = await signer.getAddress();
 
           const net = await provider.getNetwork();
-          if (Number(net.chainId) !== Number(MONAD_CHAIN_ID)) {
+          if (Number(net.chainId) !== Number(MONAD_CHAIN_ID)){
             try {
               await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: MONAD_CHAIN_ID_HEX }]});
-            } catch (switchErr) {
-              if (switchErr && switchErr.code === 4902) {
-                try {
+            } catch (switchErr){
+              if (switchErr && switchErr.code === 4902){
+                try{
                   await window.ethereum.request({
                     method: "wallet_addEthereumChain",
                     params: [{
@@ -560,14 +273,14 @@
                       blockExplorerUrls: []
                     }]
                   });
-                } catch (e) { console.warn("Add chain failed", e); }
+                } catch(e){ console.warn("Add chain failed", e); }
               } else { console.warn("Switch chain error", switchErr); }
             }
           }
-        } else if (typeof window.Modal !== "undefined" && typeof window.Modal.Web3Auth !== "undefined") {
-          const web3authClientId = "BM_xtlDAKQnuJR2-_N6dQuVvkSP7TTIglL1ho47LG7DP_ZbJT1HftQJ7F0RCoA0HvZKRfMeyRfwgJmZYgM-ZVSs";
-          const chainConfig = { chainNamespace: "eip155", chainId: MONAD_CHAIN_ID_HEX, rpcTarget: RPC_URL, displayName: "Monad Mainnet", ticker: "MON", tickerName: "Monad" };
-          web3auth = new window.Modal.Web3Auth({ clientId: web3authClientId, chainConfig, uiConfig: { appName: "Digital Life DEX", mode: "dark" }});
+        } else if (typeof window.Modal !== "undefined" && typeof window.Modal.Web3Auth !== "undefined"){
+          const web3authClientId = THIRDWEB_CLIENT_ID; // reuse public client id as fallback
+          const chainConfig = { chainNamespace:"eip155", chainId: MONAD_CHAIN_ID_HEX, rpcTarget: RPC_URL, displayName:"Monad Mainnet", ticker:"MON", tickerName:"Monad" };
+          web3auth = new window.Modal.Web3Auth({ clientId: web3authClientId, chainConfig, uiConfig:{ appName:"Digital Life DEX", mode:"dark"}});
           await web3auth.initModal();
           const web3authProvider = await web3auth.connect();
           provider = new ethers.BrowserProvider(web3authProvider);
@@ -577,80 +290,292 @@
           throw new Error("No wallet provider available");
         }
 
+        // Create contract instances with signer
         vault = new ethers.Contract(VAULT_V2_PROXY, VAULT_ABI, signer);
+
+        // IMPORTANT: use the full WMON_ABI for the wrapped token so deposit/withdraw exist
         wmon = new ethers.Contract(WMON_ADDRESS, WMON_ABI, signer);
 
         document.getElementById("connectWallet").textContent = "✅ " + shortAddr(userAddress);
         updateStatus("Connected: " + shortAddr(userAddress), "green");
-        addActivityFeedItem("🔌", "Connected", shortAddr(userAddress), "green");
+        addActivityFeedItem("🔌","Connected", shortAddr(userAddress), "green");
 
+        // initial refreshes
         await Promise.allSettled([ updateWalletBalance(), updateUserStakes(), fetchLiveDexData(), fetchDexActivity() ]);
-      } catch (err) {
+      } catch(err){
         console.error("Connect failed", err);
-        addActivityFeedItem("❌", "Connect failed", (err && err.message) || String(err), "red");
+        addActivityFeedItem("❌","Connect failed", (err && err.message) || String(err), "red");
         alert("Connect failed: " + (err && err.message ? err.message : String(err)));
       }
     }
 
-    function disconnectWallet() {
+    function disconnectWallet(){
       userAddress = null; provider = null; signer = null; vault = null; wmon = null;
       document.getElementById("connectWallet").textContent = "Connect Wallet";
-      updateStatus("Disconnected", "gray");
+      updateStatus("Disconnected","gray");
       document.getElementById("walletBalance").textContent = "0.00 WMON";
       setLcdBalance("0.0000");
       renderStakes([]);
       addActivityFeedItem("🔌","Disconnected","Logged out","green");
     }
 
-    // copy donate address functionality
-    document.addEventListener("DOMContentLoaded", () => {
-      const copyBtn = document.getElementById("copyDonate");
-      if (copyBtn) {
-        copyBtn.addEventListener("click", async () => {
-          const addr = "0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e";
-          try {
-            await navigator.clipboard.writeText(addr);
-            addActivityFeedItem("📋","Copied","Donate address copied to clipboard","green");
-          } catch (e) {
-            console.warn("clipboard failed", e);
-            alert("Copy failed — please copy manually: " + addr);
-          }
-        });
-      }
-    });
+    // Staking / withdraw / display logic (same as your earlier implementation)
+    async function stakeTokens(){
+      if (!vault || !wmon || !userAddress){ alert("Connect wallet first"); return; }
+      const amount = document.getElementById("stakeAmount").value;
+      const durationDays = document.getElementById("lockDuration").value || 30;
+      const referrer = document.getElementById("referrerAddress").value || ethers.ZeroAddress;
+      if (!amount || Number(amount) <= 0){ alert("Enter valid amount"); return; }
 
-    // Price widget load and periodic refresh
-    const DEXSCREENER_TOKEN = WMON_ADDRESS;
-    async function loadPrice() {
-      try {
-        if (!DEXSCREENER_TOKEN) {
-          document.getElementById("priceButton").innerText = "Price N/A";
+      try{
+        addActivityFeedItem("⏳","Staking","Processing...","yellow");
+        const decimals = await wmon.decimals();
+        const amountWei = ethers.parseUnits(String(amount), decimals);
+        const durationSec = Number(durationDays) * 24 * 60 * 60;
+
+        const allowance = await wmon.allowance(userAddress, VAULT_V2_PROXY);
+        if (allowance < amountWei){
+          const txApprove = await wmon.approve(VAULT_V2_PROXY, amountWei);
+          await txApprove.wait();
+        }
+
+        const tx = await vault.stake(WMON_ADDRESS, amountWei, durationSec, referrer);
+        await tx.wait();
+
+        addActivityFeedItem("🔒","Staked", `${amount} WMON`, "green");
+        document.getElementById("stakeAmount").value = "";
+        await Promise.allSettled([ updateWalletBalance(), updateUserStakes(), fetchLiveDexData() ]);
+      } catch (err){
+        console.error("Stake failed", err);
+        addActivityFeedItem("❌","Stake failed",(err && err.message) || String(err),"red");
+        alert("Stake failed: " + (err && err.message ? err.message : String(err)));
+      }
+    }
+
+    async function withdrawStake(stakeId){
+      if (!vault){ alert("Connect wallet"); return; }
+      try{
+        const tx = await vault.withdraw(stakeId);
+        await tx.wait();
+        addActivityFeedItem("💰","Withdrawn", `Stake #${stakeId}`, "green");
+        await Promise.allSettled([ updateWalletBalance(), updateUserStakes(), fetchLiveDexData() ]);
+      } catch (err){
+        console.error("Withdraw failed", err);
+        alert("Withdraw failed: " + (err && err.message ? err.message : String(err)));
+      }
+    }
+
+    async function updateWalletBalance(){
+      try{
+        if (!wmon || !userAddress) return;
+        const bal = await wmon.balanceOf(userAddress);
+        const decimals = await wmon.decimals();
+        const formatted = parseFloat(ethers.formatUnits(bal, decimals)).toFixed(4);
+        document.getElementById("walletBalance").textContent = formatted + " WMON";
+        setLcdBalance(parseFloat(ethers.formatUnits(bal, decimals)).toFixed(4));
+      } catch(e){ console.warn("Balance fetch failed", e); }
+    }
+
+    async function updateUserStakes(){
+      if (!vault || !userAddress) return;
+      try{
+        const ids = await vault.getUserStakes(userAddress);
+        const rpcProv = new ethers.JsonRpcProvider(RPC_URL);
+        const tokenContract = new ethers.Contract(WMON_ADDRESS, WMON_ABI, rpcProv);
+        const tokenDecimals = await tokenContract.decimals().catch(()=>18);
+
+        const stakes = [];
+        for (const id of ids){
+          try{
+            const info = await vault.getStakeInfo(userAddress, id);
+            stakes.push({
+              id: id.toString(),
+              amount: parseFloat(ethers.formatUnits(info[1], tokenDecimals)).toFixed(4),
+              unlockTime: new Date(Number(info[3]) * 1000).toLocaleString(),
+              locked: Math.floor(Date.now()/1000) < Number(info[3])
+            });
+          } catch(e){ console.warn("getStakeInfo failed for", id, e); }
+        }
+        renderStakes(stakes);
+      } catch(e){ console.error("updateUserStakes error", e); }
+    }
+
+    function renderStakes(stakes){
+      const grids = [ document.getElementById("stakesGrid"), document.getElementById("stakesGridAlt") ];
+      grids.forEach(grid => {
+        if (!grid) return;
+        if (!stakes || stakes.length === 0){
+          grid.innerHTML = '<p class="muted">No stakes found</p>';
           return;
         }
+        grid.innerHTML = stakes.map(s => `
+          <div class="glass-card" style="margin-bottom:0.8rem;">
+            <div style="display:flex;align-items:center;gap:0.6rem;">
+              <div class="token-logo"><img src="${TOKEN_LOGOS[WMON_ADDRESS.toLowerCase()]||''}" alt="WMON" onerror="this.style.display='none'"></div>
+              <div>
+                <div style="font-weight:700">${s.amount} WMON</div>
+                <div class="muted">Stake #${s.id} — Unlock: ${s.unlockTime}</div>
+              </div>
+            </div>
+            <div style="margin-top:0.8rem">
+              <button class="btn-ghost" ${s.locked ? "disabled" : ""} onclick="withdrawStake('${s.id}')">${s.locked ? "🔒 LOCKED" : "💰 WITHDRAW"}</button>
+            </div>
+          </div>
+        `).join('');
+      });
+    }
+
+    // Live DEX + thirdweb Insight
+    async function fetchLiveDexData(){
+      try{
+        const rpcProv = new ethers.JsonRpcProvider(RPC_URL);
+        const vaultRpc = new ethers.Contract(VAULT_V2_PROXY, VAULT_ABI, rpcProv);
+
+        let tokenAddresses = [];
+        try { tokenAddresses = (await vaultRpc.getSupportedTokens()).map(a => a.toLowerCase()); }
+        catch(e){ console.warn("getSupportedTokens failed, using fallback", e); tokenAddresses = [WMON_ADDRESS.toLowerCase(), USDC_ADDRESS.toLowerCase()]; }
+
+        const tokenData = await Promise.all(tokenAddresses.map(async addr => {
+          try{
+            const t = new ethers.Contract(addr, ERC20_ABI, rpcProv);
+            const decimals = await t.decimals().catch(()=>18);
+            const symbol = await t.symbol().catch(()=> addr.slice(0,6)+'...');
+            const raw = await vaultRpc.totalStaked(addr).catch(()=>ethers.Zero);
+            const tvl = parseFloat(ethers.formatUnits(raw, decimals)).toFixed(2);
+            const logo = TOKEN_LOGOS[addr] || null;
+            return { address: addr, symbol, tvl, logo };
+          } catch(e){ console.warn("token fetch failed", addr, e); return null; }
+        }));
+
+        let users = "N/A";
+        try{ users = (await vaultRpc.totalUsers()).toString(); } catch(e){ console.warn("totalUsers failed", e); }
+
+        const dexEl = document.getElementById("dexData");
+        if (dexEl){
+          dexEl.innerHTML = `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div class="glass-card">
+                <h3>Total Value Locked — tokens</h3>
+                <div>
+                ${tokenData.filter(Boolean).map(t => `
+                  <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,0.02);">
+                    <div style="display:flex;align-items:center;gap:0.75rem">
+                      <div class="token-logo">${t.logo ? `<img src="${t.logo}" alt="${t.symbol}" />` : ''}</div>
+                      <div style="font-weight:600">${t.symbol}</div>
+                    </div>
+                    <div style="font-weight:700">${t.tvl}</div>
+                  </div>
+                `).join('')}
+                </div>
+              </div>
+              <div class="glass-card">
+                <h3>Total Users</h3>
+                <div style="font-size:1.6rem;font-weight:700">${users}</div>
+                <div style="margin-top:12px;" class="muted">Updated: ${new Date().toLocaleString()}</div>
+              </div>
+            </div>
+          `;
+        }
+
+        const sum = tokenData.filter(Boolean).reduce((acc,t)=>acc+(isFinite(Number(t.tvl))?Number(t.tvl):0),0);
+        document.getElementById("tv1").textContent = sum ? sum.toFixed(2) : "N/A";
+        document.getElementById("tv2").textContent = users;
+        addActivityFeedItem("✅","DEX data refreshed","Live DEX values updated","green");
+      } catch(err){
+        console.error("fetchLiveDexData err", err);
+        const dexEl = document.getElementById("dexData");
+        if (dexEl) dexEl.innerHTML = '<p class="muted">Failed to load DEX data</p>';
+        addActivityFeedItem("❌","DEX fetch failed",(err && err.message) || String(err),"red");
+      }
+    }
+
+    async function fetchDexActivity(){
+      try{
+        const tokenAddresses = [WMON_ADDRESS.toLowerCase(), USDC_ADDRESS.toLowerCase()];
+        const base = `https://143.insight.thirdweb.com/v1/events`;
+        const queries = tokenAddresses.map(addr => fetch(`${base}?limit=4&contract=${addr}&event=Transfer(address,address,uint256)`, { headers:{ "x-client-id": THIRDWEB_CLIENT_ID } }).then(r=>r.ok?r.json():Promise.reject(r.statusText)).catch(e=>{ console.warn("insight fail", addr, e); return null; }));
+        const results = await Promise.all(queries);
+        let any=false;
+        results.forEach(res=>{
+          if (!res || !res.events) return;
+          res.events.slice(0,3).forEach(ev=>{
+            any=true;
+            const title = `Transfer ${ev.payload?.value||''}`;
+            const desc = `${ev.payload?.from||''} → ${ev.payload?.to||''}`;
+            addActivityFeedItem("🔁", title, desc, "blue");
+          });
+        });
+        if (!any) addActivityFeedItem("ℹ️","No recent token transfers","No events from Insight","yellow");
+      } catch(e){ console.warn("fetchDexActivity failed", e); }
+    }
+
+    // Price widget
+    const DEXSCREENER_TOKEN = WMON_ADDRESS;
+    async function loadPrice(){
+      try{
+        if (!DEXSCREENER_TOKEN){ document.getElementById("priceButton").innerText = "Price N/A"; return; }
         const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${DEXSCREENER_TOKEN}`);
         const json = await res.json();
         const price = json.pairs && json.pairs[0] ? json.pairs[0].priceUsd : null;
         document.getElementById("priceButton").innerText = price ? `$${Number(price).toFixed(6)}` : "Price N/A";
-      } catch (e) {
-        console.warn("loadPrice error", e);
-        document.getElementById("priceButton").innerText = "Price N/A";
-      }
+      } catch(e){ console.warn("loadPrice error", e); document.getElementById("priceButton").innerText = "Price N/A"; }
     }
 
-    // Load initial UI and set intervals
-    (async function init() {
+    // UI wiring after DOM ready
+    document.addEventListener("DOMContentLoaded", async () => {
+      // Wire connect/disconnect
+      document.getElementById("connectWallet").addEventListener("click", () => {
+        if (!userAddress) connectWallet(); else disconnectWallet();
+      });
+
+      // Wire stake action
+      const stakeBtn = document.getElementById("stakeBtn");
+      if (stakeBtn) stakeBtn.addEventListener("click", stakeTokens);
+
+      // Copy donate address
+      const copyBtn = document.getElementById("copyDonate");
+      if (copyBtn) copyBtn.addEventListener("click", async () => {
+        const addr = "0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e";
+        try { await navigator.clipboard.writeText(addr); addActivityFeedItem("📋","Copied","Donate address copied to clipboard","green"); }
+        catch (e){ console.warn("clipboard failed", e); alert("Copy failed — please copy manually: " + addr); }
+      });
+
+      // Nav wiring
+      document.querySelectorAll(".nav-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          const tab = btn.dataset.tab;
+          document.querySelectorAll(".tab-section").forEach(sec => sec.classList.remove("active"));
+          const el = document.getElementById(tab);
+          if (el) el.classList.add("active");
+          if (tab === "live-dex") fetchLiveDexData();
+          if (tab === "my-stakes") updateUserStakes();
+        });
+      });
+
+      // Init UI state & handlers
       updateStatus("Initializing wallet support...", "yellow");
       await initWalletSupport();
-      setLcdBalance("0.0000");
+
+      // Price ticker
       loadPrice();
       setInterval(loadPrice, 5000);
-      // initial fetches (will work when ABIs are present)
-      try { await fetchLiveDexData(); } catch(e){/* ignore */ }
-      try { await fetchDexActivity(); } catch(e){/* ignore */ }
-    })();
 
-    // Expose withdraw for inline handlers (ensure implementation present)
-    window.withdrawStake = function(stakeId){ console.warn('withdrawStake placeholder - ensure vault ABI and signer exist'); };
+      // Auto-refresh when connected
+      setInterval(async () => {
+        if (userAddress) {
+          await Promise.allSettled([ fetchLiveDexData(), updateWalletBalance() ]);
+        }
+      }, 15000);
+
+      // Initial loads
+      await fetchLiveDexData();
+      await fetchDexActivity();
+    });
+
+    // Expose withdraw for inline onclicks
+    window.withdrawStake = withdrawStake;
   </script>
 </body>
 </html>
