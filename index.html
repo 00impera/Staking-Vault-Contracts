@@ -434,24 +434,46 @@ async function initWeb3Auth() {
 document.addEventListener("DOMContentLoaded", async function () {
   console.log("⚡ STAKING VAULT DASHBOARD INITIALIZING ⚡");
 
-  // Initialize Web3Auth FIRST
+  
+  // ========== EVENT LISTENERS ==========
+  const connectBtn = document.getElementById("connectWallet");
+  const stakeBtn = document.getElementById("stakeBtn");
+
+  // Show loading state on connect button
+  if (connectBtn) {
+    connectBtn.textContent = "⏳ Loading Wallet...";
+    connectBtn.disabled = true;
+    connectBtn.style.opacity = "0.6";
+    connectBtn.style.cursor = "not-allowed";
+  }
+
+  // Initialize Web3Auth FIRST before enabling button
   try {
     await initWeb3Auth();
     console.log("✅ Web3Auth initialized");
+    
+    // Now enable and attach event listener
+    if (connectBtn) {
+      connectBtn.textContent = "Connect Wallet";
+      connectBtn.disabled = false;
+      connectBtn.style.opacity = "1";
+      connectBtn.style.cursor = "pointer";
+      connectBtn.addEventListener("click", connectWallet);
+    } else {
+      console.warn("⚠️ connectWallet button not found");
+    }
   } catch (err) {
     console.error("❌ Web3Auth initialization error:", err);
     showAlert("Failed to initialize Web3Auth. Please refresh the page.");
+    
+    if (connectBtn) {
+      connectBtn.textContent = "❌ Wallet Error - Refresh Page";
+      connectBtn.disabled = true;
+      connectBtn.style.opacity = "0.5";
+    }
   }
 
-  // ========== EVENT LISTENERS ==========
-  const connectBtn = document.getElementById("connectWallet");
-  if (connectBtn) {
-    connectBtn.addEventListener("click", connectWallet);
-  } else {
-    console.warn("⚠️ connectWallet button not found");
-  }
-
-  const stakeBtn = document.getElementById("stakeBtn");
+  // Stake button setup
   if (stakeBtn) {
     stakeBtn.addEventListener("click", stakeTokens);
   } else {
