@@ -42,24 +42,14 @@
     .glass-card{ background:var(--card-bg); border:1.5px solid var(--card-border); border-radius:18px; box-shadow:var(--shadow); padding:1.5rem 1.2rem; margin-bottom:1.5rem; transition:border-color .2s, box-shadow .2s; position:relative; }
     .glass-card:hover{ border-color:var(--neon-blue); box-shadow:0 0 32px #00C8FF77, 0 2px 24px #0008; }
     h1,h2,h3{ font-family:var(--font-header); color:var(--neon-blue); margin-top:0; margin-bottom:0.5rem; letter-spacing:0.04em; text-shadow:0 0 8px #00C8FF44; }
-    h2{ font-size:1.5rem; } h3{ font-size:1.1rem; color:var(--rune-glow); }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.1rem; color: var(--rune-glow); }
     .muted{ color:var(--secondary-text); }
     .token-logo img{ width:32px; height:32px; border-radius:50%; border:2px solid var(--electric-cyan); background:#111; box-shadow:0 0 8px #00C8FF44; }
     .token-logo{ width:32px; height:32px; display:flex; align-items:center; justify-content:center; background:#111; border-radius:50%; margin-right:0.5rem; }
 
     /* donate section adjustments (smaller logo, nudged down) */
-    .donate-section {
-      background: var(--card-bg);
-      border: 2px solid var(--neon-blue);
-      border-radius: 12px;
-      padding: 1.25rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 0 18px #00C8FF33;
-      display: flex;
-      align-items: flex-start;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
+    .donate-section { background: var(--card-bg); border: 2px solid var(--neon-blue); border-radius: 12px; padding: 1.25rem; margin-bottom: 2rem; box-shadow: 0 0 18px #00C8FF33; display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
     .donate-logo { width:48px; height:48px; border-radius:50%; border:2px solid var(--neon-blue); box-shadow:0 0 12px var(--neon-blue); object-fit:cover; background:linear-gradient(180deg,#001a2a,#002b3a); flex-shrink:0; margin-top:10px; }
     .donate-info { flex: 1; min-width: 220px; }
     .donate-title { font-family: var(--font-header); font-size: 1.15rem; color: var(--neon-blue); margin-bottom: 0.25rem; text-shadow: 0 0 6px var(--neon-blue); }
@@ -69,6 +59,20 @@
     .btn-ghost{ background:none; border:1.5px solid var(--circuit-silver); color:var(--neon-blue); border-radius:8px; padding:0.5rem 1.2rem; font-family:var(--font-header); font-size:1rem; cursor:pointer; transition:background .2s, border-color .2s, color .2s; margin-top:0.5rem; }
     .glassmorph-btn { background: rgba(10,15,20,0.35); border:1.5px solid #4FD4FF; color:#E6F3FF; border-radius:12px; padding:10px 16px; font-family:var(--font-header); font-size:0.95rem; font-weight:700; box-shadow:0 4px 20px #00C8FF22; backdrop-filter:blur(6px) saturate(1.1); transition:background .2s, border-color .2s; cursor:pointer; }
     .neon-anim-btn { background:var(--dark-metal); color:var(--neon-blue); border:2px solid var(--electric-cyan); border-radius:10px; padding:10px 18px; font-family:var(--font-header); font-size:0.95rem; font-weight:700; box-shadow:0 0 12px #00C8FF55; cursor:pointer; }
+
+    .tab-section { display:none; margin-top:2rem; }
+    .tab-section.active { display:block; }
+
+    .quick-stats { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin-bottom:1rem; }
+    .stat-label { color: var(--secondary-text); }
+    .stat-value { font-weight:700; margin-top:0.25rem; }
+
+    @media (max-width:520px) {
+      .donate-section { flex-direction: column; align-items: center; }
+      .donate-logo { margin-top: 0; width:64px; height:64px; }
+      .donate-ctas { align-items:center; width:100%; }
+      header { padding: 0.8rem 1rem; }
+    }
   </style>
 </head>
 <body>
@@ -107,10 +111,22 @@
     </section>
 
     <div class="quick-stats">
-      <div><span class="stat-label">Total Value Locked</span><div class="stat-value" id="tv1">0.00</div></div>
-      <div><span class="stat-label">Total Users</span><div class="stat-value" id="tv2">0</div></div>
-      <div><span class="stat-label">Wallet Balance</span><div class="stat-value" id="walletBalance">0.00 WMON</div></div>
-      <div><span class="stat-label">Status</span><div class="stat-value" id="walletStatus">Initializing...</div></div>
+      <div>
+        <span class="stat-label">Total Value Locked</span>
+        <div class="stat-value" id="tv1">0.00</div>
+      </div>
+      <div>
+        <span class="stat-label">Total Users</span>
+        <div class="stat-value" id="tv2">0</div>
+      </div>
+      <div>
+        <span class="stat-label">Wallet Balance</span>
+        <div class="stat-value" id="walletBalance">0.00 WMON</div>
+      </div>
+      <div>
+        <span class="stat-label">Status</span>
+        <div class="stat-value" id="walletStatus">Initializing...</div>
+      </div>
     </div>
 
     <div class="activity-feed" id="activityFeed" aria-live="polite"></div>
@@ -147,9 +163,9 @@
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
 
   <script>
-    //
-    // Fix: centralized ABIs + correct usage for connection
-    //
+    // ------------------------------------------------------------------
+    // Configuration / ABIs / Constants
+    // ------------------------------------------------------------------
     const RPC_URL = "https://rpc.monad.xyz/";
     const MONAD_CHAIN_ID = 143;
     const MONAD_CHAIN_ID_HEX = "0x8f";
@@ -159,7 +175,12 @@
     const DONATION_ADDRESS = "0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e";
     const THIRDWEB_CLIENT_ID = "BM_xtlDAKQnuJR2-_N6dQuVvkSP7TTIglL1ho47LG7DP_ZbJT1HftQJ7F0RCoA0HvZKRfMeyRfwgJmZYgM-ZVSs";
 
-    // Full WMON ABI (includes deposit/withdraw)
+    const TOKEN_LOGOS = {
+      [WMON_ADDRESS.toLowerCase()]: "https://files.catbox.moe/hwlhih.png",
+      [USDC_ADDRESS.toLowerCase()]: "https://files.catbox.moe/ujzf30.gif"
+    };
+
+    // Full WMON ABI (wrapped token)
     const WMON_ABI = [
       {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":true,"internalType":"address","name":"guy","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Approval","type":"event"},
       {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"dst","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Deposit","type":"event"},
@@ -179,7 +200,7 @@
       {"constant":false,"inputs":[{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"withdraw","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}
     ];
 
-    // Minimal Vault ABI used by UI
+    // Minimal Vault / ERC20 ABIs used by UI
     const VAULT_ABI = [
       {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"totalStaked","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"totalUsers","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
@@ -190,7 +211,6 @@
       {"inputs":[],"name":"getSupportedTokens","outputs":[{"internalType":"address[]","name":"","type":"address[]"}],"stateMutability":"view","type":"function"}
     ];
 
-    // Minimal ERC20 ABI for generic tokens
     const ERC20_ABI = [
       {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
@@ -200,10 +220,12 @@
       {"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}
     ];
 
-    // Runtime state
-    let provider, signer, userAddress, vault, wmon, web3auth;
+    // runtime state
+    let provider = null, signer = null, userAddress = null, vault = null, wmon = null, web3auth = null;
 
-    // Helpers
+    // ------------------------------------------------------------------
+    // Helpers: UI & activity feed
+    // ------------------------------------------------------------------
     function shortAddr(addr){ return addr ? addr.slice(0,6) + "..." + addr.slice(-4) : ""; }
     function addActivityFeedItem(icon, title, desc, color = "blue") {
       const feed = document.getElementById("activityFeed");
@@ -216,20 +238,20 @@
       feed.insertBefore(item, feed.firstChild);
       while (feed.children.length > 6) feed.removeChild(feed.lastChild);
     }
-
     function updateStatus(msg, color = "gray") {
       const el = document.getElementById("walletStatus");
       if (!el) return;
       el.textContent = msg;
       el.style.color = color === "green" ? "#10b981" : color === "red" ? "#ef4444" : "#9ca3af";
     }
-
     function setLcdBalance(formatted){
       const lcd = document.getElementById('lcdBalance');
       if (lcd) lcd.textContent = formatted + " WMON";
     }
 
-    // ensure chain helper
+    // ------------------------------------------------------------------
+    // Chain / Wallet helpers
+    // ------------------------------------------------------------------
     async function ensureMonadChain() {
       if (!provider) throw new Error("No provider");
       const net = await provider.getNetwork();
@@ -259,7 +281,6 @@
       }
     }
 
-    // connect wallet (MetaMask primary, Web3Auth fallback)
     async function connectWallet() {
       try {
         addActivityFeedItem("🔄","Connecting","Opening wallet...","yellow");
@@ -282,7 +303,6 @@
 
         try { await ensureMonadChain(); } catch(e){ console.warn("ensure chain:", e); }
 
-        // create contracts with signer (use full WMON_ABI)
         vault = new ethers.Contract(VAULT_V2_PROXY, VAULT_ABI, signer);
         wmon = new ethers.Contract(WMON_ADDRESS, WMON_ABI, signer);
 
@@ -290,7 +310,6 @@
         updateStatus("Connected: " + shortAddr(userAddress), "green");
         addActivityFeedItem("🔌","Connected", shortAddr(userAddress), "green");
 
-        // initial refreshes
         await Promise.allSettled([ updateWalletBalance(), updateUserStakes(), fetchLiveDexData(), fetchDexActivity() ]);
       } catch (err) {
         console.error("Connect failed", err);
@@ -308,7 +327,9 @@
       addActivityFeedItem("🔌","Disconnected","Logged out","green");
     }
 
-    // donation helper: send native MON
+    // ------------------------------------------------------------------
+    // Donation: native MON transfer helper
+    // ------------------------------------------------------------------
     async function sendDonation(amount) {
       try {
         if (!signer) await connectWallet();
@@ -331,16 +352,52 @@
       }
     }
 
-    // price/DEX/stake functions (kept from your working implementation)
-    const DEXSCREENER_TOKEN = WMON_ADDRESS;
-    async function loadPrice(){
+    // ------------------------------------------------------------------
+    // Staking / UI data functions
+    // ------------------------------------------------------------------
+    async function stakeTokens(){
+      if (!vault || !wmon || !userAddress){ alert("Connect wallet first"); return; }
+      const amount = document.getElementById("stakeAmount").value;
+      const durationDays = document.getElementById("lockDuration").value || 30;
+      const referrer = document.getElementById("referrerAddress").value || ethers.ZeroAddress;
+      if (!amount || Number(amount) <= 0){ alert("Enter valid amount"); return; }
+
       try{
-        if (!DEXSCREENER_TOKEN){ document.getElementById("priceButton").innerText = "Price N/A"; return; }
-        const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${DEXSCREENER_TOKEN}`);
-        const json = await res.json();
-        const price = json.pairs && json.pairs[0] ? json.pairs[0].priceUsd : null;
-        document.getElementById("priceButton").innerText = price ? `$${Number(price).toFixed(6)}` : "Price N/A";
-      } catch(e){ console.warn("loadPrice error", e); document.getElementById("priceButton").innerText = "Price N/A"; }
+        addActivityFeedItem("⏳","Staking","Processing...","yellow");
+        const decimals = await wmon.decimals();
+        const amountWei = ethers.parseUnits(String(amount), decimals);
+        const durationSec = Number(durationDays) * 24 * 60 * 60;
+
+        const allowance = await wmon.allowance(userAddress, VAULT_V2_PROXY);
+        if (allowance < amountWei){
+          const txApprove = await wmon.approve(VAULT_V2_PROXY, amountWei);
+          await txApprove.wait();
+        }
+
+        const tx = await vault.stake(WMON_ADDRESS, amountWei, durationSec, referrer);
+        await tx.wait();
+
+        addActivityFeedItem("🔒","Staked", `${amount} WMON`, "green");
+        document.getElementById("stakeAmount").value = "";
+        await Promise.allSettled([ updateWalletBalance(), updateUserStakes(), fetchLiveDexData() ]);
+      } catch (err){
+        console.error("Stake failed", err);
+        addActivityFeedItem("❌","Stake failed",(err && err.message) || String(err),"red");
+        alert("Stake failed: " + (err && err.message ? err.message : String(err)));
+      }
+    }
+
+    async function withdrawStake(stakeId){
+      if (!vault){ alert("Connect wallet"); return; }
+      try{
+        const tx = await vault.withdraw(stakeId);
+        await tx.wait();
+        addActivityFeedItem("💰","Withdrawn", `Stake #${stakeId}`, "green");
+        await Promise.allSettled([ updateWalletBalance(), updateUserStakes(), fetchLiveDexData() ]);
+      } catch (err){
+        console.error("Withdraw failed", err);
+        alert("Withdraw failed: " + (err && err.message ? err.message : String(err)));
+      }
     }
 
     async function updateWalletBalance(){
@@ -361,6 +418,7 @@
         const rpcProv = new ethers.JsonRpcProvider(RPC_URL);
         const tokenContract = new ethers.Contract(WMON_ADDRESS, WMON_ABI, rpcProv);
         const tokenDecimals = await tokenContract.decimals().catch(()=>18);
+
         const stakes = [];
         for (const id of ids){
           try{
@@ -402,25 +460,33 @@
       });
     }
 
+    // ------------------------------------------------------------------
+    // DEX / Price / Activity
+    // ------------------------------------------------------------------
     async function fetchLiveDexData(){
       try{
         const rpcProv = new ethers.JsonRpcProvider(RPC_URL);
         const vaultRpc = new ethers.Contract(VAULT_V2_PROXY, VAULT_ABI, rpcProv);
+
         let tokenAddresses = [];
-        try { tokenAddresses = (await vaultRpc.getSupportedTokens()).map(a => a.toLowerCase()); } catch(e){ tokenAddresses = [WMON_ADDRESS.toLowerCase(), USDC_ADDRESS.toLowerCase()]; }
+        try { tokenAddresses = (await vaultRpc.getSupportedTokens()).map(a => a.toLowerCase()); }
+        catch(e){ console.warn("getSupportedTokens failed, using fallback", e); tokenAddresses = [WMON_ADDRESS.toLowerCase(), USDC_ADDRESS.toLowerCase()]; }
+
         const tokenData = await Promise.all(tokenAddresses.map(async addr => {
           try{
             const t = new ethers.Contract(addr, ERC20_ABI, rpcProv);
             const decimals = await t.decimals().catch(()=>18);
             const symbol = await t.symbol().catch(()=> addr.slice(0,6)+'...');
-            const raw = await vaultRpc.totalStaked(addr).catch(()=>ethers.Zero);
+            const raw = await vaultRpc.totalStaked(addr).catch(()=>0n);
             const tvl = parseFloat(ethers.formatUnits(raw, decimals)).toFixed(2);
             const logo = TOKEN_LOGOS[addr] || null;
             return { address: addr, symbol, tvl, logo };
           } catch(e){ console.warn("token fetch failed", addr, e); return null; }
         }));
+
         let users = "N/A";
         try{ users = (await vaultRpc.totalUsers()).toString(); } catch(e){ console.warn("totalUsers failed", e); }
+
         const dexEl = document.getElementById("dexData");
         if (dexEl){
           dexEl.innerHTML = `
@@ -447,6 +513,7 @@
             </div>
           `;
         }
+
         const sum = tokenData.filter(Boolean).reduce((acc,t)=>acc+(isFinite(Number(t.tvl))?Number(t.tvl):0),0);
         document.getElementById("tv1").textContent = sum ? sum.toFixed(2) : "N/A";
         document.getElementById("tv2").textContent = users;
@@ -479,40 +546,127 @@
       } catch(e){ console.warn("fetchDexActivity failed", e); }
     }
 
-    // UI wiring
-    document.addEventListener("DOMContentLoaded", async () => {
+    async function loadPrice(){
+      try{
+        const DEXSCREENER_TOKEN = WMON_ADDRESS;
+        if (!DEXSCREENER_TOKEN){ document.getElementById("priceButton").innerText = "Price N/A"; return; }
+        const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${DEXSCREENER_TOKEN}`);
+        const json = await res.json();
+        const price = json.pairs && json.pairs[0] ? json.pairs[0].priceUsd : null;
+        document.getElementById("priceButton").innerText = price ? `$${Number(price).toFixed(6)}` : "Price N/A";
+      } catch(e){ console.warn("loadPrice error", e); document.getElementById("priceButton").innerText = "Price N/A"; }
+    }
+
+    // ------------------------------------------------------------------
+    // Robust tab wiring (single source)
+    // ------------------------------------------------------------------
+    function activateTab(tabKey) {
+      if (!tabKey) return false;
+      let target = document.getElementById(tabKey) || document.querySelector(`[id="${tabKey}"]`);
+      if (!target && window.CSS && CSS.escape) {
+        try { target = document.querySelector('#' + CSS.escape(tabKey)); } catch (e) {}
+      }
+      if (!target) {
+        const altKeys = [ tabKey.replace(/\s+/g, '-'), tabKey.replace(/\s+/g, '_'), tabKey.replace(/-/g, '_'), tabKey.replace(/_/g, '-') ];
+        for (const k of altKeys) {
+          target = document.getElementById(k) || document.querySelector(`[id="${k}"]`);
+          if (target) break;
+        }
+      }
+      if (!target) { console.warn('activateTab: no matching section for', tabKey); return false; }
+      document.querySelectorAll('.tab-section').forEach(sec => sec.classList.remove('active'));
+      target.classList.add('active');
+      return true;
+    }
+
+    function syncNavToActiveSection() {
+      const activeSection = document.querySelector('.tab-section.active');
+      let activeId = activeSection && activeSection.id;
+      if (!activeId) {
+        const first = document.querySelector('.tab-section');
+        activeId = first ? first.id : null;
+        if (activeId) activateTab(activeId);
+      }
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      if (activeId) {
+        const btn = Array.from(document.querySelectorAll('.nav-btn')).find(b => {
+          const dt = b.getAttribute('data-tab');
+          const ac = b.getAttribute('aria-controls');
+          return dt === activeId || ac === activeId || b.id === activeId;
+        });
+        if (btn) btn.classList.add('active');
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Single DOMContentLoaded: wire everything once
+    // ------------------------------------------------------------------
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Nav buttons: use robust wiring
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          const tab = btn.getAttribute('data-tab') || btn.getAttribute('aria-controls') || btn.id;
+          if (!tab) { console.warn('nav-btn clicked but no data-tab/aria-controls/id', btn); return; }
+
+          document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          const ok = activateTab(tab);
+          if (!ok) {
+            console.debug('Tab activation failed for key:', tab, 'Available sections:', Array.from(document.querySelectorAll('.tab-section')).map(s=>s.id));
+          }
+
+          if (tab === 'live-dex') fetchLiveDexData().catch(e => console.warn(e));
+          if (tab === 'my-stakes') updateUserStakes().catch(e => console.warn(e));
+        });
+      });
+
+      // Connect / Donate / Copy wiring
       document.getElementById("connectWallet").addEventListener("click", () => {
         if (!userAddress) connectWallet(); else disconnectWallet();
       });
-      document.getElementById("donateButton").addEventListener("click", async (e) => { e.preventDefault(); await sendDonation("0.01"); });
-      document.getElementById("donateNow").addEventListener("click", async (e) => { e.preventDefault(); await sendDonation(); });
+
+      const donateBtn = document.getElementById("donateButton");
+      if (donateBtn) donateBtn.addEventListener("click", async (e) => { e.preventDefault(); await sendDonation("0.01"); });
+
+      const donateNow = document.getElementById("donateNow");
+      if (donateNow) donateNow.addEventListener("click", async (e) => { e.preventDefault(); await sendDonation(); });
+
       const copyBtn = document.getElementById("copyDonate");
-      if (copyBtn) copyBtn.addEventListener("click", async () => { try { await navigator.clipboard.writeText(DONATION_ADDRESS); addActivityFeedItem("📋","Copied","Donate address copied","green"); } catch(e){ alert("Copy failed: " + DONATION_ADDRESS); } });
+      if (copyBtn) copyBtn.addEventListener("click", async () => {
+        try { await navigator.clipboard.writeText(DONATION_ADDRESS); addActivityFeedItem("📋","Copied","Donate address copied to clipboard","green"); }
+        catch(e){ console.warn("clipboard failed", e); alert("Copy failed — please copy manually: " + DONATION_ADDRESS); }
+      });
 
       const stakeBtn = document.getElementById("stakeBtn");
       if (stakeBtn) stakeBtn.addEventListener("click", stakeTokens);
 
-      document.querySelectorAll(".nav-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
-          btn.classList.add("active");
-          const tab = btn.dataset.tab;
-          document.querySelectorAll(".tab-section").forEach(sec => sec.classList.remove("active"));
-          const el = document.getElementById(tab);
-          if (el) el.classList.add("active");
-          if (tab === "live-dex") fetchLiveDexData();
-          if (tab === "my-stakes") updateUserStakes();
-        });
-      });
-
+      // initial sync, price, and data
+      syncNavToActiveSection();
       updateStatus("Initializing wallet support...", "yellow");
-      await initWalletSupport();
+      if (typeof initWalletSupport === 'function') await initWalletSupport().catch(()=>{});
       loadPrice(); setInterval(loadPrice, 5000);
-      await fetchLiveDexData();
-      await fetchDexActivity();
+      fetchLiveDexData().catch(()=>{});
+      fetchDexActivity().catch(()=>{});
+      // periodic refresh when connected
+      setInterval(async () => {
+        if (userAddress) await Promise.allSettled([ fetchLiveDexData(), updateWalletBalance() ]);
+      }, 15000);
     });
 
-    // expose withdraw
+    // Small compatibility: if you had an initWalletSupport function previously, keep it; else define a minimal one
+    async function initWalletSupport(){
+      if (typeof window.ethereum !== "undefined") {
+        updateStatus("MetaMask available — ready","green"); return;
+      }
+      if (typeof window.Modal !== "undefined" && typeof window.Modal.Web3Auth !== "undefined") {
+        updateStatus("Web3Auth available — ready","green"); return;
+      }
+      updateStatus("No injected wallet detected","red");
+    }
+
+    // expose withdraw to inline handlers
     window.withdrawStake = withdrawStake;
   </script>
 </body>
