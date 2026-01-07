@@ -6,6 +6,7 @@
   <title>Digital Life DEX - Premium Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.10.0/dist/ethers.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@web3auth/modal@9.1.0/dist/modal.umd.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
     :root {
@@ -295,7 +296,9 @@
     const WMON_ADDRESS = "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A";
     const USDC_ADDRESS = "0x754704Bc059F8C67012fEd69BC8A327a5aafb603";
     const RPC_URL = "https://rpc.monad.xyz";
-
+// Web3Auth Configuration
+const WEB3AUTH_CLIENT_ID = "BPi5PB_UiIZ-cPz1GtV5i1I2iOSOHuimiXBI0e-Oe_u6X3oVAbCiAZOTEBtTXw4tsluTITPqA8zMsfxIKMjiqNQ"; // Staging/Development Client ID
+const WEB3AUTH_NETWORK = "sapphire_devnet"; // Use "sapphire_mainnet" for production
     // ========== ABIs ==========
     // --- Staking Vault V2 Proxy (ERC1967/UUPS) ---
     const VAULT_V2_PROXY_ABI = [
@@ -358,7 +361,7 @@
       {"constant":false,"inputs":[{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"withdraw","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}
     ];
 
-    // --- USDC (Proxy) ---
+   // --- USDC (Proxy) ---
     const USDC_ABI = [
       {"inputs":[{"internalType":"address","name":"implementationContract","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},
       {"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"previousAdmin","type":"address"},{"indexed":false,"internalType":"address","name":"newAdmin","type":"address"}],"name":"AdminChanged","type":"event"},
@@ -368,10 +371,10 @@
       {"inputs":[{"internalType":"address","name":"newAdmin","type":"address"}],"name":"changeAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"},
       {"inputs":[],"name":"implementation","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"address","name":"newImplementation","type":"address"}],"name":"upgradeTo","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"newImplementation","type":"address"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"upgradeToAndCall","outputs":[],"stateMutability":"payable"," 
+      {"inputs":[{"internalType":"address","name":"newImplementation","type":"address"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"upgradeToAndCall","outputs":[],"stateMutability":"payable","type":"function"}
+    ];
 
-      let provider, signer, userAddress, vault, wmon, web3auth, web3authProvider;
-
+     let provider, signer, userAddress, vault, wmon, web3auth, web3authProvider;
 // ========== UTILITY FUNCTIONS ==========
 function shortAddr(addr) {
   return addr ? addr.slice(0, 6) + "..." + addr.slice(-4) : "";
@@ -427,7 +430,6 @@ async function initWeb3Auth() {
     throw error;
   }
 }
-
 // ========== INITIALIZATION ==========
 document.addEventListener("DOMContentLoaded", async function () {
   console.log("⚡ STAKING VAULT DASHBOARD INITIALIZING ⚡");
@@ -621,7 +623,7 @@ async function disconnectWallet() {
     // Reset connect button
     const connectBtn = document.getElementById("connectWallet");
     if (connectBtn) {
-      connectBtn.textContent = "🔌 Connect Wallet";
+      connectBtn.textContent = "Connect Wallet";
       connectBtn.classList.remove("connected");
       connectBtn.onclick = connectWallet;
     }
@@ -840,7 +842,6 @@ async function withdrawStake(stakeId) {
     addActivityFeedItem("❌", "Withdrawal Failed", errorMsg, "red");
   }
 }
-
 // ========== FETCH WALLET BALANCE ==========
 async function updateWalletBalance() {
   if (!wmon || !userAddress) return;
@@ -864,7 +865,6 @@ async function updateWalletBalance() {
     if (balanceEl) balanceEl.textContent = "0.00";
   }
 }
-
 // ========== FETCH USER STAKES ==========
 async function updateUserStakes() {
   if (!vault || !userAddress) return;
@@ -896,7 +896,6 @@ async function updateUserStakes() {
     renderStakes([]);
   }
 }
-
 // ========== RENDER STAKES ==========
 function renderStakes(stakes) {
   const grid = document.getElementById("stakesGrid");
@@ -968,7 +967,6 @@ function renderStakes(stakes) {
     )
     .join("");
 }
-
 // ========== FETCH CRYPTO PRICES ==========
 async function fetchCryptoPrices() {
   try {
@@ -1038,9 +1036,7 @@ function addActivityFeedItem(icon, title, description, color = "yellow") {
   while (feed.children.length > 5) {
     feed.removeChild(feed.lastChild);
   }
-}
-
-// ========== FETCH LIVE DEX DATA ==========
+} // ========== FETCH LIVE DEX DATA ==========
 async function fetchLiveDexData() {
   const dexContainer = document.getElementById("dexData");
 
@@ -1201,4 +1197,7 @@ async function fetchLiveDexData() {
       "red"
     );
   }
-}
+}  
+</script>
+</body>
+</html>
