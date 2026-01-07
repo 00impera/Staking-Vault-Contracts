@@ -22,10 +22,13 @@
     .glass-card {background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.015)); padding:1rem;border-radius:12px;margin-bottom:1rem;color:#e6eef8;}
     header {display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
     .btn {background:var(--accent);color:#001; border:0;padding:0.5rem 0.9rem;border-radius:8px;cursor:pointer;}
-    .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted);}
+    .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted);padding:0.5rem;border-radius:8px;cursor:pointer;}
     #activityFeed {max-height:220px;overflow:auto;}
     input,select {padding:0.5rem;border-radius:8px;border:1px solid #25303a;background:#07101a;color:#e6eef8;width:100%}
     .grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;}
+    .token-logo {height:28px;width:28px;border-radius:6px;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+    .token-logo img {height:100%;width:100%;object-fit:cover;display:block;}
+    .muted {color:var(--muted);}
   </style>
 
   <!-- Ethers v6 UMD build -->
@@ -71,11 +74,11 @@
       <section class="tab-section active" id="overview">
         <div class="glass-card">
           <h2>Overview</h2>
-          <p style="color:var(--muted);">Quick stats</p>
+          <p class="muted">Quick stats</p>
           <div class="grid" style="margin-top:0.75rem;">
-            <div class="glass-card"><strong id="tv1">-</strong><div style="color:var(--muted)">TVL (aggregate)</div></div>
-            <div class="glass-card"><strong id="tv2">-</strong><div style="color:var(--muted)">Total Users</div></div>
-            <div class="glass-card"><strong id="tv3">-</strong><div style="color:var(--muted)">Your Stakes</div></div>
+            <div class="glass-card"><strong id="tv1">-</strong><div class="muted">TVL (aggregate)</div></div>
+            <div class="glass-card"><strong id="tv2">-</strong><div class="muted">Total Users</div></div>
+            <div class="glass-card"><strong id="tv3">-</strong><div class="muted">Your Stakes</div></div>
           </div>
         </div>
       </section>
@@ -112,7 +115,7 @@
       <section class="tab-section" id="referral">
         <div class="glass-card">
           <h2>Referral</h2>
-          <p style="color:var(--muted)">Referral stats and link will appear here.</p>
+          <p class="muted">Referral stats and link will appear here.</p>
         </div>
       </section>
 
@@ -121,7 +124,7 @@
         <div class="glass-card">
           <h2 style="margin-bottom:1rem;">📈 Live DEX Data</h2>
           <div id="dexData">
-            <p style="color:var(--muted);text-align:center;padding:2rem;">Loading DEX data...</p>
+            <p class="muted" style="text-align:center;padding:2rem;">Loading DEX data...</p>
           </div>
         </div>
       </section>
@@ -130,7 +133,7 @@
       <section class="tab-section" id="admin">
         <div class="glass-card">
           <h2>Admin</h2>
-          <p style="color:var(--muted)">Admin actions (protected)</p>
+          <p class="muted">Admin actions (protected)</p>
         </div>
       </section>
     </main>
@@ -149,8 +152,15 @@
     const USDC_ADDRESS = "0x754704Bc059F8C67012fEd69BC8A327a5aafb603";
     const THIRDWEB_CLIENT_ID = "BM_xtlDAKQnuJR2-_N6dQuVvkSP7TTIglL1ho47LG7DP_ZbJT1HftQJ7F0RCoA0HvZKRfMeyRfwgJmZYgM-ZVSs";
 
+    // Token logos (provided)
+    const TOKEN_LOGOS = {
+      // normalized lowercase addresses
+      [WMON_ADDRESS.toLowerCase()]: "https://files.catbox.moe/hwlhih.png",
+      [USDC_ADDRESS.toLowerCase()]: "https://files.catbox.moe/ujzf30.gif"
+    };
+
     // Minimal ABIs only for the methods used in this UI.
-   const VAULT_ABI = [
+    const VAULT_ABI = [
   { inputs: [], stateMutability: "nonpayable", type: "constructor" },
   {
     inputs: [{ internalType: "address", name: "target", type: "address" }],
@@ -1411,14 +1421,20 @@
       try {
         const stakeIds = await vault.getUserStakes(userAddress);
         const stakes = [];
+        // Try to fetch decimals of WMON for display
+        let tokenDecimals = 18;
+        try {
+          const rpcProv = new ethers.JsonRpcProvider(RPC_URL);
+          const w = new ethers.Contract(WMON_ADDRESS, ERC20_ABI, rpcProv);
+          tokenDecimals = await w.decimals();
+        } catch (e) { /* keep default */ }
+
         for (let id of stakeIds) {
           try {
             const info = await vault.getStakeInfo(userAddress, id);
-            // amount is returned in token smallest unit; we attempt to format assuming WMON decimals for display
-            const decimals = 18;
             stakes.push({
               id: id.toString(),
-              amount: parseFloat(ethers.formatUnits(info[1], decimals)).toFixed(4),
+              amount: parseFloat(ethers.formatUnits(info[1], tokenDecimals)).toFixed(4),
               unlockTime: new Date(Number(info[3]) * 1000).toLocaleString(),
               locked: Math.floor(Date.now()/1000) < Number(info[3])
             });
@@ -1439,7 +1455,10 @@
       }
       grid.innerHTML = stakes.map(s => `
         <div class="glass-card">
-          <p style="font-size:1.25rem;font-weight:700;margin:0;">${s.amount} WMON</p>
+          <div style="display:flex;align-items:center;gap:0.6rem;">
+            <div class="token-logo"><img src="${TOKEN_LOGOS[WMON_ADDRESS.toLowerCase()] || ''}" alt="WMON" onerror="this.style.display='none'"></div>
+            <p style="font-size:1.25rem;font-weight:700;margin:0;">${s.amount} WMON</p>
+          </div>
           <p style="color:var(--muted);margin:0.4rem 0 0;">Stake #${s.id}</p>
           <p style="margin:0.5rem 0 0;">Unlock: ${s.unlockTime}</p>
           <button class="btn-ghost" style="margin-top:0.75rem;width:100%;" ${s.locked ? 'disabled' : ''} onclick="withdrawStake('${s.id}')">
@@ -1450,7 +1469,7 @@
     }
 
     // -----------------------
-    // Live DEX fetch (all tokens supported by the vault)
+    // Live DEX fetch (all tokens supported by the vault) — now with token logos
     // -----------------------
     async function fetchLiveDexData() {
       try {
@@ -1460,11 +1479,11 @@
         // Get supported tokens from vault
         let tokenAddresses = [];
         try {
-          tokenAddresses = await vaultContract.getSupportedTokens();
+          tokenAddresses = (await vaultContract.getSupportedTokens()).map(a => a.toLowerCase());
         } catch (err) {
           console.warn("getSupportedTokens not available or failed:", err);
           // Fallback to known tokens
-          tokenAddresses = [WMON_ADDRESS, USDC_ADDRESS];
+          tokenAddresses = [WMON_ADDRESS.toLowerCase(), USDC_ADDRESS.toLowerCase()];
         }
 
         // Collect token data
@@ -1479,7 +1498,8 @@
             let tvlRaw = ethers.Zero;
             try { tvlRaw = await vaultContract.totalStaked(tokenAddr); } catch(e) { console.warn("totalStaked failed", tokenAddr, e); }
             const tvl = parseFloat(ethers.formatUnits(tvlRaw, decimals)).toFixed(2);
-            return { address: tokenAddr, symbol, tvl };
+            const logo = TOKEN_LOGOS[tokenAddr.toLowerCase()] || null;
+            return { address: tokenAddr, symbol, tvl, logo };
           } catch (e) {
             console.warn("token processing failed for", tokenAddr, e);
             return null;
@@ -1504,7 +1524,9 @@
                   ${tokenData.filter(Boolean).map(t => `
                     <div style="display:flex;align-items:center;justify-content:space-between;">
                       <div style="display:flex;align-items:center;gap:0.6rem;">
-                        <div style="height:28px;width:28px;border-radius:6px;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--muted);font-size:12px">${t.symbol.slice(0,3)}</div>
+                        <div class="token-logo">
+                          ${t.logo ? `<img src="${t.logo}" alt="${t.symbol}" onerror="this.style.display='none'">` : `<div style="font-weight:700;color:var(--muted);font-size:12px">${t.symbol.slice(0,3)}</div>`}
+                        </div>
                         <div style="font-weight:600">${t.symbol}</div>
                       </div>
                       <div style="font-weight:700">${t.tvl}</div>
@@ -1533,7 +1555,7 @@
       } catch (err) {
         console.error("DEX data error:", err);
         const dex = document.getElementById("dexData");
-        if (dex) dex.innerHTML = `<p style="color:var(--muted);text-align:center;padding:2rem;">Failed to load DEX data.</p>`;
+        if (dex) dex.innerHTML = `<p class="muted" style="text-align:center;padding:2rem;">Failed to load DEX data.</p>`;
         addActivityFeedItem("❌", "DEX fetch failed", (err && err.message) || String(err), "red");
       }
     }
@@ -1542,26 +1564,21 @@
     // Optional: thirdweb Insight -> fetch recent transfers for the supported tokens
     // -----------------------
     async function fetchDexActivity() {
-      // If you don't want Insight usage, simply skip calling this function.
       try {
-        // build a list of token addrs (prefer vault list)
         const rpcProv = new ethers.JsonRpcProvider(RPC_URL);
         const vaultContract = new ethers.Contract(VAULT_V2_PROXY, VAULT_ABI, rpcProv);
         let tokenAddresses = [];
-        try { tokenAddresses = await vaultContract.getSupportedTokens(); } catch (e) { tokenAddresses = [WMON_ADDRESS, USDC_ADDRESS]; }
+        try { tokenAddresses = (await vaultContract.getSupportedTokens()).map(a => a.toLowerCase()); } catch (e) { tokenAddresses = [WMON_ADDRESS.toLowerCase(), USDC_ADDRESS.toLowerCase()]; }
 
         // thirdweb Insight endpoint for chain 143
         const base = `https://${MONAD_CHAIN_ID}.insight.thirdweb.com/v1/events`;
-        // Get latest transfer events for these tokens (limit small)
         const queries = tokenAddresses.slice(0, 6).map(addr => {
-          // event signature encoded in query for Transfer(address,address,uint256)
           return fetch(`${base}?limit=6&contract=${addr}&event=Transfer(address,address,uint256)`, {
             headers: { "x-client-id": THIRDWEB_CLIENT_ID }
           }).then(r => r.ok ? r.json() : Promise.reject(r.statusText)).catch(e => { console.warn("insight fetch failed for", addr, e); return null; });
         });
 
         const results = await Promise.all(queries);
-        // Render a few items in activity feed
         let any = false;
         for (const res of results) {
           if (!res || !res.events) continue;
