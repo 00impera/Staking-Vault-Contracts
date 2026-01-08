@@ -22,7 +22,22 @@
     .small{font-size:0.9rem;color:var(--muted)}
     select,input {padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#0d1117;color:var(--text)}
     .muted-small{color:var(--muted);font-size:0.9rem}
-    pre.debug { background:#081018;color:#bfefff;padding:10px;border-radius:8px;overflow:auto;max-height:240px;margin-top:12px;white-space:pre-wrap }
+    pre.debug { background:#071024;color:#bfefff;padding:12px;border-radius:12px;overflow:auto;max-height:320px;margin-top:12px;font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", monospace; white-space:pre-wrap }
+    /* Debug console color classes (neon / mythic) */
+    .debug-line{display:flex;gap:8px;align-items:flex-start;padding:8px;border-radius:8px;margin-bottom:6px}
+    .log-timestamp{color:#7f8caa;font-size:0.82rem;min-width:110px}
+    .log-tag{font-weight:700;font-size:0.9rem}
+    .log-info{color:#5fd0ff}
+    .log-success{color:#7efc9a}
+    .log-warn{color:#ffd36a}
+    .log-error{color:#ff7b7b}
+    .log-module{color:#c17cff}
+    .debug-controls{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-bottom:8px}
+    .debug-controls button{padding:6px 10px;border-radius:8px;border:0;cursor:pointer;background:rgba(255,255,255,0.04);color:var(--muted)}
+    .debug-controls .danger{background:linear-gradient(90deg,#ff5a5a,#ff8a5a);color:#081018}
+    .address-copy{cursor:pointer;text-decoration:underline dotted;opacity:0.85}
+    /* small responsive tweaks */
+    @media (max-width:880px){ .container{padding:16px;margin:18px auto} header{flex-direction:column;align-items:flex-start;gap:12px} }
   </style>
 
   <!-- Ethers v5 and Web3Auth modal UMD -->
@@ -42,7 +57,7 @@
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
         <div class="small muted" id="network-indicator">Network: Sapphire Mainnet (default)</div>
         <div style="display:flex;gap:8px;align-items:center">
-          <div id="w3a-address" class="small muted" style="min-width:170px">Not connected</div>
+          <div id="w3a-address" class="small muted address-copy" style="min-width:170px">Not connected</div>
           <button id="w3a-connect" class="btn" disabled>Initializing...</button>
         </div>
       </div>
@@ -56,7 +71,7 @@
         <div>Price: <strong id="selectedTokenPrice">N/A</strong></div>
         <div>USD: <strong id="selectedTokenUsd">N/A</strong></div>
       </div>
-      <div style="margin-top:12px;display:flex;gap:12px;align-items:center">
+      <div style="margin-top:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
         <input id="stakeAmount" placeholder="Amount" style="width:160px">
         <select id="lockDuration"><option value="30">30d</option><option value="60">60d</option><option value="90">90d</option></select>
         <input id="referrerAddress" placeholder="Referrer (optional)" style="width:260px">
@@ -70,9 +85,20 @@
       </div>
     </div>
 
+    <div class="card" id="activityCard" style="display:block;">
+      <h4 style="margin:0 0 8px 0">Recent activity</h4>
+      <div id="txList" class="muted-small">No recent activity</div>
+    </div>
+
     <div class="glass-card" id="debugPanel" style="display:none">
-      <h4 style="margin:0 0 8px 0">Debug / Console</h4>
-      <pre id="debugLog" class="debug"></pre>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h4 style="margin:0 0 8px 0">Debug / Console</h4>
+        <div class="debug-controls">
+          <button id="debugClear">Clear</button>
+          <button id="debugToggle" class="danger">Hide</button>
+        </div>
+      </div>
+      <div id="debugLog" class="debug" aria-live="polite"></div>
     </div>
   </div>
 
@@ -132,14 +158,73 @@
     tokensList: document.getElementById('tokensList'),
     refRewards: document.getElementById('refRewards'),
     debugPanel: document.getElementById('debugPanel'),
-    debugLog: document.getElementById('debugLog')
+    debugLog: document.getElementById('debugLog'),
+    debugClearBtn: document.getElementById('debugClear'),
+    debugToggleBtn: document.getElementById('debugToggle')
   };
 
-  function log(...args) {
-    console.log(...args);
-    try { ui.debugLog.textContent += args.map(a => (typeof a === 'string' ? a : (a && a.stack) ? a.stack : JSON.stringify(a,null,2))).join(' ') + '\n'; } catch(e){}
+  // === Styled debug console helpers ===
+  function ensureDebugVisible() {
+    if (ui.debugPanel) ui.debugPanel.style.display = 'block';
   }
-  function showDebugPanel(){ ui.debugPanel.style.display = 'block'; }
+  function hideDebug() {
+    if (ui.debugPanel) ui.debugPanel.style.display = 'none';
+  }
+  function clearDebug() {
+    if (ui.debugLog) ui.debugLog.innerHTML = '';
+  }
+  if (ui.debugClearBtn) ui.debugClearBtn.onclick = clearDebug;
+  if (ui.debugToggleBtn) ui.debugToggleBtn.onclick = () => { if (ui.debugPanel.style.display === 'none') { ensureDebugVisible(); ui.debugToggleBtn.textContent = 'Hide'; } else { hideDebug(); ui.debugToggleBtn.textContent = 'Show'; } };
+
+  function appendDebugLine(level, tag, message) {
+    try {
+      if (!ui.debugLog) return;
+      ensureDebugVisible();
+      const line = document.createElement('div');
+      line.className = 'debug-line';
+      const ts = document.createElement('div');
+      ts.className = 'log-timestamp';
+      ts.textContent = new Date().toLocaleTimeString();
+      const tagEl = document.createElement('div');
+      tagEl.className = 'log-tag';
+      tagEl.textContent = `[${(tag||'LOG').toUpperCase()}]`;
+      // color class
+      const colorClass = level === 'error' ? 'log-error' : level === 'warn' ? 'log-warn' : level === 'success' ? 'log-success' : level === 'module' ? 'log-module' : 'log-info';
+      tagEl.classList.add(colorClass);
+      const msg = document.createElement('div');
+      msg.style.whiteSpace = 'pre-wrap';
+      msg.textContent = String(message);
+      line.appendChild(ts);
+      line.appendChild(tagEl);
+      line.appendChild(msg);
+      ui.debugLog.appendChild(line);
+      ui.debugLog.scrollTop = ui.debugLog.scrollHeight;
+    } catch (e) { console.log('appendDebugLine failed', e); }
+  }
+
+  // Generic log wrapper used across the app. Detects severity based on text / keywords.
+  function log(...args) {
+    // Mirror to browser console
+    try { console.log(...args); } catch(e){}
+    try {
+      const text = args.map(a => {
+        if (a === null) return 'null';
+        if (typeof a === 'string') return a;
+        try { return (a && a.stack) ? a.stack : JSON.stringify(a, null, 2); } catch(e){ return String(a); }
+      }).join(' ');
+      // determine level by heuristics
+      const lower = text.toLowerCase();
+      let level = 'info';
+      if (lower.includes('error') || lower.includes('failed') || lower.includes('unhandledrejection') || lower.includes('exception')) level = 'error';
+      else if (lower.includes('warn')) level = 'warn';
+      else if (lower.includes('success') || lower.includes('confirmed') || lower.includes('connected')) level = 'success';
+      else if (lower.includes('debug') || lower.includes('module')) level = 'module';
+      appendDebugLine(level, (args[0] && typeof args[0] === 'string' ? args[0].split(' ')[0].replace(/[:]/g,'') : 'LOG'), text);
+    } catch (e) {
+      try { appendDebugLine('error','log','Failed to render debug line: ' + e.message); } catch(e){}
+    }
+  }
+  function showDebugPanel(){ if (ui.debugPanel) ui.debugPanel.style.display = 'block'; }
 
   window.addEventListener('unhandledrejection', (ev) => { log('UnhandledRejection:', ev.reason); showDebugPanel(); });
 
@@ -148,10 +233,18 @@
     ui.connectBtn.disabled = true;
     ui.connectBtn.textContent = 'Initializing...';
     try {
-      // Try to detect Web3Auth UMD export
-      const Web3AuthConstructor = (window.Web3AuthModal && window.Web3AuthModal.Web3Auth) || window.Web3Auth || (window.Web3AuthModal && window.Web3AuthModal.default && window.Web3AuthModal.default.Web3Auth);
+      // Try to detect Web3Auth UMD export more robustly
+      const Web3AuthCandidates = [
+        () => (window.Web3AuthModal && window.Web3AuthModal.Web3Auth),
+        () => window.Web3Auth,
+        () => (window.Web3AuthModal && window.Web3AuthModal.default && window.Web3AuthModal.default.Web3Auth),
+        () => (window.Web3Auth && window.Web3Auth.default && window.Web3Auth.default.Web3Auth)
+      ];
+      let Web3AuthConstructor = null;
+      for (const fn of Web3AuthCandidates) {
+        try { const c = fn(); if (c) { Web3AuthConstructor = c; break; } } catch(e){}
+      }
       if (!Web3AuthConstructor) {
-        // Web3Auth library not loaded — enable injected-wallet fallback
         const msg = 'Web3Auth modal library not found. Falling back to injected wallet (MetaMask) if available.';
         console.warn(msg);
         log(msg);
@@ -177,14 +270,14 @@
       });
 
       await web3auth.initModal();
-      log('Web3Auth initModal finished');
+      log('Web3Auth', 'initModal finished');
       ui.connectBtn.disabled = false;
       ui.connectBtn.textContent = 'Connect (Web3Auth)';
       ui.connectBtn.onclick = () => connectWeb3Auth();
 
       // If an existing session/provider is present, connect automatically
       if (web3auth.provider) {
-        log('Auto-connecting with existing Web3Auth session');
+        log('Web3Auth', 'Auto-connecting with existing Web3Auth session');
         await connectWeb3Auth(true);
       }
     } catch (err) {
@@ -206,7 +299,7 @@
       const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
       if (!isSecure && !isAuto) {
         const w = 'Web3Auth requires HTTPS or localhost. Serve over http://localhost or HTTPS.';
-        log(w); alert(w); showDebugPanel(); return;
+        log('Web3Auth', w); alert(w); showDebugPanel(); return;
       }
       ui.connectBtn.disabled = true; ui.connectBtn.textContent = 'Connecting...';
       walletProvider = await web3auth.connect(); // may open modal
@@ -215,6 +308,7 @@
       signer = ethersProvider.getSigner();
       currentAddress = (await signer.getAddress()).toLowerCase();
       ui.address.textContent = 'Connected: ' + currentAddress;
+      ui.address.title = 'Click to copy address';
       vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
       await afterWalletConnected();
       ui.connectBtn.disabled = false; ui.connectBtn.textContent = 'Connected';
@@ -241,6 +335,7 @@
       signer = ethersProvider.getSigner();
       currentAddress = (await signer.getAddress()).toLowerCase();
       ui.address.textContent = 'Connected: ' + currentAddress;
+      ui.address.title = 'Click to copy address';
       vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
       await afterWalletConnected();
       ui.connectBtn.disabled = false; ui.connectBtn.textContent = 'Connected (Injected)';
@@ -253,9 +348,12 @@
     }
   }
 
+  // copy address on click
+  if (ui.address) ui.address.onclick = async () => { if (currentAddress) { try { await navigator.clipboard.writeText(currentAddress); log('Clipboard','Copied address to clipboard'); } catch(e){ log('Clipboard error', e); } } };
+
   // === Post-connect logic (token loading, balances, allowances, staking) ===
   async function afterWalletConnected() {
-    log('afterWalletConnected start');
+    log('afterWalletConnected', 'start');
     try {
       await loadSupportedTokens();
       await loadUserBalance();
@@ -265,7 +363,7 @@
       await loadUserStakes();
       await loadRecentActivity();
       await loadReferrerRewards();
-      log('afterWalletConnected completed');
+      log('afterWalletConnected', 'completed');
     } catch (e) {
       console.warn('afterWalletConnected failed', e);
       log('afterWalletConnected failed: ' + (e.message || e));
@@ -288,7 +386,7 @@
       }
       const w = WMON_ADDRESS.toLowerCase();
       if (Array.from(ui.stakeToken.options).some(o => o.value === w)) ui.stakeToken.value = w;
-      ui.tokensList && (ui.tokensList.textContent = Array.from(ui.stakeToken.options).map(o=>o.textContent).join(', '));
+      if (ui.tokensList) ui.tokensList.textContent = Array.from(ui.stakeToken.options).map(o=>o.textContent).join(', ');
       ui.stakeToken.dispatchEvent(new Event('change'));
       log('Supported tokens loaded:', list);
     } catch (e) {
@@ -404,12 +502,12 @@
 
   async function loadUserStakes() {
     log('loadUserStakes');
-    ui.stakesGrid && (ui.stakesGrid.textContent = 'Loading...');
-    if (!currentAddress) { ui.stakesGrid && (ui.stakesGrid.textContent = 'Connect wallet to view stakes'); return; }
+    if (ui.stakesGrid) ui.stakesGrid.textContent = 'Loading...';
+    if (!currentAddress) { if (ui.stakesGrid) ui.stakesGrid.textContent = 'Connect wallet to view stakes'; return; }
     try {
       const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
       const ids = await vaultRead.getUserStakes(currentAddress).catch(()=>[]);
-      if (!ids || ids.length === 0) { ui.stakesGrid && (ui.stakesGrid.innerHTML = '<div class="muted">No stakes</div>'); return; }
+      if (!ids || ids.length === 0) { if (ui.stakesGrid) ui.stakesGrid.innerHTML = '<div class="muted">No stakes</div>'; return; }
       const rows = [];
       for (const id of ids) {
         try {
@@ -427,10 +525,10 @@
           console.warn('getStakeInfo failed', e);
         }
       }
-      ui.stakesGrid && (ui.stakesGrid.innerHTML = rows.join('') || '<div class="muted">No stakes</div>');
+      if (ui.stakesGrid) ui.stakesGrid.innerHTML = rows.join('') || '<div class="muted">No stakes</div>';
     } catch (e) {
       console.error('loadUserStakes failed', e);
-      ui.stakesGrid && (ui.stakesGrid.textContent = 'Failed to load stakes');
+      if (ui.stakesGrid) ui.stakesGrid.textContent = 'Failed to load stakes';
       log('loadUserStakes failed: ' + (e.message || e));
     }
   }
@@ -476,13 +574,13 @@
         for (const ev of ts.slice(-6)) { const a = ev.args||[]; txs.push({title:`Staked ${a[3] ? a[3].toString() : ''}`, desc:`${a[0]||''} • stake #${a[1] ? a[1].toString() : ''}`}); }
         for (const ev of sw.slice(-6)) { const a = ev.args||[]; txs.push({title:`Withdrawn ${a[2] ? a[2].toString() : ''}`, desc:`${a[0]||''} • stake #${a[1] ? a[1].toString() : ''}`}); }
       } catch (e){}
-      ui.txList && (ui.txList.innerHTML = '');
-      if (txs.length === 0) ui.txList && (ui.txList.innerHTML = '<div class="muted">No recent transfers</div>');
+      if (ui.txList) ui.txList.innerHTML = '';
+      if (txs.length === 0) { if (ui.txList) ui.txList.innerHTML = '<div class="muted">No recent transfers</div>'; }
       else txs.slice(-20).reverse().forEach(t => { const n = document.createElement('div'); n.style.padding='6px 0'; n.innerHTML = `<div style="font-weight:600">${t.title}</div><div class="muted-small">${t.desc}</div>`; ui.txList && ui.txList.appendChild(n); });
     } catch (e) {
       console.warn('loadRecentActivity failed', e);
       log('loadRecentActivity failed: ' + (e.message || e));
-      ui.txList && (ui.txList.textContent = 'Transaction history unavailable');
+      if (ui.txList) ui.txList.textContent = 'Transaction history unavailable';
     }
   }
 
@@ -493,16 +591,16 @@
       const names = ['referrerRewardsOf','referrerRewards','refRewards','referralRewards'];
       let val = null;
       for (const n of names) { if (vaultRead[n]) { try { val = await vaultRead[n](currentAddress); break; } catch(e){} } }
-      ui.refRewards && (ui.refRewards.textContent = val ? ethers.utils.formatUnits(val,18) : '—');
+      if (ui.refRewards) ui.refRewards.textContent = val ? ethers.utils.formatUnits(val,18) : '—';
     } catch (e) {
       console.warn('loadReferrerRewards failed', e);
       log('loadReferrerRewards failed: ' + (e.message || e));
-      ui.refRewards && (ui.refRewards.textContent = '—');
+      if (ui.refRewards) ui.refRewards.textContent = '—';
     }
   }
 
   // Stake / Approve / Revoke wiring
-  ui.stakeBtn.addEventListener('click', async () => {
+  if (ui.stakeBtn) ui.stakeBtn.addEventListener('click', async () => {
     if (!signer || !vaultContract) return alert('Connect wallet first!');
     const tokenAddr = ui.stakeToken.value || WMON_ADDRESS;
     const amountRaw = ui.stakeAmount.value;
@@ -514,10 +612,10 @@
       const amountWei = ethers.utils.parseUnits(String(amountRaw), dec);
       const allowance = await token.allowance(currentAddress, VAULT_ADDRESS);
       if (allowance.lt(amountWei)) {
-        log('Approving token for vault...');
+        log('Approve', 'Approving token for vault...');
         const txA = await token.approve(VAULT_ADDRESS, amountWei);
         await txA.wait();
-        log('Approve confirmed');
+        log('Approve', 'Approve confirmed');
       }
       const durationSec = durationDays * 24 * 60 * 60;
       const tx = await vaultContract.stake(tokenAddr, amountWei, durationSec);
@@ -532,7 +630,7 @@
     }
   });
 
-  ui.revokeBtn.addEventListener('click', async () => {
+  if (ui.revokeBtn) ui.revokeBtn.addEventListener('click', async () => {
     if (!signer) return alert('Connect wallet first!');
     const tokenAddr = ui.stakeToken.value || WMON_ADDRESS;
     try {
@@ -549,7 +647,7 @@
     }
   });
 
-  ui.stakeToken.addEventListener('change', async () => {
+  if (ui.stakeToken) ui.stakeToken.addEventListener('change', async () => {
     await Promise.all([ loadUserBalance(), loadAllowance(), loadPendingRewards(), loadAPY() ]);
   });
 
