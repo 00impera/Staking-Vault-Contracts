@@ -19,6 +19,8 @@
       --text: #E6F3FF;
       --glass: rgba(13,18,24,0.6);
       --accent2: #8A2CFF;
+      --glass-green: rgba(0,255,120,0.10);
+      --glass-green-strong: rgba(0,255,120,0.18);
     }
 
     *{box-sizing:border-box;font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
@@ -41,13 +43,53 @@
     .stake-item{display:flex;justify-content:space-between;padding:10px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.03));border:1px solid rgba(79,212,255,0.03);margin-top:10px;}
     .chip{background:rgba(79,212,255,0.06);padding:6px 10px;border-radius:999px;color:var(--primary);font-weight:600}
     .row-compact{display:flex;gap:10px;align-items:center;}
-    footer{margin-top:26px;color:var(--muted);font-size:12px;text-align:center}
     a.link{color:var(--primary);text-decoration:none}
     .notice{padding:10px;border-radius:8px;background:linear-gradient(90deg, rgba(8,16,20,0.35), rgba(8,12,18,0.35));border:1px solid rgba(79,212,255,0.03);color:var(--muted);font-size:13px;}
     .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
     .status { font-weight:600; color:var(--accent); }
 
-    /* Electric Dashboard Button CSS (glow, hover, active) */
+    /* Quick Stake - Green mirror-glass */
+    .card.quick-stake {
+      background: linear-gradient(120deg, rgba(0,255,120,0.18) 0%, rgba(0,255,120,0.10) 100%);
+      border: 1.5px solid var(--glass-green-strong);
+      box-shadow: 0 8px 32px 0 var(--glass-green-strong), 0 2px 8px 0 #0008;
+      backdrop-filter: blur(8px) saturate(1.2);
+      -webkit-backdrop-filter: blur(8px) saturate(1.2);
+      color: #eafff2;
+      position: relative;
+      overflow: hidden;
+    }
+    .card.quick-stake::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 40%;
+      background: linear-gradient(120deg, rgba(255,255,255,0.18) 0%, rgba(0,255,120,0.08) 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .card.quick-stake * { position: relative; z-index: 1; }
+
+    /* Quick-stake inputs/buttons glassy */
+    .quick-stake .input, .quick-stake select {
+      background: var(--glass-green);
+      border: 1.5px solid var(--glass-green-strong);
+      color: #eafff2;
+      box-shadow: 0 2px 8px 0 rgba(0,255,120,0.08);
+      backdrop-filter: blur(2px);
+    }
+    .quick-stake .btn {
+      background: linear-gradient(90deg, #00ff77 0%, #00c8ff 100%);
+      color: #041018;
+      box-shadow: 0 0 16px 0 #00ff77, 0 2px 8px 0 #0008;
+    }
+    .quick-stake .btn.secondary {
+      background: linear-gradient(90deg, #1a1f26 60%, rgba(0,255,120,0.10) 100%);
+      color: #00ff77;
+      border: 1.5px solid #00ff77;
+      box-shadow: 0 0 8px 0 #00ff77;
+    }
+
+    /* Electric Dashboard Button CSS (glow, hover, active) - base */
     .btn {
       background: linear-gradient(90deg, var(--primary), var(--accent2));
       color: #041018;
@@ -89,46 +131,13 @@
       box-shadow: 0 0 8px 0 var(--primary-hr);
       transform: scale(0.98);
     }
-    .btn.secondary {
-      background: linear-gradient(90deg, #14171b 60%, var(--panel) 100%);
-      color: var(--primary);
-      border: 1.5px solid rgba(0,200,255,0.12);
-      box-shadow: 0 0 8px 0 rgba(0,200,255,0.06);
-    }
-    .btn.secondary:hover, .btn.secondary:focus {
-      color: var(--accent2);
-      border-color: var(--accent2);
-      box-shadow: 0 0 16px 2px var(--accent2);
-    }
-    .btn[disabled] {
-      opacity: 0.5;
-      cursor: not-allowed;
-      filter: grayscale(0.5);
-      box-shadow: none;
-    }
+    .btn[disabled] { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.5); box-shadow: none; }
 
     /* Loading spinner inside button */
-    .btn-spinner {
-      display: inline-block;
-      width: 16px; height: 16px;
-      border: 2px solid rgba(0,0,0,0.08);
-      border-top: 2px solid rgba(4,16,24,0.08);
-      border-right: 2px solid var(--primary-hr);
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      vertical-align: middle;
-    }
+    .btn-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.08); border-top: 2px solid rgba(4,16,24,0.08); border-right: 2px solid var(--primary-hr); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
     @keyframes spin { 100% { transform: rotate(360deg); } }
-
-    /* Loading pulse for entire button */
-    .btn.loading {
-      animation: pulse 1.2s infinite alternate;
-      box-shadow: 0 0 24px 4px var(--accent2), 0 2px 16px 0 #000a;
-    }
-    @keyframes pulse {
-      0% { box-shadow: 0 0 18px 2px var(--accent2); }
-      100% { box-shadow: 0 0 34px 6px var(--primary); }
-    }
+    .btn.loading { animation: pulse 1.2s infinite alternate; box-shadow: 0 0 24px 4px var(--accent2), 0 2px 16px 0 #000a; }
+    @keyframes pulse { 0% { box-shadow: 0 0 18px 2px var(--accent2); } 100% { box-shadow: 0 0 34px 6px var(--primary); } }
 
     /* responsive */
     @media (max-width: 900px) {
@@ -159,7 +168,8 @@
 
     <div class="row">
       <div class="col">
-        <div class="card">
+        <!-- Quick Stake: added quick-stake class -->
+        <div class="card quick-stake">
           <h3 style="margin:0 0 8px 0;">Quick Stake</h3>
           <div class="muted">Stake WMON, choose lock duration, optional referrer will be picked from URL (?ref=0x...)</div>
 
@@ -249,10 +259,7 @@
         </div>
       </div>
     </div>
-
-    <footer>
-      Built for Monad Mainnet — Test with small amounts first. This frontend is non-custodial. Last Updated: 2026-01-08
-    </footer>
+    <!-- Footer removed per request -->
   </div>
 
   <script>
@@ -268,10 +275,6 @@
         document.head.appendChild(s);
       });
     }
-  </script>
-
-  <script>
-    (function(){ /* wrap to avoid accidental early usage */ })();
   </script>
 
   <script>
