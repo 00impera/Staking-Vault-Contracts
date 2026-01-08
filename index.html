@@ -305,8 +305,9 @@
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
   <script>
     /*
-      Minor JS tweaks to toggle a visual "connected" state class on the body.
-      All other JS logic is unchanged from your existing implementation.
+      Minor JS tweaks to toggle a visual "connected" state on the body,
+      add safer initialization and MetaMask detection, and avoid reliance on
+      deprecated selectedAddress auto-connect behavior.
     */
 
     // ---------- CONFIG ----------
@@ -319,8 +320,13 @@
       MONAD_CHAIN_ID: "0x504" // adjust if your chainId differs
     };
 
-    // (The rest of your JS functions are retained exactly as in the previous version)
-    // Below are the specifically updated JS sections that toggle the connected visual state.
+    // ---------- Simple DOM / globals ----------
+    function byId(id){ return document.getElementById(id); }
+
+    // provider/signer/user state
+    let provider = null;
+    let signer = null;
+    let userAddress = null;
 
     // helper to update connected class
     function setConnectedState(isConnected){
@@ -328,16 +334,25 @@
       else document.body.classList.remove('connected');
     }
 
+    // minimal ensureProvider guard used by connectWallet
+    async function ensureProvider(){
+      if (!window.ethereum) {
+        throw new Error('Ethereum provider not found. Please install MetaMask or another wallet.');
+      }
+    }
+
     // wrap original connectWallet to add class toggle
     async function connectWallet(){
       try {
         await ensureProvider();
+        // request the user to connect (interactive)
         await window.ethereum.request({ method: 'eth_requestAccounts' });
         provider = new ethers.BrowserProvider(window.ethereum);
         signer = await provider.getSigner();
         userAddress = await signer.getAddress();
-        byId('walletBtn').textContent = '✅ ' + short(userAddress);
-        byId('userAddr').textContent = userAddress;
+        const wBtn = byId('walletBtn');
+        if (wBtn) wBtn.textContent = '✅ ' + short(userAddress);
+        if (byId('userAddr')) byId('userAddr').textContent = userAddress;
         // set visual connected state
         setConnectedState(true);
         await ensureMonadNetwork();
@@ -345,44 +360,125 @@
         await checkOwner();
         toast('Wallet connected');
       } catch(e){
-        showError('Wallet connect failed: ' + (e.message||e));
+        showError('Wallet connect failed: ' + (e && e.message ? e.message : e));
       }
     }
 
-    // modify disconnect behavior in the existing click handler
-    byId('walletBtn').addEventListener('click', async () => {
-      if (!userAddress) await connectWallet();
-      else {
-        // disconnect UI only
-        userAddress = null; signer = null; provider = null;
-        byId('walletBtn').textContent = byId('walletBtn').dataset.label || 'Connect Wallet';
-        byId('userAddr').textContent = 'Not connected';
-        byId('bfBal').textContent = '—';
-        byId('wmonBal').textContent = '—';
-        byId('ownerActions').style.display = 'none';
-        setStatus('Disconnected');
-        // remove visual connected state
-        setConnectedState(false);
-      }
-    });
+    // modify disconnect behavior in the existing click handler (safely attach later)
+    function attachWalletBtnListener(){
+      const wBtn = byId('walletBtn');
+      if (!wBtn) return;
+      wBtn.addEventListener('click', async () => {
+        try {
+          if (!window.ethereum) {
+            // If no provider, do nothing (button should be disabled already). Provide feedback.
+            showError('No Ethereum provider found. Install MetaMask or another wallet.');
+            return;
+          }
 
-    // Also set connected state on init if wallet already present
+          if (!userAddress) {
+            await connectWallet();
+          } else {
+            // disconnect UI only
+            userAddress = null; signer = null; provider = null;
+            wBtn.textContent = wBtn.dataset.label || 'Connect Wallet';
+            if (byId('userAddr')) byId('userAddr').textContent = 'Not connected';
+            if (byId('bfBal')) byId('bfBal').textContent = '—';
+            if (byId('wmonBal')) byId('wmonBal').textContent = '—';
+            if (byId('ownerActions')) byId('ownerActions').style.display = 'none';
+            setStatus('Disconnected');
+            // remove visual connected state
+            setConnectedState(false);
+          }
+        } catch (err){
+          showError('Wallet action failed: ' + (err && err.message ? err.message : err));
+        }
+      });
+    }
+
+    // Also set connected state on init if wallet already present, but use eth_accounts
     (async function initConnectedState(){
       try {
-        if (window.ethereum && window.ethereum.selectedAddress){
+        const wBtn = byId('walletBtn');
+        if (!window.ethereum) {
+          // No MetaMask / injected provider detected
+          if (wBtn) {
+            wBtn.disabled = true;
+            wBtn.textContent = 'Install MetaMask';
+            wBtn.style.opacity = 0.7;
+            wBtn.setAttribute('aria-label', 'Install MetaMask');
+          }
+          // still attach listener so it can show guidance if clicked unexpectedly
+          attachWalletBtnListener();
+          return;
+        }
+
+        // provider exists — attach listener
+        attachWalletBtnListener();
+
+        // Check whether the site already has access to accounts (no prompt).
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        if (accounts && accounts.length > 0) {
           provider = new ethers.BrowserProvider(window.ethereum);
           signer = await provider.getSigner();
-          userAddress = await signer.getAddress();
-          byId('walletBtn').textContent = '✅ ' + short(userAddress);
-          byId('userAddr').textContent = userAddress;
-          setConnectedState(true); // reflect connected state on load
+          userAddress = accounts[0];
+          if (wBtn) wBtn.textContent = '✅ ' + short(userAddress);
+          if (byId('userAddr')) byId('userAddr').textContent = userAddress;
+          setConnectedState(true);
+          // load initial UI state
+          await ensureMonadNetwork();
+          await loadBalances();
+          await checkOwner();
+        } else {
+          // no accounts currently authorized — show default state but do not auto-request permissions
+          if (wBtn && (!wBtn.disabled)) {
+            wBtn.textContent = wBtn.dataset.label || 'Connect Wallet';
+          }
         }
-      } catch(e){ /* ignore */ }
+
+        // Optional: react to account/network changes
+        if (window.ethereum && window.ethereum.on) {
+          window.ethereum.on('accountsChanged', (accs) => {
+            if (accs && accs.length > 0) {
+              userAddress = accs[0];
+              if (byId('walletBtn')) byId('walletBtn').textContent = '✅ ' + short(userAddress);
+              if (byId('userAddr')) byId('userAddr').textContent = userAddress;
+              setConnectedState(true);
+              // re-load balances + owner checks
+              loadBalances().catch(()=>{});
+              checkOwner().catch(()=>{});
+            } else {
+              // disconnected
+              userAddress = null;
+              provider = null;
+              signer = null;
+              if (byId('walletBtn')) byId('walletBtn').textContent = byId('walletBtn').dataset.label || 'Connect Wallet';
+              if (byId('userAddr')) byId('userAddr').textContent = 'Not connected';
+              setConnectedState(false);
+            }
+          });
+
+          window.ethereum.on('chainChanged', (chainId) => {
+            // optional: update network display or force reload logic
+            setStatus('Chain changed: ' + chainId);
+            // you may want to re-initialize provider/signers here
+          });
+        }
+      } catch(e){
+        // ignore non-fatal init errors, but surface them in console
+        console.debug('initConnectedState error:', e);
+      }
     })();
 
-    // The rest of your JS (functions like ensureProvider, ensureMonadNetwork, setStatus, showError,
-    // getContract, loadBalances, checkOwner, approveSpender, buyBTCF, sellBTCF, fetchActivity, etc.)
+    // The rest of your JS (functions like ensureMonadNetwork, setStatus, showError,
+    // toast, getContract, loadBalances, checkOwner, approveSpender, buyOnDex, sellOnDex, fetchActivity, etc.)
     // remain unchanged and are assumed to be present in your page as in the previous version.
+
+    // Minimal helper used in the UI (if not defined elsewhere)
+    function short(addr){
+      if (!addr) return '';
+      return addr.slice(0,6) + '…' + addr.slice(-4);
+    }
   </script>
 </body>
 </html>
