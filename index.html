@@ -255,440 +255,473 @@
     </footer>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
   <script>
-    // CONFIG
-    const API_BASE = ""; // set if you have backend indexer
-    const VAULT_ADDRESS = "0x2C18eb6708cb7c03C19c7C793345bd22E9d261b8";
-    const WMON_ADDRESS  = "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A";
-
-    // Minimal ABI fragments used by the UI
-    const VAULT_ABI = [
-      {"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"uint256","name":"duration","type":"uint256"},{"internalType":"address","name":"referrer","type":"address"}],"name":"stake","outputs":[{"internalType":"uint256","name":"stakeId","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"stakeId","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getUserStakes","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"uint256","name":"stakeId","type":"uint256"}],"name":"getStakeInfo","outputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"uint256","name":"stakedAt","type":"uint256"},{"internalType":"uint256","name":"unlockTime","type":"uint256"},{"internalType":"bool","name":"withdrawn","type":"bool"},{"internalType":"bool","name":"canWithdraw","type":"bool"},{"internalType":"address","name":"referrer","type":"address"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"getSupportedTokens","outputs":[{"internalType":"address[]","name":"","type":"address[]"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"address","name":"token","type":"address"}],"name":"getTokenConfig","outputs":[{"components":[{"internalType":"bool","name":"enabled","type":"bool"},{"internalType":"uint24","name":"poolFee","type":"uint24"},{"internalType":"address","name":"pairedToken","type":"address"},{"internalType":"uint256","name":"minLiquidity","type":"uint256"},{"internalType":"uint256","name":"maxStakePerUser","type":"uint256"},{"internalType":"uint256","name":"totalStakeCap","type":"uint256"},{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"symbol","type":"string"}],"internalType":"struct StakingVaultV2.TokenConfig","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"referrerRewards","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
-    ];
-
-    const WMON_ABI = [
-      {"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"type":"function"},
-      {"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"},
-      {"constant":true,"inputs":[{"name":"owner","type":"address"},{"name":"spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"type":"function"},
-      {"constant":false,"inputs":[{"name":"spender","type":"address"},{"name":"value","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"type":"function"},
-      {"constant":false,"inputs":[{"name":"dst","type":"address"},{"name":"wad","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"type":"function"}
-    ];
-
-    // STATE
-    let provider, signer, userAddress;
-    let vaultContract, wmonContract;
-    let wmonDecimals = 18;
-    let apiBase = API_BASE || "";
-
-    // ELEMENTS
-    const connectBtn = document.getElementById("connectBtn");
-    const connectedAddress = document.getElementById("connectedAddress");
-    const tokenSelect = document.getElementById("tokenSelect");
-    const amountInput = document.getElementById("amount");
-    const durationSelect = document.getElementById("duration");
-    const refInput = document.getElementById("referrer");
-    const approveBtn = document.getElementById("approveBtn");
-    const stakeBtn = document.getElementById("stakeBtn");
-    const stakesArea = document.getElementById("stakesArea");
-    const tokensList = document.getElementById("tokensList");
-    const refRewards = document.getElementById("refRewards");
-    const txStatus = document.getElementById("txStatus");
-    const refreshBtn = document.getElementById("refreshBtn");
-    const stakePreview = document.getElementById("stakePreview");
-
-    // HELPERS
-    function short(addr){ if(!addr) return ""; return addr.slice(0,6)+"..."+addr.slice(-4); }
-    function parseParamRef(){ const u = new URL(window.location.href); return u.searchParams.get("ref") || ""; }
-
-    function setConnectedUI(address){
-      if(address){
-        connectedAddress.textContent = `Connected: ${short(address)}`;
-        connectBtn.querySelector('.btn-label').textContent = short(address);
-      } else {
-        connectedAddress.textContent = '';
-        connectBtn.querySelector('.btn-label').textContent = 'Connect Wallet';
-      }
+    // Option A: dynamic loader for ethers.js (recommended for robustness)
+    async function ensureEthers() {
+      if (typeof window.ethers !== "undefined") return;
+      await new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = "https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js";
+        s.async = true;
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error("Failed to load ethers.js from CDN"));
+        document.head.appendChild(s);
+      });
     }
+  </script>
 
-    function setActionButtonsEnabled(enabled){
-      approveBtn.disabled = !enabled;
-      stakeBtn.disabled = !enabled;
-    }
+  <script>
+    (function(){ /* wrap to avoid accidental early usage */ })();
+  </script>
 
-    function showButtonLoading(button, loading, labelText){
-      const label = button.querySelector('.btn-label');
-      const spinner = button.querySelector('.btn-spinner');
-      if(loading){
-        button.classList.add('loading');
-        if(spinner) spinner.style.display = 'inline-block';
-        if(labelText) label.textContent = labelText;
-      } else {
-        button.classList.remove('loading');
-        if(spinner) spinner.style.display = 'none';
-        if(labelText) label.textContent = labelText;
-      }
-    }
-
-    // INIT UI: tokens & listeners
-    async function initUI(){
-      const qref = parseParamRef();
-      if(qref) refInput.value = qref;
-
+  <script>
+    // Main inline app script — will call ensureEthers() before any ethers usage.
+    (async function () {
       try {
-        const httpProvider = new ethers.providers.JsonRpcProvider("https://rpc.monad.xyz");
-        const readVault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, httpProvider);
-        const supported = await readVault.getSupportedTokens();
-        tokenSelect.innerHTML = "";
-        if(supported && supported.length>0){
-          for(const t of supported){
-            const opt = document.createElement("option");
-            opt.value = t;
-            opt.textContent = (t === WMON_ADDRESS ? "WMON (WMON)" : t);
-            tokenSelect.appendChild(opt);
-          }
+        await ensureEthers();
+      } catch (err) {
+        console.error("Failed to load ethers.js:", err);
+        alert("Critical: failed to load ethers.js. Check network or CSP.");
+        return;
+      }
+
+      // Now ethers is guaranteed to be present.
+      // ===================== CONFIG =====================
+      const API_BASE = ""; // set if you have backend indexer
+      const VAULT_ADDRESS = "0x2C18eb6708cb7c03C19c7C793345bd22E9d261b8";
+      const WMON_ADDRESS  = "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A";
+
+      const VAULT_ABI = [
+        {"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"uint256","name":"duration","type":"uint256"},{"internalType":"address","name":"referrer","type":"address"}],"name":"stake","outputs":[{"internalType":"uint256","name":"stakeId","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},
+        {"inputs":[{"internalType":"uint256","name":"stakeId","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},
+        {"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getUserStakes","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"},
+        {"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"uint256","name":"stakeId","type":"uint256"}],"name":"getStakeInfo","outputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"uint256","name":"stakedAt","type":"uint256"},{"internalType":"uint256","name":"unlockTime","type":"uint256"},{"internalType":"bool","name":"withdrawn","type":"bool"},{"internalType":"bool","name":"canWithdraw","type":"bool"},{"internalType":"address","name":"referrer","type":"address"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"getSupportedTokens","outputs":[{"internalType":"address[]","name":"","type":"address[]"}],"stateMutability":"view","type":"function"},
+        {"inputs":[{"internalType":"address","name":"token","type":"address"}],"name":"getTokenConfig","outputs":[{"components":[{"internalType":"bool","name":"enabled","type":"bool"},{"internalType":"uint24","name":"poolFee","type":"uint24"},{"internalType":"address","name":"pairedToken","type":"address"},{"internalType":"uint256","name":"minLiquidity","type":"uint256"},{"internalType":"uint256","name":"maxStakePerUser","type":"uint256"},{"internalType":"uint256","name":"totalStakeCap","type":"uint256"},{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"symbol","type":"string"}],"internalType":"struct StakingVaultV2.TokenConfig","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},
+        {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"referrerRewards","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+      ];
+
+      const WMON_ABI = [
+        {"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"type":"function"},
+        {"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"},
+        {"constant":true,"inputs":[{"name":"owner","type":"address"},{"name":"spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"type":"function"},
+        {"constant":false,"inputs":[{"name":"spender","type":"address"},{"name":"value","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"type":"function"},
+        {"constant":false,"inputs":[{"name":"dst","type":"address"},{"name":"wad","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"type":"function"}
+      ];
+
+      // STATE
+      let provider, signer, userAddress;
+      let vaultContract, wmonContract;
+      let wmonDecimals = 18;
+      let apiBase = API_BASE || "";
+
+      // ELEMENTS
+      const connectBtn = document.getElementById("connectBtn");
+      const connectedAddress = document.getElementById("connectedAddress");
+      const tokenSelect = document.getElementById("tokenSelect");
+      const amountInput = document.getElementById("amount");
+      const durationSelect = document.getElementById("duration");
+      const refInput = document.getElementById("referrer");
+      const approveBtn = document.getElementById("approveBtn");
+      const stakeBtn = document.getElementById("stakeBtn");
+      const stakesArea = document.getElementById("stakesArea");
+      const tokensList = document.getElementById("tokensList");
+      const refRewards = document.getElementById("refRewards");
+      const txStatus = document.getElementById("txStatus");
+      const refreshBtn = document.getElementById("refreshBtn");
+      const stakePreview = document.getElementById("stakePreview");
+
+      // HELPERS
+      function short(addr){ if(!addr) return ""; return addr.slice(0,6)+"..."+addr.slice(-4); }
+      function parseParamRef(){ const u = new URL(window.location.href); return u.searchParams.get("ref") || ""; }
+
+      function setConnectedUI(address){
+        if(address){
+          connectedAddress.textContent = `Connected: ${short(address)}`;
+          const lbl = connectBtn.querySelector('.btn-label');
+          if(lbl) lbl.textContent = short(address);
         } else {
-          tokenSelect.innerHTML = `<option value="${WMON_ADDRESS}">WMON</option>`;
+          connectedAddress.textContent = '';
+          const lbl = connectBtn.querySelector('.btn-label');
+          if(lbl) lbl.textContent = 'Connect Wallet';
         }
-        tokensList.innerHTML = "";
-        if(supported && supported.length>0){
-          for(const t of supported){
-            try{
-              const cfg = await readVault.getTokenConfig(t);
-              const div = document.createElement("div");
-              div.className = "small muted";
-              div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
-                <div><strong>${cfg.name || short(t)}</strong><div class="muted">${t}</div></div>
-                <div class="chip">${cfg.enabled ? "ENABLED" : "DISABLED"}</div>
-              </div>`;
-              tokensList.appendChild(div);
-            }catch(e){}
-          }
+      }
+
+      function setActionButtonsEnabled(enabled){
+        approveBtn.disabled = !enabled;
+        stakeBtn.disabled = !enabled;
+      }
+
+      function showButtonLoading(button, loading, labelText){
+        const label = button.querySelector('.btn-label');
+        const spinner = button.querySelector('.btn-spinner');
+        if(loading){
+          button.classList.add('loading');
+          if(spinner) spinner.style.display = 'inline-block';
+          if(labelText) label.textContent = labelText;
         } else {
+          button.classList.remove('loading');
+          if(spinner) spinner.style.display = 'none';
+          if(labelText) label.textContent = labelText;
+        }
+      }
+
+      // INIT UI: tokens & listeners
+      async function initUI(){
+        // ensure ethers still available (defensive)
+        await ensureEthers();
+
+        const qref = parseParamRef();
+        if(qref) refInput.value = qref;
+
+        try {
+          const httpProvider = new ethers.providers.JsonRpcProvider("https://rpc.monad.xyz");
+          const readVault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, httpProvider);
+          const supported = await readVault.getSupportedTokens();
+          tokenSelect.innerHTML = "";
+          if(supported && supported.length>0){
+            for(const t of supported){
+              const opt = document.createElement("option");
+              opt.value = t;
+              opt.textContent = (t === WMON_ADDRESS ? "WMON (WMON)" : t);
+              tokenSelect.appendChild(opt);
+            }
+          } else {
+            tokenSelect.innerHTML = `<option value="${WMON_ADDRESS}">WMON</option>`;
+          }
+          tokensList.innerHTML = "";
+          if(supported && supported.length>0){
+            for(const t of supported){
+              try{
+                const cfg = await readVault.getTokenConfig(t);
+                const div = document.createElement("div");
+                div.className = "small muted";
+                div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+                  <div><strong>${cfg.name || short(t)}</strong><div class="muted">${t}</div></div>
+                  <div class="chip">${cfg.enabled ? "ENABLED" : "DISABLED"}</div>
+                </div>`;
+                tokensList.appendChild(div);
+              }catch(e){}
+            }
+          } else {
+            tokensList.innerHTML = `<div class="small muted">Using WMON only (couldn't read supported tokens).</div>`;
+          }
+        } catch(e){
+          tokenSelect.innerHTML = `<option value="${WMON_ADDRESS}">WMON</option>`;
           tokensList.innerHTML = `<div class="small muted">Using WMON only (couldn't read supported tokens).</div>`;
         }
-      } catch(e){
-        tokenSelect.innerHTML = `<option value="${WMON_ADDRESS}">WMON</option>`;
-        tokensList.innerHTML = `<div class="small muted">Using WMON only (couldn't read supported tokens).</div>`;
+
+        // hook inputs
+        amountInput.addEventListener('input', onAmountOrDurationChange);
+        durationSelect.addEventListener('change', onAmountOrDurationChange);
+        tokenSelect.addEventListener('change', onAmountOrDurationChange);
+
+        setActionButtonsEnabled(false);
       }
 
-      // hook inputs
-      amountInput.addEventListener('input', onAmountOrDurationChange);
-      durationSelect.addEventListener('change', onAmountOrDurationChange);
-      tokenSelect.addEventListener('change', onAmountOrDurationChange);
-
-      setActionButtonsEnabled(false);
-    }
-
-    async function onAmountOrDurationChange(){
-      updateStakePreview();
-      await checkAllowanceForInputAmount();
-    }
-
-    function updateStakePreview(){
-      const amount = amountInput.value;
-      const days = Number(durationSelect.value || 30);
-      if(!amount || isNaN(Number(amount)) || Number(amount) <= 0){
-        stakePreview.textContent = 'Stake preview: enter amount and choose duration';
-        return;
-      }
-      const amt = Number(amount);
-      const depositFee = amt * 0.01; // 1%
-      const net = amt - depositFee;
-      const protocol = depositFee * 0.5;
-      const creator = depositFee * 0.3;
-      const referrer = depositFee * 0.2;
-      stakePreview.innerHTML = `Stake preview: Deposit fee <strong>${depositFee.toFixed(6)} WMON</strong> (split: protocol ${protocol.toFixed(6)}, creator ${creator.toFixed(6)}, referrer ${referrer.toFixed(6)}). Net staked: <strong>${net.toFixed(6)} WMON</strong>. Lock: <strong>${days} days</strong>.`;
-    }
-
-    // WALLET
-    async function connectWallet(){
-      if(window.ethereum === undefined){
-        alert("No injected wallet found. Please install MetaMask or a compatible wallet.");
-        return;
-      }
-      try {
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-        window.ethereum.on && window.ethereum.on('accountsChanged', handleAccountsChanged);
-        window.ethereum.on && window.ethereum.on('chainChanged', handleChainChanged);
-
-        signer = provider.getSigner();
-        userAddress = (await signer.getAddress()).toLowerCase();
-        setConnectedUI(userAddress);
-
-        vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
-        wmonContract = new ethers.Contract(WMON_ADDRESS, WMON_ABI, signer);
-        try { wmonDecimals = await wmonContract.decimals(); } catch(e){ wmonDecimals = 18; }
-
-        setActionButtonsEnabled(true);
+      async function onAmountOrDurationChange(){
         updateStakePreview();
         await checkAllowanceForInputAmount();
-        await loadUserStakes();
-        await loadReferrerRewards();
-      } catch (err){
-        console.error("connect error", err);
-        alert("Failed to connect wallet: " + (err?.message || err));
       }
-    }
 
-    async function handleAccountsChanged(accounts){
-      if(!accounts || accounts.length === 0){
-        userAddress = null;
-        signer = null;
-        provider = null;
-        setConnectedUI(null);
-        setActionButtonsEnabled(false);
-        stakesArea.innerHTML = 'Connect a wallet to view stakes.';
-        return;
-      }
-      userAddress = accounts[0].toLowerCase();
-      provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-      signer = provider.getSigner();
-      vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
-      wmonContract = new ethers.Contract(WMON_ADDRESS, WMON_ABI, signer);
-      setConnectedUI(userAddress);
-      setActionButtonsEnabled(true);
-      await loadUserStakes();
-      await loadReferrerRewards();
-    }
-
-    async function handleChainChanged(chainId){
-      document.getElementById('network-indicator').textContent = `Network changed (chainId ${chainId}).`;
-      try { await initUI(); } catch(e){}
-      if(userAddress) await loadUserStakes();
-    }
-
-    // APPROVAL / STAKE / WITHDRAW
-    async function checkAllowanceForInputAmount(){
-      if(!userAddress || !wmonContract) return;
-      const amount = amountInput.value;
-      if(!amount || isNaN(Number(amount)) || Number(amount) <= 0){
-        approveBtn.querySelector('.btn-label').textContent = 'Approve';
-        approveBtn.disabled = false;
-        return;
-      }
-      try {
-        const amtBn = ethers.utils.parseUnits(amount, wmonDecimals);
-        const allowance = await wmonContract.allowance(userAddress, VAULT_ADDRESS);
-        if(ethers.BigNumber.from(allowance).gte(amtBn)){
-          approveBtn.querySelector('.btn-label').textContent = 'Approved';
-          approveBtn.disabled = true;
-        } else {
-          approveBtn.querySelector('.btn-label').textContent = 'Approve';
-          approveBtn.disabled = false;
-        }
-      } catch (err){
-        console.warn('checkAllowance error', err);
-      }
-    }
-
-    async function ensureAllowance(amountBig){
-      if(!userAddress || !wmonContract) throw new Error("Wallet not connected");
-      try {
-        const allowance = await wmonContract.allowance(userAddress, VAULT_ADDRESS);
-        if(ethers.BigNumber.from(allowance).gte(amountBig)) {
-          approveBtn.querySelector('.btn-label').textContent = 'Approved';
-          approveBtn.disabled = true;
-          return true;
-        }
-        showButtonLoading(approveBtn, true, 'Approving...');
-        const tx = await wmonContract.approve(VAULT_ADDRESS, amountBig);
-        await tx.wait();
-        showButtonLoading(approveBtn, false, 'Approved');
-        txStatus.textContent = "Approve confirmed";
-        setTimeout(()=> txStatus.textContent = "", 2000);
-        return true;
-      } catch (err){
-        console.error('ensureAllowance error', err);
-        showButtonLoading(approveBtn, false, 'Approve');
-        approveBtn.disabled = false;
-        throw err;
-      }
-    }
-
-    async function stake(){
-      if(!signer) return alert("Connect your wallet first.");
-      const token = tokenSelect.value || WMON_ADDRESS;
-      const amount = amountInput.value;
-      if(!amount || isNaN(Number(amount)) || Number(amount) <= 0) return alert("Enter a valid amount.");
-      const days = Number(durationSelect.value || 30);
-      const durationSeconds = days * 24 * 60 * 60;
-      const ref = (refInput.value && refInput.value.trim()) ? refInput.value : ethers.constants.AddressZero;
-      const parsed = ethers.utils.parseUnits(amount, wmonDecimals);
-
-      const depositFee = Number(amount) * 0.01;
-      const net = Number(amount) - depositFee;
-      const preview = `You are staking ${amount} WMON for ${days} days.\nDeposit fee: ${depositFee.toFixed(6)} WMON (net staked ${net.toFixed(6)} WMON).\nReferrer: ${ref === ethers.constants.AddressZero ? 'None' : ref}\n\nProceed?`;
-      if(!confirm(preview)) return;
-
-      try {
-        txStatus.textContent = "Checking allowance...";
-        await ensureAllowance(parsed);
-
-        showButtonLoading(stakeBtn, true, 'Staking...');
-        const tx = await vaultContract.stake(token, parsed, durationSeconds, ref);
-        txStatus.textContent = "Waiting confirmation...";
-        await tx.wait();
-        txStatus.textContent = "Stake successful ✔";
-        await loadUserStakes();
-        await loadReferrerRewards();
-      } catch (err){
-        console.error("stake error", err);
-        txStatus.textContent = "Transaction failed";
-        alert("Stake failed: " + (err?.message || err));
-      } finally {
-        showButtonLoading(stakeBtn, false, 'Stake');
-        setTimeout(()=> txStatus.textContent = "", 4000);
-      }
-    }
-
-    async function withdraw(stakeId){
-      if(!signer) return alert("Connect your wallet first.");
-      if(!confirm("Withdraw stake " + stakeId + "? If before unlock you will pay penalty.")) return;
-      try {
-        txStatus.textContent = "Withdrawing...";
-        showButtonLoading(stakeBtn, true, 'Working...');
-        const tx = await vaultContract.withdraw(stakeId);
-        await tx.wait();
-        txStatus.textContent = "Withdrawn ✔";
-        await loadUserStakes();
-      } catch (err){
-        console.error("withdraw error", err);
-        txStatus.textContent = "Withdraw failed";
-        alert("Withdraw failed: " + (err?.message || err));
-      } finally {
-        showButtonLoading(stakeBtn, false, 'Stake');
-        setTimeout(()=> txStatus.textContent = "", 3000);
-      }
-    }
-
-    // READERS (parallel chunked)
-    async function loadUserStakes(){
-      if(!userAddress) {
-        stakesArea.innerHTML = `<div class="small muted">Connect a wallet to view stakes.</div>`;
-        return;
-      }
-      stakesArea.innerHTML = `<div class="small muted">Loading stakes...</div>`;
-
-      try {
-        const readProvider = new ethers.providers.JsonRpcProvider("https://rpc.monad.xyz");
-        const readVault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, readProvider);
-
-        const stakeIds = await readVault.getUserStakes(userAddress);
-        if(!stakeIds || stakeIds.length === 0){
-          stakesArea.innerHTML = `<div class="small muted">No stakes found for ${short(userAddress)}</div>`;
+      function updateStakePreview(){
+        const amount = amountInput.value;
+        const days = Number(durationSelect.value || 30);
+        if(!amount || isNaN(Number(amount)) || Number(amount) <= 0){
+          stakePreview.textContent = 'Stake preview: enter amount and choose duration';
           return;
         }
-
-        const ids = stakeIds.map(id => id.toString());
-        const CHUNK = 50;
-        const chunks = [];
-        for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK));
-
-        const infos = new Array(ids.length);
-        for (let ci = 0; ci < chunks.length; ci++) {
-          const chunk = chunks[ci];
-          const promises = chunk.map((id) => readVault.getStakeInfo(userAddress, id));
-          const settled = await Promise.allSettled(promises);
-          for (let j = 0; j < settled.length; j++) {
-            const idx = ci * CHUNK + j;
-            if (settled[j].status === "fulfilled") infos[idx] = settled[j].value;
-            else console.warn(`Failed to load stake info for id ${chunk[j]}:`, settled[j].reason);
-          }
-        }
-
-        let html = "";
-        for (let i = 0; i < ids.length; i++) {
-          const stakeId = ids[i];
-          const info = infos[i];
-          if (!info) {
-            html += `<div class="stake-item"><div><div style="font-weight:700">—</div><div class="small muted">Stake ID: ${stakeId} • Failed to load details</div></div><div style="text-align:right"><div class="small muted">—</div></div></div>`;
-            continue;
-          }
-          const token = info.token;
-          const amountStr = ethers.utils.formatUnits(info.amount, wmonDecimals);
-          const unlockTime = Number(info.unlockTime);
-          const withdrawn = info.withdrawn;
-          const canWithdraw = info.canWithdraw;
-          const ref = info.referrer;
-
-          html += `<div class="stake-item">
-            <div>
-              <div style="font-weight:700">${amountStr} WMON</div>
-              <div class="small muted">Stake ID: ${stakeId} • Token: ${short(token)} • Referrer: ${ref === "0x0000000000000000000000000000000000000000" ? "—" : short(ref)}</div>
-            </div>
-            <div style="text-align:right">
-              <div class="small muted">Unlock: ${new Date(unlockTime*1000).toLocaleString()}</div>
-              <div style="margin-top:8px;" class="row-compact">
-                <button class="btn secondary" onclick="navigator.clipboard.writeText('${stakeId}')">Copy ID</button>
-                <button class="btn" ${withdrawn || !canWithdraw ? 'disabled' : ''} onclick="withdraw('${stakeId}')">Withdraw</button>
-              </div>
-            </div>
-          </div>`;
-        }
-
-        stakesArea.innerHTML = html;
-      } catch (err) {
-        console.error("loadUserStakes error", err);
-        stakesArea.innerHTML = `<div class="small muted">Failed to load stakes: ${err?.message || err}</div>`;
+        const amt = Number(amount);
+        const depositFee = amt * 0.01; // 1%
+        const net = amt - depositFee;
+        const protocol = depositFee * 0.5;
+        const creator = depositFee * 0.3;
+        const referrer = depositFee * 0.2;
+        stakePreview.innerHTML = `Stake preview: Deposit fee <strong>${depositFee.toFixed(6)} WMON</strong> (split: protocol ${protocol.toFixed(6)}, creator ${creator.toFixed(6)}, referrer ${referrer.toFixed(6)}). Net staked: <strong>${net.toFixed(6)} WMON</strong>. Lock: <strong>${days} days</strong>.`;
       }
-    }
 
-    async function loadReferrerRewards(){
-      try {
-        let target = userAddress;
-        if(!target) { refRewards.textContent = "Connect wallet to view your referrer rewards."; return; }
-        if(apiBase){
-          const res = await fetch(`${apiBase}/referrer/${target}/rewards`);
-          if(res.ok){
-            const json = await res.json();
-            const total = ethers.BigNumber.from(json.total?.toString() || "0");
-            refRewards.innerHTML = `<div style="font-weight:700">${ethers.utils.formatUnits(total, wmonDecimals)} WMON</div><div class="small muted">${(json.rewards?.length || 0)} payouts</div>`;
+      // WALLET
+      async function connectWallet(){
+        await ensureEthers(); // defensive
+        if(window.ethereum === undefined){
+          alert("No injected wallet found. Please install MetaMask or a compatible wallet.");
+          return;
+        }
+        try {
+          await window.ethereum.request({ method: "eth_requestAccounts" });
+          provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+          window.ethereum.on && window.ethereum.on('accountsChanged', handleAccountsChanged);
+          window.ethereum.on && window.ethereum.on('chainChanged', handleChainChanged);
+
+          signer = provider.getSigner();
+          userAddress = (await signer.getAddress()).toLowerCase();
+          setConnectedUI(userAddress);
+
+          vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
+          wmonContract = new ethers.Contract(WMON_ADDRESS, WMON_ABI, signer);
+          try { wmonDecimals = await wmonContract.decimals(); } catch(e){ wmonDecimals = 18; }
+
+          setActionButtonsEnabled(true);
+          updateStakePreview();
+          await checkAllowanceForInputAmount();
+          await loadUserStakes();
+          await loadReferrerRewards();
+        } catch (err){
+          console.error("connect error", err);
+          alert("Failed to connect wallet: " + (err?.message || err));
+        }
+      }
+
+      async function handleAccountsChanged(accounts){
+        if(!accounts || accounts.length === 0){
+          userAddress = null;
+          signer = null;
+          provider = null;
+          setConnectedUI(null);
+          setActionButtonsEnabled(false);
+          stakesArea.innerHTML = 'Connect a wallet to view stakes.';
+          return;
+        }
+        userAddress = accounts[0].toLowerCase();
+        provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+        signer = provider.getSigner();
+        vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
+        wmonContract = new ethers.Contract(WMON_ADDRESS, WMON_ABI, signer);
+        setConnectedUI(userAddress);
+        setActionButtonsEnabled(true);
+        await loadUserStakes();
+        await loadReferrerRewards();
+      }
+
+      async function handleChainChanged(chainId){
+        document.getElementById('network-indicator').textContent = `Network changed (chainId ${chainId}).`;
+        try { await initUI(); } catch(e){}
+        if(userAddress) await loadUserStakes();
+      }
+
+      // APPROVAL / STAKE / WITHDRAW
+      async function checkAllowanceForInputAmount(){
+        if(!userAddress || !wmonContract) return;
+        const amount = amountInput.value;
+        if(!amount || isNaN(Number(amount)) || Number(amount) <= 0){
+          const lbl = approveBtn.querySelector('.btn-label'); if(lbl) lbl.textContent = 'Approve';
+          approveBtn.disabled = false;
+          return;
+        }
+        try {
+          const amtBn = ethers.utils.parseUnits(amount, wmonDecimals);
+          const allowance = await wmonContract.allowance(userAddress, VAULT_ADDRESS);
+          if(ethers.BigNumber.from(allowance).gte(amtBn)){
+            const lbl = approveBtn.querySelector('.btn-label'); if(lbl) lbl.textContent = 'Approved';
+            approveBtn.disabled = true;
+          } else {
+            const lbl = approveBtn.querySelector('.btn-label'); if(lbl) lbl.textContent = 'Approve';
+            approveBtn.disabled = false;
+          }
+        } catch (err){
+          console.warn('checkAllowance error', err);
+        }
+      }
+
+      async function ensureAllowance(amountBig){
+        if(!userAddress || !wmonContract) throw new Error("Wallet not connected");
+        try {
+          const allowance = await wmonContract.allowance(userAddress, VAULT_ADDRESS);
+          if(ethers.BigNumber.from(allowance).gte(amountBig)) {
+            const lbl = approveBtn.querySelector('.btn-label'); if(lbl) lbl.textContent = 'Approved';
+            approveBtn.disabled = true;
+            return true;
+          }
+          showButtonLoading(approveBtn, true, 'Approving...');
+          const tx = await wmonContract.approve(VAULT_ADDRESS, amountBig);
+          await tx.wait();
+          showButtonLoading(approveBtn, false, 'Approved');
+          txStatus.textContent = "Approve confirmed";
+          setTimeout(()=> txStatus.textContent = "", 2000);
+          return true;
+        } catch (err){
+          console.error('ensureAllowance error', err);
+          showButtonLoading(approveBtn, false, 'Approve');
+          approveBtn.disabled = false;
+          throw err;
+        }
+      }
+
+      async function stake(){
+        if(!signer) return alert("Connect your wallet first.");
+        const token = tokenSelect.value || WMON_ADDRESS;
+        const amount = amountInput.value;
+        if(!amount || isNaN(Number(amount)) || Number(amount) <= 0) return alert("Enter a valid amount.");
+        const days = Number(durationSelect.value || 30);
+        const durationSeconds = days * 24 * 60 * 60;
+        const ref = (refInput.value && refInput.value.trim()) ? refInput.value : ethers.constants.AddressZero;
+        const parsed = ethers.utils.parseUnits(amount, wmonDecimals);
+
+        const depositFee = Number(amount) * 0.01;
+        const net = Number(amount) - depositFee;
+        const preview = `You are staking ${amount} WMON for ${days} days.\nDeposit fee: ${depositFee.toFixed(6)} WMON (net staked ${net.toFixed(6)} WMON).\nReferrer: ${ref === ethers.constants.AddressZero ? 'None' : ref}\n\nProceed?`;
+        if(!confirm(preview)) return;
+
+        try {
+          txStatus.textContent = "Checking allowance...";
+          await ensureAllowance(parsed);
+
+          showButtonLoading(stakeBtn, true, 'Staking...');
+          const tx = await vaultContract.stake(token, parsed, durationSeconds, ref);
+          txStatus.textContent = "Waiting confirmation...";
+          await tx.wait();
+          txStatus.textContent = "Stake successful ✔";
+          await loadUserStakes();
+          await loadReferrerRewards();
+        } catch (err){
+          console.error("stake error", err);
+          txStatus.textContent = "Transaction failed";
+          alert("Stake failed: " + (err?.message || err));
+        } finally {
+          showButtonLoading(stakeBtn, false, 'Stake');
+          setTimeout(()=> txStatus.textContent = "", 4000);
+        }
+      }
+
+      async function withdraw(stakeId){
+        if(!signer) return alert("Connect your wallet first.");
+        if(!confirm("Withdraw stake " + stakeId + "? If before unlock you will pay penalty.")) return;
+        try {
+          txStatus.textContent = "Withdrawing...";
+          showButtonLoading(stakeBtn, true, 'Working...');
+          const tx = await vaultContract.withdraw(stakeId);
+          await tx.wait();
+          txStatus.textContent = "Withdrawn ✔";
+          await loadUserStakes();
+        } catch (err){
+          console.error("withdraw error", err);
+          txStatus.textContent = "Withdraw failed";
+          alert("Withdraw failed: " + (err?.message || err));
+        } finally {
+          showButtonLoading(stakeBtn, false, 'Stake');
+          setTimeout(()=> txStatus.textContent = "", 3000);
+        }
+      }
+
+      // READERS (parallel chunked)
+      async function loadUserStakes(){
+        if(!userAddress) {
+          stakesArea.innerHTML = `<div class="small muted">Connect a wallet to view stakes.</div>`;
+          return;
+        }
+        stakesArea.innerHTML = `<div class="small muted">Loading stakes...</div>`;
+
+        try {
+          const readProvider = new ethers.providers.JsonRpcProvider("https://rpc.monad.xyz");
+          const readVault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, readProvider);
+
+          const stakeIds = await readVault.getUserStakes(userAddress);
+          if(!stakeIds || stakeIds.length === 0){
+            stakesArea.innerHTML = `<div class="small muted">No stakes found for ${short(userAddress)}</div>`;
             return;
           }
+
+          const ids = stakeIds.map(id => id.toString());
+          const CHUNK = 50;
+          const chunks = [];
+          for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK));
+
+          const infos = new Array(ids.length);
+          for (let ci = 0; ci < chunks.length; ci++) {
+            const chunk = chunks[ci];
+            const promises = chunk.map((id) => readVault.getStakeInfo(userAddress, id));
+            const settled = await Promise.allSettled(promises);
+            for (let j = 0; j < settled.length; j++) {
+              const idx = ci * CHUNK + j;
+              if (settled[j].status === "fulfilled") infos[idx] = settled[j].value;
+              else console.warn(`Failed to load stake info for id ${chunk[j]}:`, settled[j].reason);
+            }
+          }
+
+          let html = "";
+          for (let i = 0; i < ids.length; i++) {
+            const stakeId = ids[i];
+            const info = infos[i];
+            if (!info) {
+              html += `<div class="stake-item"><div><div style="font-weight:700">—</div><div class="small muted">Stake ID: ${stakeId} • Failed to load details</div></div><div style="text-align:right"><div class="small muted">—</div></div></div>`;
+              continue;
+            }
+            const token = info.token;
+            const amountStr = ethers.utils.formatUnits(info.amount, wmonDecimals);
+            const unlockTime = Number(info.unlockTime);
+            const withdrawn = info.withdrawn;
+            const canWithdraw = info.canWithdraw;
+            const ref = info.referrer;
+
+            html += `<div class="stake-item">
+              <div>
+                <div style="font-weight:700">${amountStr} WMON</div>
+                <div class="small muted">Stake ID: ${stakeId} • Token: ${short(token)} • Referrer: ${ref === "0x0000000000000000000000000000000000000000" ? "—" : short(ref)}</div>
+              </div>
+              <div style="text-align:right">
+                <div class="small muted">Unlock: ${new Date(unlockTime*1000).toLocaleString()}</div>
+                <div style="margin-top:8px;" class="row-compact">
+                  <button class="btn secondary" onclick="navigator.clipboard.writeText('${stakeId}')">Copy ID</button>
+                  <button class="btn" ${withdrawn || !canWithdraw ? 'disabled' : ''} onclick="withdraw('${stakeId}')">Withdraw</button>
+                </div>
+              </div>
+            </div>`;
+          }
+
+          stakesArea.innerHTML = html;
+        } catch (err) {
+          console.error("loadUserStakes error", err);
+          stakesArea.innerHTML = `<div class="small muted">Failed to load stakes: ${err?.message || err}</div>`;
         }
-        const httpProvider = new ethers.providers.JsonRpcProvider("https://rpc.monad.xyz");
-        const readVault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, httpProvider);
-        const total = await readVault.referrerRewards(target);
-        refRewards.innerHTML = `<div style="font-weight:700">${ethers.utils.formatUnits(total, wmonDecimals)} WMON</div><div class="small muted">On-chain</div>`;
-      } catch(err){
-        console.error("ref rewards error", err);
-        refRewards.textContent = "Failed to load referrer rewards.";
       }
-    }
 
-    // BINDINGS
-    connectBtn.addEventListener("click", connectWallet);
-    stakeBtn.addEventListener("click", stake);
-    approveBtn.addEventListener("click", async () => {
-      if(!signer) return alert("Connect wallet first.");
-      const amt = amountInput.value;
-      if(!amt) return alert("Enter amount.");
-      const amtBn = ethers.utils.parseUnits(amt, wmonDecimals);
-      try {
-        approveBtn.disabled = true;
-        await ensureAllowance(amtBn);
-      } catch(e){ alert("Approve failed: " + (e?.message||e)); } finally {
-        approveBtn.disabled = false;
+      async function loadReferrerRewards(){
+        try {
+          let target = userAddress;
+          if(!target) { refRewards.textContent = "Connect wallet to view your referrer rewards."; return; }
+          if(apiBase){
+            const res = await fetch(`${apiBase}/referrer/${target}/rewards`);
+            if(res.ok){
+              const json = await res.json();
+              const total = ethers.BigNumber.from(json.total?.toString() || "0");
+              refRewards.innerHTML = `<div style="font-weight:700">${ethers.utils.formatUnits(total, wmonDecimals)} WMON</div><div class="small muted">${(json.rewards?.length || 0)} payouts</div>`;
+              return;
+            }
+          }
+          const httpProvider = new ethers.providers.JsonRpcProvider("https://rpc.monad.xyz");
+          const readVault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, httpProvider);
+          const total = await readVault.referrerRewards(target);
+          refRewards.innerHTML = `<div style="font-weight:700">${ethers.utils.formatUnits(total, wmonDecimals)} WMON</div><div class="small muted">On-chain</div>`;
+        } catch(err){
+          console.error("ref rewards error", err);
+          refRewards.textContent = "Failed to load referrer rewards.";
+        }
       }
-    });
-    refreshBtn.addEventListener("click", async ()=>{
-      await initUI();
-      if(userAddress) await loadUserStakes();
-      if(userAddress) await loadReferrerRewards();
-    });
 
-    window.withdraw = withdraw;
+      // BINDINGS
+      connectBtn.addEventListener("click", connectWallet);
+      stakeBtn.addEventListener("click", stake);
+      approveBtn.addEventListener("click", async () => {
+        if(!signer) return alert("Connect wallet first.");
+        const amt = amountInput.value;
+        if(!amt) return alert("Enter amount.");
+        const amtBn = ethers.utils.parseUnits(amt, wmonDecimals);
+        try {
+          approveBtn.disabled = true;
+          await ensureAllowance(amtBn);
+        } catch(e){ alert("Approve failed: " + (e?.message||e)); } finally {
+          approveBtn.disabled = false;
+        }
+      });
+      refreshBtn.addEventListener("click", async ()=>{
+        await initUI();
+        if(userAddress) await loadUserStakes();
+        if(userAddress) await loadReferrerRewards();
+      });
 
-    // START
-    (async function(){
+      window.withdraw = withdraw;
+
+      // START
       try {
         await initUI();
       } catch(e){
