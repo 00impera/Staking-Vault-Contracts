@@ -218,11 +218,8 @@
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
   <script>
     /*
-      Index HTML with OctoSwap trading integrated (buyBTCF / sellBTCF).
-      - Router: OCTOSWAP_ROUTER
-      - Uses ethers v6
-      - Auto-approve if allowance insufficient
-      - 5% slippage tolerance (adjustable)
+      Finalized: Buy/Sell (OctoSwap) with pair check, factory validation, explicit signer contracts,
+      improved error messages and logging, and safe slippage handling.
     */
 
     // ---------- CONFIG ----------
@@ -231,13 +228,17 @@
 
     const ALCHEMY_HTTP = "https://monad-mainnet.g.alchemy.com/v2/Uwb7T0DbXMQHjiJBNf9_b005qYjLmJqk";
 
-    // OctoSwap router (from your message)
+    // OctoSwap router & factory (from your messages)
     const OCTOSWAP_ROUTER = "0x60fd5Aa15Debd5ffdEfB5129FD9FD8A34d80d608";
+    const OCTOSWAP_FACTORY = "0xCe104732685B9D7b2F07A09d828F6b19786cdA32";
 
     const ROUTER_ABI = [
       "function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] path, address to, uint deadline) returns (uint[] amounts)",
-      "function swapTokensForExactTokens(uint amountOut, uint amountInMax, address[] path, address to, uint deadline) returns (uint[] amounts)",
       "function getAmountsOut(uint amountIn, address[] path) view returns (uint[] amounts)"
+    ];
+
+    const FACTORY_ABI = [
+      "function getPair(address tokenA, address tokenB) view returns (address)"
     ];
 
     // ---------- ABIs (kept) ----------
@@ -251,7 +252,6 @@
 
     const bfContract = new ethers.Contract(BITCOINFLASH, BITCOINFLASH_ABI, rpcProvider);
     const wmonContract = new ethers.Contract(WMON, WMON_ABI, rpcProvider);
-    const routerContract = new ethers.Contract(OCTOSWAP_ROUTER, ROUTER_ABI, rpcProvider);
 
     const byId = id => document.getElementById(id);
     function short(a){ return a ? a.slice(0,6) + '...' + a.slice(-4) : ''; }
@@ -291,9 +291,9 @@
     // ---------- Load balances & metadata ----------
     async function loadBalances(){
       try {
+        if (!userAddress) return;
         const [bfSym, bfDec, wmonDec] = await Promise.all([bfContract.symbol(), bfContract.decimals(), wmonContract.decimals()]);
-        const bfBalRaw = await bfContract.balanceOf(userAddress);
-        const wmonBalRaw = await wmonContract.balanceOf(userAddress);
+        const [bfBalRaw, wmonBalRaw] = await Promise.all([bfContract.balanceOf(userAddress), wmonContract.balanceOf(userAddress)]);
         const bfBal = Number(ethers.formatUnits(bfBalRaw, bfDec));
         const wmonBal = Number(ethers.formatUnits(wmonBalRaw, wmonDec));
         byId('bfBal').textContent = `${bfBal.toFixed(6)} ${bfSym}`;
@@ -407,19 +407,31 @@
     }
 
     // ---------- OctoSwap trading (buy/sell) ----------
-    // 5% slippage default (adjust as needed)
-    const SLIPPAGE_BPS = 500n; // 5% = 500 basis points
+    const SLIPPAGE_BPS = 500n; // 5%
 
     async function buyBTCF(){
       try {
         if (!signer) { alert('Connect wallet first'); return; }
-        const wmonAmount = prompt('How much WMON to spend?', '10');
-        if (!wmonAmount) return;
-        const amountIn = ethers.parseUnits(wmonAmount, 18); // WMON assumed 18 decimals
-        const routerWithSigner = contractWithSigner(ROUTER_ABI, OCTOSWAP_ROUTER);
-        const wmonWithSigner = contractWithSigner(WMON_ABI, WMON);
 
-        // Check allowance
+        // Validate factory/pair exist
+        setStatus('Checking pair...');
+        const factory = new ethers.Contract(OCTOSWAP_FACTORY, FACTORY_ABI, rpcProvider);
+        const pairAddress = await factory.getPair(WMON, BITCOINFLASH);
+        if (!pairAddress || pairAddress === ethers.ZeroAddress) {
+          alert('❌ BTCF/WMON pair does not exist yet. Create liquidity first.');
+          setStatus('Pair not found');
+          return;
+        }
+        console.log('Pair:', pairAddress);
+
+        const wmonAmount = prompt('How much WMON to spend?', '1');
+        if (!wmonAmount || Number(wmonAmount) <= 0) return;
+
+        const amountIn = ethers.parseUnits(wmonAmount, 18);
+        const router = new ethers.Contract(OCTOSWAP_ROUTER, ROUTER_ABI, signer);
+        const wmonWithSigner = new ethers.Contract(WMON, WMON_ABI, signer);
+
+        // Allowance
         const allowance = await wmonWithSigner.allowance(userAddress, OCTOSWAP_ROUTER);
         if (allowance < amountIn) {
           setStatus('Approving WMON...');
@@ -429,39 +441,73 @@
           setStatus('Approve confirmed', `https://monadvision.com/tx/${approveTx.hash}`);
         }
 
-        // Get expected output
-        setStatus('Fetching quote...');
-        const amounts = await routerWithSigner.getAmountsOut(amountIn, [WMON, BITCOINFLASH]);
-        // amounts is an array of BigInt (e.g., [amountIn, amountOut])
-        const amountOut = BigInt(amounts[1].toString ? amounts[1].toString() : amounts[1]);
-        // apply slippage: minOut = amountOut * (100% - slippage)
-        const amountOutMin = (amountOut * (10000n - SLIPPAGE_BPS)) / 10000n;
+        // Quote
+        setStatus('Calculating output...');
+        let amountOutMin;
+        try {
+          const amounts = await router.getAmountsOut(amountIn, [WMON, BITCOINFLASH]);
+          const amountOut = BigInt(amounts[1].toString ? amounts[1].toString() : amounts[1]);
+          amountOutMin = (amountOut * (10000n - SLIPPAGE_BPS)) / 10000n;
+        } catch(e) {
+          console.error('getAmountsOut failed', e);
+          alert('⚠️ Cannot calculate output. Pool may have insufficient liquidity.');
+          setStatus('Calculation failed');
+          return;
+        }
 
-        setStatus('Swapping WMON → BTCF...');
-        const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
-        const tx = await routerWithSigner.swapExactTokensForTokens(amountIn, amountOutMin, [WMON, BITCOINFLASH], userAddress, deadline);
+        // Swap
+        setStatus('Executing swap...');
+        const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
+        const tx = await router.swapExactTokensForTokens(amountIn, amountOutMin, [WMON, BITCOINFLASH], userAddress, deadline);
         setStatus('Swap sent', `https://monadvision.com/tx/${tx.hash}`);
         await tx.wait();
         setStatus('Buy complete!', `https://monadvision.com/tx/${tx.hash}`);
-        toast('BTCF bought successfully! 🎉');
+        toast('BTCF bought successfully! 🎉', 5000);
         await loadBalances();
+
       } catch(e){
         console.error('buyBTCF failed', e);
-        alert('Buy failed: ' + (e?.message || e));
-        setStatus('Error');
+        let errorMsg = 'Buy failed: ';
+        const msg = (e && e.message) ? e.message : String(e);
+        if (msg.includes('INSUFFICIENT_OUTPUT_AMOUNT')) {
+          errorMsg += 'Insufficient output amount. Try increasing slippage or reducing amount.';
+        } else if (msg.includes('INSUFFICIENT_LIQUIDITY')) {
+          errorMsg += 'Insufficient liquidity in pool.';
+        } else if (msg.toLowerCase().includes('user rejected')) {
+          errorMsg += 'Transaction rejected by user.';
+        } else if (msg.toLowerCase().includes('insufficient funds')) {
+          errorMsg += 'Insufficient WMON balance.';
+        } else {
+          errorMsg += msg;
+        }
+        alert(errorMsg);
+        setStatus('Buy failed');
       }
     }
 
     async function sellBTCF(){
       try {
         if (!signer) { alert('Connect wallet first'); return; }
-        const btcfAmount = prompt('How much BTCF to sell?', '1000');
-        if (!btcfAmount) return;
-        const amountIn = ethers.parseUnits(btcfAmount, 18); // BTCF assumed 18 decimals
-        const routerWithSigner = contractWithSigner(ROUTER_ABI, OCTOSWAP_ROUTER);
-        const btcfWithSigner = contractWithSigner(BITCOINFLASH_ABI, BITCOINFLASH);
 
-        // Check allowance
+        // Validate factory/pair exist
+        setStatus('Checking pair...');
+        const factory = new ethers.Contract(OCTOSWAP_FACTORY, FACTORY_ABI, rpcProvider);
+        const pairAddress = await factory.getPair(BITCOINFLASH, WMON);
+        if (!pairAddress || pairAddress === ethers.ZeroAddress) {
+          alert('❌ BTCF/WMON pair does not exist yet. Create liquidity first.');
+          setStatus('Pair not found');
+          return;
+        }
+        console.log('Pair:', pairAddress);
+
+        const btcfAmount = prompt('How much BTCF to sell?', '1000');
+        if (!btcfAmount || Number(btcfAmount) <= 0) return;
+
+        const amountIn = ethers.parseUnits(btcfAmount, 18);
+        const router = new ethers.Contract(OCTOSWAP_ROUTER, ROUTER_ABI, signer);
+        const btcfWithSigner = new ethers.Contract(BITCOINFLASH, BITCOINFLASH_ABI, signer);
+
+        // Allowance
         const allowance = await btcfWithSigner.allowance(userAddress, OCTOSWAP_ROUTER);
         if (allowance < amountIn) {
           setStatus('Approving BTCF...');
@@ -471,28 +517,51 @@
           setStatus('Approve confirmed', `https://monadvision.com/tx/${approveTx.hash}`);
         }
 
-        // Get expected output (BTCF -> WMON)
-        setStatus('Fetching quote...');
-        const amounts = await routerWithSigner.getAmountsOut(amountIn, [BITCOINFLASH, WMON]);
-        const amountOut = BigInt(amounts[1].toString ? amounts[1].toString() : amounts[1]);
-        const amountOutMin = (amountOut * (10000n - SLIPPAGE_BPS)) / 10000n;
+        // Quote
+        setStatus('Calculating output...');
+        let amountOutMin;
+        try {
+          const amounts = await router.getAmountsOut(amountIn, [BITCOINFLASH, WMON]);
+          const amountOut = BigInt(amounts[1].toString ? amounts[1].toString() : amounts[1]);
+          amountOutMin = (amountOut * (10000n - SLIPPAGE_BPS)) / 10000n;
+        } catch(e) {
+          console.error('getAmountsOut failed', e);
+          alert('⚠️ Cannot calculate output. Pool may have insufficient liquidity.');
+          setStatus('Calculation failed');
+          return;
+        }
 
-        setStatus('Swapping BTCF → WMON...');
+        // Swap
+        setStatus('Executing swap...');
         const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
-        const tx = await routerWithSigner.swapExactTokensForTokens(amountIn, amountOutMin, [BITCOINFLASH, WMON], userAddress, deadline);
+        const tx = await router.swapExactTokensForTokens(amountIn, amountOutMin, [BITCOINFLASH, WMON], userAddress, deadline);
         setStatus('Swap sent', `https://monadvision.com/tx/${tx.hash}`);
         await tx.wait();
         setStatus('Sell complete!', `https://monadvision.com/tx/${tx.hash}`);
-        toast('BTCF sold successfully! 💰');
+        toast('BTCF sold successfully! 💰', 5000);
         await loadBalances();
+
       } catch(e){
         console.error('sellBTCF failed', e);
-        alert('Sell failed: ' + (e?.message || e));
-        setStatus('Error');
+        let errorMsg = 'Sell failed: ';
+        const msg = (e && e.message) ? e.message : String(e);
+        if (msg.includes('INSUFFICIENT_OUTPUT_AMOUNT')) {
+          errorMsg += 'Insufficient output amount. Try increasing slippage or reducing amount.';
+        } else if (msg.includes('INSUFFICIENT_LIQUIDITY')) {
+          errorMsg += 'Insufficient liquidity in pool.';
+        } else if (msg.toLowerCase().includes('user rejected')) {
+          errorMsg += 'Transaction rejected by user.';
+        } else if (msg.toLowerCase().includes('insufficient funds')) {
+          errorMsg += 'Insufficient BTCF balance.';
+        } else {
+          errorMsg += msg;
+        }
+        alert(errorMsg);
+        setStatus('Sell failed');
       }
     }
 
-    // wire the UI buttons to the real functions
+    // wire the UI buttons
     function buyOnDex(){ buyBTCF(); }
     function sellOnDex(){ sellBTCF(); }
     function openWmonDex(){ window.open(`https://dexscreener.com/monad/${WMON}`, '_blank'); }
