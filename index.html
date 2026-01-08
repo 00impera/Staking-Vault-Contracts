@@ -7,174 +7,53 @@
   <meta name="theme-color" content="#0A0F14" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{
-      --bg-main: linear-gradient(135deg, #0a0f1a 0%, #101a2b 100%);
-      --glass-bg: rgba(20,30,50,0.62);
-      --glass-blur: blur(18px);
-      --neon-blue: #00eaff;
-      --neon-cyan: #00A4CC;
-      --neon-purple: #a259ff;
-      --neon-pink: #ff4fd8;
-      --panel-border-gradient: linear-gradient(90deg, #00eaff 0%, #a259ff 100%);
-      --text-main: #f6faff;
-      --text-muted: #8ca0b3;
-      --container-max:1400px;
-      --glass-radius:24px;
-      --big-btn-font: 1.35rem;
-      --big-label-font: 1.1rem;
-      --big-input-font: 1.2rem;
-      --big-panel-padding: 32px;
-      --big-gap: 22px;
-      --short-input-width: 140px;
-      --connected-gradient: linear-gradient(90deg, #7ED957 0%, #2BD37D 100%);
-    }
-
+    /* (styles are unchanged from your last version) */
+    :root{ --bg-main: linear-gradient(135deg, #0a0f1a 0%, #101a2b 100%); --glass-bg: rgba(20,30,50,0.62); --glass-blur: blur(18px); --neon-blue: #00eaff; --neon-cyan: #00A4CC; --neon-purple: #a259ff; --neon-pink: #ff4fd8; --panel-border-gradient: linear-gradient(90deg, #00eaff 0%, #a259ff 100%); --text-main: #f6faff; --text-muted: #8ca0b3; --container-max:1400px; --glass-radius:24px; --big-btn-font: 1.35rem; --big-label-font: 1.1rem; --big-input-font: 1.2rem; --big-panel-padding: 32px; --big-gap: 22px; --short-input-width: 140px; --connected-gradient: linear-gradient(90deg, #7ED957 0%, #2BD37D 100%); }
     html,body{height:100%;margin:0;background:var(--bg-main);color:var(--text-main);font-family:Inter,system-ui,Segoe UI,Roboto,Arial;-webkit-font-smoothing:antialiased}
     .container{max-width:var(--container-max);margin:0 auto;padding:32px}
-
     header{display:flex;align-items:center;justify-content:space-between;gap:var(--big-gap);margin-bottom:var(--big-gap)}
     .logo{display:flex;align-items:center;gap:16px;font-weight:800;font-size:2.1rem;letter-spacing:0.5px}
     .logo-dot{width:22px;height:22px;border-radius:999px;background:var(--neon-blue);box-shadow:0 0 24px rgba(0,234,255,0.22), 0 0 10px rgba(162,89,255,0.09)}
     .small{color:var(--text-muted);font-size:1.1rem}
     #txStatus{margin-left:12px;color:var(--text-muted);display:flex;align-items:center;gap:12px}
-
     .layout{display:grid;grid-template-columns:520px 1fr;gap:var(--big-gap)}
-    .panel{
-      border-radius:var(--glass-radius);
-      padding:var(--big-panel-padding);
-      background:var(--glass-bg);
-      backdrop-filter:var(--glass-blur);
-      border:2px solid transparent;
-      border-image: var(--panel-border-gradient) 1;
-      box-shadow:0 18px 60px rgba(2,8,14,0.7), inset 0 2px 0 rgba(255,255,255,0.03);
-    }
-
+    .panel{border-radius:var(--glass-radius);padding:var(--big-panel-padding);background:var(--glass-bg);backdrop-filter:var(--glass-blur);border:2px solid transparent;border-image: var(--panel-border-gradient) 1;box-shadow:0 18px 60px rgba(2,8,14,0.7), inset 0 2px 0 rgba(255,255,255,0.03);}
     h2{margin:0 0 18px 0;color:var(--text-muted);font-size:2.2rem}
     h3{margin:18px 0 10px 0;color:var(--text-muted);font-size:1.4rem}
-
     .token-row{display:flex;gap:18px;align-items:center;margin-bottom:18px}
     .token-logo{width:64px;height:64px;border-radius:16px;background:linear-gradient(180deg,#081118,#051018);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 10px 36px rgba(0,0,0,0.7)}
     .field{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
     label{font-size:var(--big-label-font);font-weight:600}
-    input, select {
-      background:rgba(0,0,0,0.24);
-      border:2px solid rgba(255,255,255,0.07);
-      color:var(--text-main);
-      padding:18px 16px;
-      border-radius:14px;
-      outline:none;
-      font-size:var(--big-input-font);
-      font-weight:500;
-      min-height:48px;
-      box-sizing: border-box;
-    }
-    input:focus, select:focus {box-shadow:0 0 24px rgba(0,234,255,0.09);border-color:var(--neon-cyan)}
-    input.error {border-color:var(--neon-pink);}
-
+    input, select { background:rgba(0,0,0,0.24); border:2px solid rgba(255,255,255,0.07); color:var(--text-main); padding:18px 16px; border-radius:14px; outline:none; font-size:var(--big-input-font); font-weight:500; min-height:48px; box-sizing: border-box;}
+    input:focus, select:focus {box-shadow:0 0 24px rgba(0,234,255,0.09);border-color:var(--neon-cyan)} input.error {border-color:var(--neon-pink);}
     .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-
-    .btn{
-      padding:18px 32px;
-      border-radius:999px;
-      font-weight:800;
-      border:none;
-      cursor:pointer;
-      background:linear-gradient(90deg,#232a36,#1e242b);
-      color:var(--neon-cyan);
-      transition:transform .08s,box-shadow .12s,background .18s;
-      display:inline-flex;align-items:center;justify-content:center;gap:12px;
-      font-size:var(--big-btn-font);
-      letter-spacing:0.5px;
-      min-height:56px;
-      min-width:160px;
-      box-sizing: border-box;
-    }
+    .btn{padding:18px 32px;border-radius:999px;font-weight:800;border:none;cursor:pointer;background:linear-gradient(90deg,#232a36,#1e242b);color:var(--neon-cyan);transition:transform .08s,box-shadow .12s,background .18s;display:inline-flex;align-items:center;justify-content:center;gap:12px;font-size:var(--big-btn-font);letter-spacing:0.5px;min-height:56px;min-width:160px;box-sizing: border-box;}
     .btn.primary{background:linear-gradient(90deg,var(--neon-blue) 0%, var(--neon-purple) 100%);color:#07101a;box-shadow:0 12px 48px rgba(0,234,255,0.16), 0 0 18px rgba(162,89,255,0.09)}
     .btn.danger{background:linear-gradient(90deg,var(--neon-pink),#ff6b7a);color:#fff}
     .btn[disabled]{opacity:.6;cursor:not-allowed;transform:none}
     .btn:hover:not([disabled]){transform:translateY(-2px)}
-
-    body.connected #walletBtn {
-      background: var(--connected-gradient);
-      color: #07101a;
-      box-shadow: 0 10px 36px rgba(46, 204, 113, 0.18), 0 0 18px rgba(46, 204, 113, 0.08);
-    }
-    body.connected .logo-dot{
-      background: linear-gradient(90deg, #7ED957, #2BD37D);
-      box-shadow: 0 0 28px rgba(46,204,113,0.22), 0 0 12px rgba(162,89,255,0.06);
-    }
-
-    .actions{display:flex;gap:18px;flex-wrap:wrap}
-    .actions .btn{flex:1 1 0; min-width:0;}
-
-    .spinner{
-      width:22px;height:22px;border-radius:50%;border:3px solid rgba(255,255,255,0.16);border-top-color:var(--neon-blue);animation:spin .9s linear infinite;
-    }
+    body.connected #walletBtn { background: var(--connected-gradient); color: #07101a; box-shadow: 0 10px 36px rgba(46, 204, 113, 0.18), 0 0 18px rgba(46, 204, 113, 0.08);}
+    body.connected .logo-dot{ background: linear-gradient(90deg, #7ED957, #2BD37D); box-shadow: 0 0 28px rgba(46,204,113,0.22), 0 0 12px rgba(162,89,255,0.06);}
+    .actions{display:flex;gap:18px;flex-wrap:wrap} .actions .btn{flex:1 1 0; min-width:0;}
+    .spinner{width:22px;height:22px;border-radius:50%;border:3px solid rgba(255,255,255,0.16);border-top-color:var(--neon-blue);animation:spin .9s linear infinite;}
     @keyframes spin{to{transform:rotate(360deg)}}
-
-    #statusWrap{display:flex;align-items:center;gap:16px}
-    .statusMsg{font-size:1.1rem;color:var(--text-muted)}
-    .statusError{color:var(--neon-pink);font-weight:800}
-    .statusSuccess{color:var(--neon-blue);font-weight:800}
-
+    #statusWrap{display:flex;align-items:center;gap:16px} .statusMsg{font-size:1.1rem;color:var(--text-muted)} .statusError{color:var(--neon-pink);font-weight:800} .statusSuccess{color:var(--neon-blue);font-weight:800}
     .big-screen{min-height:900px;height:900px;border-radius:18px;overflow:hidden;border:2px solid rgba(255,255,255,0.05);box-shadow:0 18px 60px rgba(0,0,0,0.6)}
-
     pre.abi{max-height:220px;overflow:auto;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.16));padding:18px;border-radius:14px;border:2px dashed rgba(255,255,255,0.05);color:var(--text-muted);font-size:1.1rem}
-
     footer{margin-top:18px;color:var(--text-muted);font-size:1.1rem;text-align:center}
-
-    .row{display:flex;align-items:center;gap:var(--big-gap)}
-    .row--wrap{display:flex;flex-wrap:wrap;align-items:center;gap:var(--big-gap)}
-    .u-mt{margin-top:var(--big-gap)}
-    .small-muted{color:var(--text-muted);opacity:.95;font-size:0.98rem}
-    .input--short{width:var(--short-input-width);}
-
-    .max-btn{
-      background:rgba(0,234,255,0.1);
-      border:1px solid var(--neon-cyan);
-      color:var(--neon-cyan);
-      padding:8px 16px;
-      border-radius:8px;
-      cursor:pointer;
-      font-size:0.9rem;
-      font-weight:700;
-      margin-left:-12px;
-    }
+    .row{display:flex;align-items:center;gap:var(--big-gap)} .row--wrap{display:flex;flex-wrap:wrap;align-items:center;gap:var(--big-gap)} .u-mt{margin-top:var(--big-gap)} .small-muted{color:var(--text-muted);opacity:.95;font-size:0.98rem} .input--short{width:var(--short-input-width);}
+    .max-btn{ background:rgba(0,234,255,0.1); border:1px solid var(--neon-cyan); color:var(--neon-cyan); padding:8px 16px; border-radius:8px; cursor:pointer; font-size:0.9rem; font-weight:700; margin-left:-12px;}
     .max-btn:hover{background:rgba(0,234,255,0.2)}
-
-    .activity-item{
-      padding:12px;
-      margin:8px 0;
-      background:rgba(0,0,0,0.2);
-      border-radius:10px;
-      border-left:3px solid var(--neon-cyan);
-      font-size:0.95rem;
-    }
-
-    @media (max-width:1200px){
-      .layout{grid-template-columns:1fr}
-      .big-screen{min-height:520px;height:520px}
-      .panel{padding:18px}
-    }
-    @media (max-width:700px){
-      .container{padding:8px}
-      .panel{padding:10px}
-      .big-screen{min-height:320px;height:320px}
-      .btn{min-width:100px;padding:10px 12px;font-size:1rem;}
-      .input--short{width:110px;}
-    }
-    @media (max-width:500px){
-      .btn, input, select { font-size:0.95rem; padding:10px 8px; }
-      h2 { font-size:1.3rem; }
-      h3 { font-size:1.1rem; }
-    }
+    .activity-item{ padding:12px; margin:8px 0; background:rgba(0,0,0,0.2); border-radius:10px; border-left:3px solid var(--neon-cyan); font-size:0.95rem; }
+    @media (max-width:1200px){ .layout{grid-template-columns:1fr} .big-screen{min-height:520px;height:520px} .panel{padding:18px} }
+    @media (max-width:700px){ .container{padding:8px} .panel{padding:10px} .big-screen{min-height:320px;height:320px} .btn{min-width:100px;padding:10px 12px;font-size:1rem;} .input--short{width:110px;} }
+    @media (max-width:500px){ .btn, input, select { font-size:0.95rem; padding:10px 8px; } h2 { font-size:1.3rem; } h3 { font-size:1.1rem; } }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
       <div class="logo"><div class="logo-dot" aria-hidden="true"></div>BitcoinFlash Control</div>
-
       <div class="row">
         <div id="network" class="small" aria-hidden="true">Network: —</div>
         <div id="txStatus" class="small" aria-live="polite">
@@ -327,22 +206,17 @@
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
   <script>
     // ========== CONFIG ==========
-    // NOTE: Leaving RPC/API keys in client-side code is not recommended for production.
-    // Put keys on a backend or use environment-specific safe storage.
     const CONFIG = {
       BITCOINFLASH: "0x7d7E0112d2763c98238aF7cebEAe33d53F3F76DD".toLowerCase(),
       WMON: "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A".toLowerCase(),
-      // OctoSwap router provided by the user
       OCTOSWAP_ROUTER: "0x0547A39Bee2E854bBA45b34D3e32b6C74505CaB3",
       MONAD_CHAIN_ID_HEX: "0x504",
-      // Alchemy / public RPC for read-only operations (example key from user)
       MONAD_RPC: "https://monad-mainnet.g.alchemy.com/v2/Uwb7T0DbXMQHjiJBNf9_b005qYjLmJqk"
     };
 
-    // ---------- ABIs ----------
+    // ABIs (same as before)
     const BTCF_ABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"burn","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"subtractedValue","type":"uint256"}],"name":"decreaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"addedValue","type":"uint256"}],"name":"increaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"}];
 
-    // Router ABI (partial - we only need getAmountsOut, swapExactETHForTokens, swapExactTokensForETH, getAmountsIn)
     const ROUTER_ABI = [
       {"inputs":[],"name":"WETH","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactETHForTokens","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"payable","type":"function"},
@@ -350,7 +224,6 @@
       {"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"}],"name":"getAmountsOut","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"view","type":"function"}
     ];
 
-    // Minimal ERC20 ABI for approve/balance/decimals/allowance/transfer
     const ERC20_MIN = [
       {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
@@ -366,7 +239,6 @@
     let signer = null;
     let userAddress = null;
 
-    // UI helpers
     function setStatus(msg, kind = '') {
       const el = byId('statusText');
       if (!el) return;
@@ -392,25 +264,9 @@
       }
     }
 
-    // short address
-    function short(addr){
-      if (!addr) return '';
-      return addr.slice(0,6) + '…' + addr.slice(-4);
-    }
-
-    // validate address
-    function validAddress(addr) {
-      try { return ethers.isAddress(addr); } catch(e){ return false; }
-    }
-
-    // parse amounts with decimals
-    async function parseUnitsSafe(amountStr, decimals) {
-      try {
-        return ethers.parseUnits(String(amountStr), decimals);
-      } catch(e){
-        throw new Error('Invalid amount');
-      }
-    }
+    function short(addr){ if (!addr) return ''; return addr.slice(0,6) + '…' + addr.slice(-4); }
+    function validAddress(addr) { try { return ethers.isAddress(addr); } catch(e){ return false; } }
+    async function parseUnitsSafe(amountStr, decimals) { try { return ethers.parseUnits(String(amountStr), decimals); } catch(e){ throw new Error('Invalid amount'); } }
 
     // ---------- Providers & Contracts ----------
     async function ensureProvider() {
@@ -424,7 +280,6 @@
       return provider;
     }
 
-    // Read-only provider (Alchemy / public RPC)
     function ensureReadProvider() {
       if (!readProvider) {
         readProvider = new ethers.JsonRpcProvider(CONFIG.MONAD_RPC);
@@ -433,20 +288,46 @@
     }
 
     function getContract(addr, abi, useSigner = false) {
-      const actor = useSigner && signer ? signer : ensureReadProvider();
+      const actor = (useSigner && signer) ? signer : ensureReadProvider();
       return new ethers.Contract(addr, abi, actor);
+    }
+
+    // ---------- Safety helpers ----------
+    async function contractExistsAt(addr) {
+      try {
+        const rp = ensureReadProvider();
+        const code = await rp.getCode(addr);
+        return code && code !== '0x' && code !== '0x0';
+      } catch(e){
+        console.debug('contractExistsAt error', e);
+        return false;
+      }
+    }
+
+    // Safe decimals getter: checks code first, returns fallback (18) if missing/errored
+    async function getDecimalsFor(addr, abi = ERC20_MIN) {
+      try {
+        if (!await contractExistsAt(addr)) {
+          throw new Error('No contract code at ' + addr);
+        }
+        const c = getContract(addr, abi, false);
+        const d = await c.decimals();
+        return Number(d);
+      } catch(e){
+        console.warn('getDecimalsFor failed for', addr, e);
+        // fallback to 18 so UI doesn't break; still notify user
+        return 18;
+      }
     }
 
     // ---------- Network checks ----------
     async function ensureMonadNetwork() {
       try {
         if (!provider) provider = new ethers.BrowserProvider(window.ethereum);
-        // request chainId from wallet
         const chainHex = await provider.send("eth_chainId", []);
         if (!chainHex) return;
         if (chainHex !== CONFIG.MONAD_CHAIN_ID_HEX) {
           setStatus('Please switch network to Monad (chainId ' + CONFIG.MONAD_CHAIN_ID_HEX + ')');
-          // do not force network switch here; only inform
         } else {
           setStatus('Connected to correct network');
         }
@@ -455,7 +336,7 @@
       }
     }
 
-    // ---------- On-load init & wallet handling ----------
+    // ---------- Wallet handling ----------
     function attachWalletBtnListener(){
       const wBtn = byId('walletBtn');
       if (!wBtn) return;
@@ -465,11 +346,9 @@
             showError('No Ethereum provider found. Install MetaMask or a compatible wallet.');
             return;
           }
-
           if (!userAddress) {
             await connectWallet();
           } else {
-            // disconnect UI only
             userAddress = null; signer = null; provider = null;
             wBtn.textContent = wBtn.dataset.label || 'Connect Wallet';
             if (byId('userAddr')) byId('userAddr').textContent = 'Not connected';
@@ -494,7 +373,6 @@
       try {
         if (!window.ethereum) throw new Error('No injected provider.');
         await ensureProvider();
-        // interactive request
         await window.ethereum.request({ method: 'eth_requestAccounts' });
         provider = new ethers.BrowserProvider(window.ethereum);
         signer = await provider.getSigner();
@@ -572,31 +450,33 @@
     })();
 
     // ---------- Core UI & blockchain logic ----------
-    // Display ABI for easy debugging
-    (function renderAbi() {
-      try { byId('bfAbi').textContent = JSON.stringify(BTCF_ABI, null, 2); } catch(e){}
-    })();
+    (function renderAbi() { try { byId('bfAbi').textContent = JSON.stringify(BTCF_ABI, null, 2); } catch(e){} })();
 
-    // load balances for WMON and BTCF
     async function loadBalances(){
       try {
         const read = ensureReadProvider();
-        const bf = getContract(CONFIG.BITCOINFLASH, BTCF_ABI, false);
-        const wmon = getContract(CONFIG.WMON, ERC20_MIN, false);
-        // decimals
-        const [bfDecimals, wmonDecimals] = await Promise.all([
-          bf.decimals().catch(()=>18),
-          wmon.decimals().catch(()=>18)
-        ]);
+        // check contracts exist before calling decimals/balanceOf
+        const bfExists = await contractExistsAt(CONFIG.BITCOINFLASH);
+        const wmonExists = await contractExistsAt(CONFIG.WMON);
+        if (!bfExists) console.warn('No contract code at BITCOINFLASH address — check RPC/chain and address.');
+        if (!wmonExists) console.warn('No contract code at WMON address — check RPC/chain and address.');
+
+        const bfDecimals = await getDecimalsFor(CONFIG.BITCOINFLASH, BTCF_ABI);
+        const wmonDecimals = await getDecimalsFor(CONFIG.WMON, ERC20_MIN);
+
         const addr = userAddress;
         if (!addr) {
           byId('bfBal').textContent = '—';
           byId('wmonBal').textContent = '—';
           return;
         }
+
+        const bf = getContract(CONFIG.BITCOINFLASH, BTCF_ABI, false);
+        const wmon = getContract(CONFIG.WMON, ERC20_MIN, false);
+
         const [bfRaw, wmonRaw] = await Promise.all([
-          bf.balanceOf(addr),
-          wmon.balanceOf(addr)
+          bfExists ? bf.balanceOf(addr).catch(()=>0n) : 0n,
+          wmonExists ? wmon.balanceOf(addr).catch(()=>0n) : 0n
         ]);
         byId('bfBal').textContent = formatUnitsSafe(bfRaw, bfDecimals);
         byId('wmonBal').textContent = formatUnitsSafe(wmonRaw, wmonDecimals);
@@ -612,8 +492,12 @@
 
     async function checkOwner(){
       try {
+        if (!await contractExistsAt(CONFIG.BITCOINFLASH)) {
+          if (byId('ownerActions')) byId('ownerActions').style.display = 'none';
+          return;
+        }
         const bf = getContract(CONFIG.BITCOINFLASH, BTCF_ABI, false);
-        const owner = await bf.owner();
+        const owner = await bf.owner().catch(()=>null);
         if (userAddress && owner && owner.toLowerCase() === userAddress.toLowerCase()) {
           if (byId('ownerActions')) byId('ownerActions').style.display = 'block';
         } else {
@@ -634,7 +518,7 @@
         if (!amountStr || Number(amountStr) <= 0) { showError('Invalid amount'); return; }
 
         const bf = getContract(CONFIG.BITCOINFLASH, BTCF_ABI, true);
-        const decimals = await bf.decimals();
+        const decimals = await getDecimalsFor(CONFIG.BITCOINFLASH, BTCF_ABI);
         const amount = await parseUnitsSafe(amountStr, decimals);
 
         setTxPending(btn, true);
@@ -661,7 +545,7 @@
         if (!amtStr || Number(amtStr) <= 0) { showError('Invalid amount'); return; }
 
         const bf = getContract(CONFIG.BITCOINFLASH, BTCF_ABI, true);
-        const decimals = await bf.decimals();
+        const decimals = await getDecimalsFor(CONFIG.BITCOINFLASH, BTCF_ABI);
         const amount = await parseUnitsSafe(amtStr, decimals);
 
         setTxPending(btn, true);
@@ -678,7 +562,7 @@
       }
     }
 
-    // Owner functions: mint, burn, transferOwnership
+    // Owner functions
     async function mintBTCF(btn){
       try {
         if (!userAddress) { showError('Connect wallet first'); return; }
@@ -688,7 +572,7 @@
         if (!amtStr || Number(amtStr) <= 0) { showError('Invalid amount'); return; }
 
         const bf = getContract(CONFIG.BITCOINFLASH, BTCF_ABI, true);
-        const decimals = await bf.decimals();
+        const decimals = await getDecimalsFor(CONFIG.BITCOINFLASH, BTCF_ABI);
         const amount = await parseUnitsSafe(amtStr, decimals);
         setTxPending(btn, true);
         const tx = await bf.mint(to, amount);
@@ -708,7 +592,7 @@
         if (!amtStr || Number(amtStr) <= 0) { showError('Invalid amount'); return; }
 
         const bf = getContract(CONFIG.BITCOINFLASH, BTCF_ABI, true);
-        const decimals = await bf.decimals();
+        const decimals = await getDecimalsFor(CONFIG.BITCOINFLASH, BTCF_ABI);
         const amount = await parseUnitsSafe(amtStr, decimals);
         setTxPending(btn, true);
         const tx = await bf.burn(amount);
@@ -739,7 +623,7 @@
       } finally { setTxPending(btn, false); }
     }
 
-    // ---------- Simple DEX helpers (get price preview & swap) ----------
+    // ---------- DEX helpers (fixes applied) ----------
     async function buyOnDex(btn){
       try {
         if (!userAddress) { showError('Connect wallet first'); return; }
@@ -748,25 +632,29 @@
         if (!amountStr || Number(amountStr) <= 0) { showError('Invalid trade amount'); return; }
         if (slippageBps < 0 || slippageBps > 2000) { showError('Invalid slippage'); return; }
 
-        // use read provider to estimate amounts
+        // ensure router and token contracts exist
+        if (!await contractExistsAt(CONFIG.OCTOSWAP_ROUTER)) { showError('Router contract not found on read RPC — check MONAD_RPC'); return; }
+        if (!await contractExistsAt(CONFIG.WMON)) { showError('WMON contract not found on read RPC — check MONAD_RPC and addresses'); return; }
+        if (!await contractExistsAt(CONFIG.BITCOINFLASH)) { showError('BTCF contract not found on read RPC — check MONAD_RPC and addresses'); return; }
+
         const routerRead = getContract(CONFIG.OCTOSWAP_ROUTER, ROUTER_ABI, false);
         const path = [CONFIG.WMON, CONFIG.BITCOINFLASH];
-        const wmonDecimals = await getContract(CONFIG.WMON, ERC20_MIN, false).decimals().catch(()=>18);
-        const inputAmount = ethers.parseUnits(String(amountStr), wmonDecimals);
-        const amountsOut = await routerRead.getAmountsOut(inputAmount, path);
-        const expectedOut = amountsOut[1];
-        const minOut = expectedOut * (10000 - slippageBps) / 10000;
 
-        // Call router.swapExactETHForTokens (wallet must send native WMON as value)
+        const wmonDecimals = await getDecimalsFor(CONFIG.WMON, ERC20_MIN);
+        const inputAmount = ethers.parseUnits(String(amountStr), wmonDecimals); // BigInt
+        const amountsOut = await routerRead.getAmountsOut(inputAmount, path);
+        const expectedOut = amountsOut[1]; // BigInt
+        // compute minOut using BigInt math
+        const minOut = (expectedOut * BigInt(10000 - slippageBps)) / BigInt(10000);
+
         await ensureProvider();
         const router = getContract(CONFIG.OCTOSWAP_ROUTER, ROUTER_ABI, true);
         setTxPending(btn, true);
         setStatus('Submitting buy swap...');
-        // deadline 2 minutes from now
         const deadline = Math.floor(Date.now() / 1000) + 120;
-        // note: some routers expect ETH (native) - if WMON is wrapped native ensure router supports swapExactETHForTokens
+
         const tx = await router.swapExactETHForTokens(
-          ethers.toString(BigInt(Math.floor(minOut))), // amountOutMin (string)
+          minOut,
           path,
           userAddress,
           deadline,
@@ -788,32 +676,37 @@
         if (!amountStr || Number(amountStr) <= 0) { showError('Invalid trade amount'); return; }
         if (slippageBps < 0 || slippageBps > 2000) { showError('Invalid slippage'); return; }
 
-        // seller sells BTCF -> WMON path reversed
+        // ensure contracts exist
+        if (!await contractExistsAt(CONFIG.OCTOSWAP_ROUTER)) { showError('Router contract not found on read RPC — check MONAD_RPC'); return; }
+        if (!await contractExistsAt(CONFIG.BITCOINFLASH)) { showError('BTCF contract not found on read RPC — check MONAD_RPC and addresses'); return; }
+        if (!await contractExistsAt(CONFIG.WMON)) { showError('WMON contract not found on read RPC — check MONAD_RPC and addresses'); return; }
+
         const path = [CONFIG.BITCOINFLASH, CONFIG.WMON];
         const bf = getContract(CONFIG.BITCOINFLASH, BTCF_ABI, true);
-        const bfDecimals = await bf.decimals();
-        const amount = await parseUnitsSafe(amountStr, bfDecimals);
+        const bfDecimals = await getDecimalsFor(CONFIG.BITCOINFLASH, BTCF_ABI);
+        const amount = await parseUnitsSafe(amountStr, bfDecimals); // BigInt
 
         // ensure approval
-        const allowance = await bf.allowance(userAddress, CONFIG.OCTOSWAP_ROUTER);
-        if (allowance < amount) {
+        const allowance = await getContract(CONFIG.BITCOINFLASH, BTCF_ABI, false).allowance(userAddress, CONFIG.OCTOSWAP_ROUTER).catch(()=>0n);
+        if (BigInt(allowance) < BigInt(amount)) {
           setStatus('Approving router to spend BTCF...');
           const aTx = await bf.approve(CONFIG.OCTOSWAP_ROUTER, amount);
           await aTx.wait();
         }
 
-        const router = getContract(CONFIG.OCTOSWAP_ROUTER, ROUTER_ABI, true);
         const routerRead = getContract(CONFIG.OCTOSWAP_ROUTER, ROUTER_ABI, false);
         const amountsOut = await routerRead.getAmountsOut(amount, path);
-        const expectedOut = amountsOut[1];
-        const minOut = expectedOut * (10000 - slippageBps) / 10000;
+        const expectedOut = amountsOut[1]; // BigInt
+        const minOut = (BigInt(expectedOut) * BigInt(10000 - slippageBps)) / BigInt(10000);
 
+        const router = getContract(CONFIG.OCTOSWAP_ROUTER, ROUTER_ABI, true);
         setTxPending(btn, true);
         setStatus('Submitting sell swap...');
         const deadline = Math.floor(Date.now() / 1000) + 120;
+
         const tx = await router.swapExactTokensForETH(
           amount,
-          ethers.toString(BigInt(Math.floor(minOut))),
+          minOut,
           path,
           userAddress,
           deadline
@@ -826,25 +719,18 @@
       } finally { setTxPending(btn, false); }
     }
 
-    // ---------- Activity (simple RPC via Alchemy) ----------
+    // ---------- Activity (unchanged) ----------
     async function fetchActivity(btn) {
       try {
         if (!userAddress) { showError('Connect wallet first'); return; }
         setTxPending(btn, true);
         setStatus('Fetching recent transfers...');
-        // use Alchemy transfer endpoint (alchemy key embedded in CONFIG.MONAD_RPC)
-        // If your MONAD_RPC isn't an Alchemy URL, replace with your own explorer API.
         const address = userAddress;
-        const apiUrl = CONFIG.MONAD_RPC.replace(/\/v2\/.*$/, ''); // best-effort strip
-        // fallback: use Alchemy REST directly if MONAD_RPC contains v2
         const isAlchemy = CONFIG.MONAD_RPC.includes('alchemyapi') || CONFIG.MONAD_RPC.includes('alchemy.com');
         let transfers = [];
         if (isAlchemy) {
           const apiKey = CONFIG.MONAD_RPC.split('/').pop();
-          const url = `https://eth-mainnet.g.alchemy.com/v2/${apiKey}`; // NOTE: user must adapt for Monad chain
-          // Using generic "getAssetTransfers" is chain-specific; here we show a simple placeholder read by Alchemy
-          // For a production app, call Alchemy's assetTransfers for the correct network.
-          // We'll show last 10 ERC20 transfer logs for the address from on-chain logs (simplified).
+          const url = `https://eth-mainnet.g.alchemy.com/v2/${apiKey}`;
           const body = {
             jsonrpc: "2.0",
             id: 1,
@@ -861,14 +747,13 @@
           const j = await resp.json();
           transfers = (j.result && j.result.transfers) ? j.result.transfers : [];
         } else {
-          // If not Alchemy, show placeholder: use ethers provider to fetch last block txs for address isn't trivial client-side
           transfers = [];
         }
 
         const ul = byId('activityList');
         ul.innerHTML = '';
         if (transfers.length === 0) {
-          ul.innerHTML = '<div class="small-muted">No recent transfers found (or provider doesn\'t support Alchemy-style API).</div>';
+          ul.innerHTML = '<div class="small-muted">No recent transfers found (or provider doesn\\'t support Alchemy-style API).</div>';
           setStatus('Activity fetched (empty)');
           return;
         }
@@ -887,30 +772,13 @@
     }
 
     // ---------- Max helpers ----------
-    async function setMaxApprove(){
-      // set approve amount to total supply-like big number (or specifically max uint)
-      byId('approveAmount').value = '1000000000';
-    }
-    async function setMaxTransfer(){
-      // fill transfer amount with user's BTCF balance (simple string)
-      const val = byId('bfBal').textContent || '0';
-      byId('transferAmt').value = val;
-    }
-    async function setMaxBurn(){
-      const val = byId('bfBal').textContent || '0';
-      byId('burnAmt').value = val;
-    }
-    async function setMaxTrade(){
-      const val = byId('wmonBal').textContent || '0';
-      byId('tradeAmount').value = val;
-    }
+    async function setMaxApprove(){ byId('approveAmount').value = '1000000000'; }
+    async function setMaxTransfer(){ const val = byId('bfBal').textContent || '0'; byId('transferAmt').value = val; }
+    async function setMaxBurn(){ const val = byId('bfBal').textContent || '0'; byId('burnAmt').value = val; }
+    async function setMaxTrade(){ const val = byId('wmonBal').textContent || '0'; byId('tradeAmount').value = val; }
 
-    // Provide noop placeholders for functions referenced by markup but not implemented here:
-    function approveSpender() { return window.approveSpenderOriginal ? window.approveSpenderOriginal.apply(this, arguments) : approveSpenderBtn.apply(this, arguments); }
-    // Not used - left for compatibility
-
-    // ---------- small compatibility for direct onclick calls (bind global names) ----------
-    window.approveSpenderBtn = approveSpender;
+    // Bind global names used in markup
+    window.approveSpender = approveSpender;
     window.transferBTCF = transferBTCF;
     window.mintBTCF = mintBTCF;
     window.burnBTCF = burnBTCF;
@@ -922,8 +790,6 @@
     window.setMaxTransfer = setMaxTransfer;
     window.setMaxBurn = setMaxBurn;
     window.setMaxTrade = setMaxTrade;
-
-    // End of script
   </script>
 </body>
 </html>
