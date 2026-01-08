@@ -7,7 +7,7 @@
   <meta name="description" content="Stake WMON, earn rewards, and refer others. Neon‑metallic UI." />
 
   <style>
-    /* Neon‑Metallic Palette (from your spec) */
+    /* Neon‑Metallic Palette */
     :root{
       --bg: #0A0F14;
       --panel: #0E1B2A;
@@ -34,10 +34,6 @@
     .col{flex:1;}
     .card{background:var(--card);border-radius:12px;padding:18px;box-shadow: 0 8px 30px rgba(0,0,0,0.6);border:1px solid rgba(79,212,255,0.04);}
     .muted{color:var(--muted);font-size:13px;}
-    .btn{background:var(--primary);color:#041018;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:600;}
-    .btn.secondary{background:transparent;border:1px solid rgba(159,220,255,0.06);color:var(--text);}
-    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted);}
-    .input, select{width:100%;padding:10px;border-radius:8px;background:var(--panel);border:1px solid rgba(79,212,255,0.04);color:var(--text);outline:none;margin-top:8px;}
     label{font-size:13px;color:var(--muted);}
 
     .small{font-size:13px;color:var(--muted);}
@@ -50,6 +46,90 @@
     .notice{padding:10px;border-radius:8px;background:linear-gradient(90deg, rgba(8,16,20,0.35), rgba(8,12,18,0.35));border:1px solid rgba(79,212,255,0.03);color:var(--muted);font-size:13px;}
     .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
     .status { font-weight:600; color:var(--accent); }
+
+    /* Electric Dashboard Button CSS (glow, hover, active) */
+    .btn {
+      background: linear-gradient(90deg, var(--primary), var(--accent2));
+      color: #041018;
+      padding: 10px 18px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 0.4px;
+      box-shadow: 0 0 16px 0 var(--primary), 0 2px 8px 0 #0008;
+      transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn:before {
+      content: "";
+      position: absolute;
+      left: -50%;
+      top: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+      opacity: 0.12;
+      z-index: 0;
+      transition: opacity 0.2s;
+    }
+    .btn:hover, .btn:focus {
+      background: linear-gradient(90deg, var(--accent2), var(--primary));
+      box-shadow: 0 0 32px 4px var(--accent2), 0 2px 16px 0 #000a;
+      transform: translateY(-2px) scale(1.03);
+    }
+    .btn:active {
+      background: linear-gradient(90deg, var(--primary-hr), var(--primary));
+      box-shadow: 0 0 8px 0 var(--primary-hr);
+      transform: scale(0.98);
+    }
+    .btn.secondary {
+      background: linear-gradient(90deg, #14171b 60%, var(--panel) 100%);
+      color: var(--primary);
+      border: 1.5px solid rgba(0,200,255,0.12);
+      box-shadow: 0 0 8px 0 rgba(0,200,255,0.06);
+    }
+    .btn.secondary:hover, .btn.secondary:focus {
+      color: var(--accent2);
+      border-color: var(--accent2);
+      box-shadow: 0 0 16px 2px var(--accent2);
+    }
+    .btn[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: grayscale(0.5);
+      box-shadow: none;
+    }
+
+    /* Loading spinner inside button */
+    .btn-spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(0,0,0,0.08);
+      border-top: 2px solid rgba(4,16,24,0.08);
+      border-right: 2px solid var(--primary-hr);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    /* Loading pulse for entire button */
+    .btn.loading {
+      animation: pulse 1.2s infinite alternate;
+      box-shadow: 0 0 24px 4px var(--accent2), 0 2px 16px 0 #000a;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 18px 2px var(--accent2); }
+      100% { box-shadow: 0 0 34px 6px var(--primary); }
+    }
+
     /* responsive */
     @media (max-width: 900px) {
       .row { flex-direction: column; }
@@ -70,8 +150,8 @@
       <div id="wallet-controls">
         <div class="small muted" id="network-indicator">Network: Monad (ChainID 143)</div>
         <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
-          <div id="connectedAddress" class="small muted" style="min-width:120px"></div>
-          <button class="btn" id="connectBtn">Connect Wallet</button>
+          <div id="connectedAddress" class="small muted" style="min-width:140px"></div>
+          <button class="btn" id="connectBtn"><span class="btn-label">Connect Wallet</span></button>
           <button class="btn secondary" id="openDocs" onclick="window.open('https://monadvision.com','_blank')">Explorer</button>
         </div>
       </div>
@@ -112,8 +192,12 @@
             </div>
 
             <div style="display:flex;gap:10px;margin-top:12px;align-items:center">
-              <button id="approveBtn" class="btn secondary">Approve</button>
-              <button id="stakeBtn" class="btn">Stake</button>
+              <button id="approveBtn" class="btn secondary">
+                <span class="btn-label">Approve</span><span class="btn-spinner" style="display:none"></span>
+              </button>
+              <button id="stakeBtn" class="btn">
+                <span class="btn-label">Stake</span><span class="btn-spinner" style="display:none"></span>
+              </button>
               <div id="txStatus" class="small muted" style="margin-left:8px"></div>
             </div>
 
@@ -171,17 +255,15 @@
     </footer>
   </div>
 
-  <!-- Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
-
   <script>
-    // ===================== CONFIG =====================
-    const API_BASE = "" /* e.g. "https://your-api.example.com/api/v1" - set to "" to use same origin */;
+    // CONFIG
+    const API_BASE = ""; // set if you have backend indexer
     const VAULT_ADDRESS = "0x2C18eb6708cb7c03C19c7C793345bd22E9d261b8";
     const WMON_ADDRESS  = "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A";
 
-    // Full ABIs (trimmed to used methods/events for clarity, rest included earlier)
-    const VAULT_ABI = [ /* full ABI copied earlier; using the view/methods referenced in the UI */ 
+    // Minimal ABI fragments used by the UI
+    const VAULT_ABI = [
       {"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"uint256","name":"duration","type":"uint256"},{"internalType":"address","name":"referrer","type":"address"}],"name":"stake","outputs":[{"internalType":"uint256","name":"stakeId","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"stakeId","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},
       {"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getUserStakes","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"},
@@ -199,15 +281,13 @@
       {"constant":false,"inputs":[{"name":"dst","type":"address"},{"name":"wad","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"type":"function"}
     ];
 
-    const ERC20_ABI = WMON_ABI;
-
-    // ===================== STATE =====================
+    // STATE
     let provider, signer, userAddress;
     let vaultContract, wmonContract;
     let wmonDecimals = 18;
-    let apiBase = API_BASE || window.location.origin + "/api/v1";
+    let apiBase = API_BASE || "";
 
-    // Elements
+    // ELEMENTS
     const connectBtn = document.getElementById("connectBtn");
     const connectedAddress = document.getElementById("connectedAddress");
     const tokenSelect = document.getElementById("tokenSelect");
@@ -223,21 +303,17 @@
     const refreshBtn = document.getElementById("refreshBtn");
     const stakePreview = document.getElementById("stakePreview");
 
-    // Utils
+    // HELPERS
     function short(addr){ if(!addr) return ""; return addr.slice(0,6)+"..."+addr.slice(-4); }
     function parseParamRef(){ const u = new URL(window.location.href); return u.searchParams.get("ref") || ""; }
 
-    // UI state helper
     function setConnectedUI(address){
       if(address){
         connectedAddress.textContent = `Connected: ${short(address)}`;
-        connectBtn.textContent = short(address);
-        connectBtn.classList.add('btn','ghost');
-        connectBtn.disabled = false;
+        connectBtn.querySelector('.btn-label').textContent = short(address);
       } else {
         connectedAddress.textContent = '';
-        connectBtn.textContent = 'Connect Wallet';
-        connectBtn.disabled = false;
+        connectBtn.querySelector('.btn-label').textContent = 'Connect Wallet';
       }
     }
 
@@ -246,13 +322,25 @@
       stakeBtn.disabled = !enabled;
     }
 
-    // ===================== UI & Data INIT =====================
+    function showButtonLoading(button, loading, labelText){
+      const label = button.querySelector('.btn-label');
+      const spinner = button.querySelector('.btn-spinner');
+      if(loading){
+        button.classList.add('loading');
+        if(spinner) spinner.style.display = 'inline-block';
+        if(labelText) label.textContent = labelText;
+      } else {
+        button.classList.remove('loading');
+        if(spinner) spinner.style.display = 'none';
+        if(labelText) label.textContent = labelText;
+      }
+    }
+
+    // INIT UI: tokens & listeners
     async function initUI(){
-      // Prefill referrer from URL if present
       const qref = parseParamRef();
       if(qref) refInput.value = qref;
 
-      // Populate tokens using contract read if available, else fallback to WMON
       try {
         const httpProvider = new ethers.providers.JsonRpcProvider("https://rpc.monad.xyz");
         const readVault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, httpProvider);
@@ -262,13 +350,12 @@
           for(const t of supported){
             const opt = document.createElement("option");
             opt.value = t;
-            opt.textContent = t === WMON_ADDRESS ? "WMON (WMON)" : t;
+            opt.textContent = (t === WMON_ADDRESS ? "WMON (WMON)" : t);
             tokenSelect.appendChild(opt);
           }
         } else {
           tokenSelect.innerHTML = `<option value="${WMON_ADDRESS}">WMON</option>`;
         }
-        // show token configs
         tokensList.innerHTML = "";
         if(supported && supported.length>0){
           for(const t of supported){
@@ -281,27 +368,24 @@
                 <div class="chip">${cfg.enabled ? "ENABLED" : "DISABLED"}</div>
               </div>`;
               tokensList.appendChild(div);
-            }catch(e){ /* ignore per-token failures */ }
+            }catch(e){}
           }
         } else {
           tokensList.innerHTML = `<div class="small muted">Using WMON only (couldn't read supported tokens).</div>`;
         }
       } catch(e){
-        // fallback
         tokenSelect.innerHTML = `<option value="${WMON_ADDRESS}">WMON</option>`;
         tokensList.innerHTML = `<div class="small muted">Using WMON only (couldn't read supported tokens).</div>`;
       }
 
-      // hook input events
+      // hook inputs
       amountInput.addEventListener('input', onAmountOrDurationChange);
       durationSelect.addEventListener('change', onAmountOrDurationChange);
       tokenSelect.addEventListener('change', onAmountOrDurationChange);
 
-      // default button state
       setActionButtonsEnabled(false);
     }
 
-    // preview and allowance check on input change
     async function onAmountOrDurationChange(){
       updateStakePreview();
       await checkAllowanceForInputAmount();
@@ -323,7 +407,7 @@
       stakePreview.innerHTML = `Stake preview: Deposit fee <strong>${depositFee.toFixed(6)} WMON</strong> (split: protocol ${protocol.toFixed(6)}, creator ${creator.toFixed(6)}, referrer ${referrer.toFixed(6)}). Net staked: <strong>${net.toFixed(6)} WMON</strong>. Lock: <strong>${days} days</strong>.`;
     }
 
-    // ===================== WALLET CONNECTION =====================
+    // WALLET
     async function connectWallet(){
       if(window.ethereum === undefined){
         alert("No injected wallet found. Please install MetaMask or a compatible wallet.");
@@ -332,19 +416,18 @@
       try {
         await window.ethereum.request({ method: "eth_requestAccounts" });
         provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-        // listen for account/network changes
         window.ethereum.on && window.ethereum.on('accountsChanged', handleAccountsChanged);
         window.ethereum.on && window.ethereum.on('chainChanged', handleChainChanged);
 
         signer = provider.getSigner();
         userAddress = (await signer.getAddress()).toLowerCase();
         setConnectedUI(userAddress);
+
         vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
-        wmonContract = new ethers.Contract(WMON_ADDRESS, ERC20_ABI, signer);
+        wmonContract = new ethers.Contract(WMON_ADDRESS, WMON_ABI, signer);
         try { wmonDecimals = await wmonContract.decimals(); } catch(e){ wmonDecimals = 18; }
 
         setActionButtonsEnabled(true);
-        // update allowance / preview
         updateStakePreview();
         await checkAllowanceForInputAmount();
         await loadUserStakes();
@@ -357,7 +440,6 @@
 
     async function handleAccountsChanged(accounts){
       if(!accounts || accounts.length === 0){
-        // disconnected
         userAddress = null;
         signer = null;
         provider = null;
@@ -367,11 +449,10 @@
         return;
       }
       userAddress = accounts[0].toLowerCase();
-      // re-init signer & contracts
       provider = new ethers.providers.Web3Provider(window.ethereum, "any");
       signer = provider.getSigner();
       vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
-      wmonContract = new ethers.Contract(WMON_ADDRESS, ERC20_ABI, signer);
+      wmonContract = new ethers.Contract(WMON_ADDRESS, WMON_ABI, signer);
       setConnectedUI(userAddress);
       setActionButtonsEnabled(true);
       await loadUserStakes();
@@ -379,21 +460,17 @@
     }
 
     async function handleChainChanged(chainId){
-      // reload page to reset provider context (simple approach)
-      console.info('chainChanged', chainId);
-      // keep UI but notify user
       document.getElementById('network-indicator').textContent = `Network changed (chainId ${chainId}).`;
-      // refresh UI data
       try { await initUI(); } catch(e){}
       if(userAddress) await loadUserStakes();
     }
 
-    // ===================== APPROVAL / STAKE / WITHDRAW =====================
+    // APPROVAL / STAKE / WITHDRAW
     async function checkAllowanceForInputAmount(){
       if(!userAddress || !wmonContract) return;
       const amount = amountInput.value;
       if(!amount || isNaN(Number(amount)) || Number(amount) <= 0){
-        approveBtn.textContent = 'Approve';
+        approveBtn.querySelector('.btn-label').textContent = 'Approve';
         approveBtn.disabled = false;
         return;
       }
@@ -401,10 +478,10 @@
         const amtBn = ethers.utils.parseUnits(amount, wmonDecimals);
         const allowance = await wmonContract.allowance(userAddress, VAULT_ADDRESS);
         if(ethers.BigNumber.from(allowance).gte(amtBn)){
-          approveBtn.textContent = 'Approved';
+          approveBtn.querySelector('.btn-label').textContent = 'Approved';
           approveBtn.disabled = true;
         } else {
-          approveBtn.textContent = 'Approve';
+          approveBtn.querySelector('.btn-label').textContent = 'Approve';
           approveBtn.disabled = false;
         }
       } catch (err){
@@ -417,23 +494,21 @@
       try {
         const allowance = await wmonContract.allowance(userAddress, VAULT_ADDRESS);
         if(ethers.BigNumber.from(allowance).gte(amountBig)) {
-          approveBtn.textContent = 'Approved';
+          approveBtn.querySelector('.btn-label').textContent = 'Approved';
           approveBtn.disabled = true;
           return true;
         }
-        // send approve for amountBig
-        txStatus.textContent = "Sending approve...";
-        approveBtn.disabled = true;
+        showButtonLoading(approveBtn, true, 'Approving...');
         const tx = await wmonContract.approve(VAULT_ADDRESS, amountBig);
         await tx.wait();
+        showButtonLoading(approveBtn, false, 'Approved');
         txStatus.textContent = "Approve confirmed";
-        approveBtn.textContent = 'Approved';
-        setTimeout(()=> txStatus.textContent = "", 3000);
+        setTimeout(()=> txStatus.textContent = "", 2000);
         return true;
       } catch (err){
         console.error('ensureAllowance error', err);
+        showButtonLoading(approveBtn, false, 'Approve');
         approveBtn.disabled = false;
-        approveBtn.textContent = 'Approve';
         throw err;
       }
     }
@@ -448,24 +523,20 @@
       const ref = (refInput.value && refInput.value.trim()) ? refInput.value : ethers.constants.AddressZero;
       const parsed = ethers.utils.parseUnits(amount, wmonDecimals);
 
-      // show preview/confirm
       const depositFee = Number(amount) * 0.01;
       const net = Number(amount) - depositFee;
       const preview = `You are staking ${amount} WMON for ${days} days.\nDeposit fee: ${depositFee.toFixed(6)} WMON (net staked ${net.toFixed(6)} WMON).\nReferrer: ${ref === ethers.constants.AddressZero ? 'None' : ref}\n\nProceed?`;
       if(!confirm(preview)) return;
 
       try {
-        // ensure approval
         txStatus.textContent = "Checking allowance...";
         await ensureAllowance(parsed);
-        // call stake
-        txStatus.textContent = "Sending stake tx...";
-        stakeBtn.disabled = true;
+
+        showButtonLoading(stakeBtn, true, 'Staking...');
         const tx = await vaultContract.stake(token, parsed, durationSeconds, ref);
         txStatus.textContent = "Waiting confirmation...";
         await tx.wait();
         txStatus.textContent = "Stake successful ✔";
-        // refresh
         await loadUserStakes();
         await loadReferrerRewards();
       } catch (err){
@@ -473,7 +544,7 @@
         txStatus.textContent = "Transaction failed";
         alert("Stake failed: " + (err?.message || err));
       } finally {
-        stakeBtn.disabled = false;
+        showButtonLoading(stakeBtn, false, 'Stake');
         setTimeout(()=> txStatus.textContent = "", 4000);
       }
     }
@@ -483,6 +554,7 @@
       if(!confirm("Withdraw stake " + stakeId + "? If before unlock you will pay penalty.")) return;
       try {
         txStatus.textContent = "Withdrawing...";
+        showButtonLoading(stakeBtn, true, 'Working...');
         const tx = await vaultContract.withdraw(stakeId);
         await tx.wait();
         txStatus.textContent = "Withdrawn ✔";
@@ -492,12 +564,12 @@
         txStatus.textContent = "Withdraw failed";
         alert("Withdraw failed: " + (err?.message || err));
       } finally {
+        showButtonLoading(stakeBtn, false, 'Stake');
         setTimeout(()=> txStatus.textContent = "", 3000);
       }
     }
 
-    // ===================== READERS =====================
-    // Parallel+chunked loadUserStakes (50 per chunk) — replaces sequential calls
+    // READERS (parallel chunked)
     async function loadUserStakes(){
       if(!userAddress) {
         stakesArea.innerHTML = `<div class="small muted">Connect a wallet to view stakes.</div>`;
@@ -515,15 +587,10 @@
           return;
         }
 
-        // Convert stakeIds to array of strings for consistent handling
         const ids = stakeIds.map(id => id.toString());
-
-        // Chunked parallel requests
-        const CHUNK = 50; // adjust if you hit rate limits
+        const CHUNK = 50;
         const chunks = [];
-        for (let i = 0; i < ids.length; i += CHUNK) {
-          chunks.push(ids.slice(i, i + CHUNK));
-        }
+        for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK));
 
         const infos = new Array(ids.length);
         for (let ci = 0; ci < chunks.length; ci++) {
@@ -532,15 +599,11 @@
           const settled = await Promise.allSettled(promises);
           for (let j = 0; j < settled.length; j++) {
             const idx = ci * CHUNK + j;
-            if (settled[j].status === "fulfilled") {
-              infos[idx] = settled[j].value;
-            } else {
-              console.warn(`Failed to load stake info for id ${chunk[j]}:`, settled[j].reason);
-            }
+            if (settled[j].status === "fulfilled") infos[idx] = settled[j].value;
+            else console.warn(`Failed to load stake info for id ${chunk[j]}:`, settled[j].reason);
           }
         }
 
-        // Build HTML once
         let html = "";
         for (let i = 0; i < ids.length; i++) {
           const stakeId = ids[i];
@@ -549,10 +612,8 @@
             html += `<div class="stake-item"><div><div style="font-weight:700">—</div><div class="small muted">Stake ID: ${stakeId} • Failed to load details</div></div><div style="text-align:right"><div class="small muted">—</div></div></div>`;
             continue;
           }
-
           const token = info.token;
-          const amountBn = ethers.BigNumber.from(info.amount);
-          const amountStr = ethers.utils.formatUnits(amountBn, wmonDecimals);
+          const amountStr = ethers.utils.formatUnits(info.amount, wmonDecimals);
           const unlockTime = Number(info.unlockTime);
           const withdrawn = info.withdrawn;
           const canWithdraw = info.canWithdraw;
@@ -584,18 +645,15 @@
       try {
         let target = userAddress;
         if(!target) { refRewards.textContent = "Connect wallet to view your referrer rewards."; return; }
-        // Prefer indexer endpoint if available
         if(apiBase){
           const res = await fetch(`${apiBase}/referrer/${target}/rewards`);
           if(res.ok){
             const json = await res.json();
             const total = ethers.BigNumber.from(json.total?.toString() || "0");
-            refRewards.innerHTML = `<div style="font-weight:700">${ethers.utils.formatUnits(total, wmonDecimals)} WMON</div>
-              <div class="small muted">${(json.rewards?.length || 0)} payouts</div>`;
+            refRewards.innerHTML = `<div style="font-weight:700">${ethers.utils.formatUnits(total, wmonDecimals)} WMON</div><div class="small muted">${(json.rewards?.length || 0)} payouts</div>`;
             return;
           }
         }
-        // fallback: read on-chain referrerRewards view
         const httpProvider = new ethers.providers.JsonRpcProvider("https://rpc.monad.xyz");
         const readVault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, httpProvider);
         const total = await readVault.referrerRewards(target);
@@ -606,7 +664,7 @@
       }
     }
 
-    // ===================== BINDINGS =====================
+    // BINDINGS
     connectBtn.addEventListener("click", connectWallet);
     stakeBtn.addEventListener("click", stake);
     approveBtn.addEventListener("click", async () => {
@@ -616,10 +674,7 @@
       const amtBn = ethers.utils.parseUnits(amt, wmonDecimals);
       try {
         approveBtn.disabled = true;
-        txStatus.textContent = "Approving...";
         await ensureAllowance(amtBn);
-        txStatus.textContent = "Approve confirmed";
-        setTimeout(()=> txStatus.textContent = "", 2000);
       } catch(e){ alert("Approve failed: " + (e?.message||e)); } finally {
         approveBtn.disabled = false;
       }
@@ -630,10 +685,9 @@
       if(userAddress) await loadReferrerRewards();
     });
 
-    // Expose withdraw function globally for inline onclick
     window.withdraw = withdraw;
 
-    // ===================== START =====================
+    // START
     (async function(){
       try {
         await initUI();
@@ -641,7 +695,6 @@
         console.warn("initUI failed", e);
       }
     })();
-
   </script>
 </body>
 </html>
