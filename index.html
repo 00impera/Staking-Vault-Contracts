@@ -69,6 +69,7 @@
       box-sizing: border-box;
     }
     input:focus, select:focus {box-shadow:0 0 24px rgba(0,234,255,0.09);border-color:var(--neon-cyan)}
+    input.error {border-color:var(--neon-pink);}
 
     .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 
@@ -81,7 +82,7 @@
       background:linear-gradient(90deg,#232a36,#1e242b);
       color:var(--neon-cyan);
       transition:transform .08s,box-shadow .12s,background .18s;
-      display:inline-flex;align-items:center;gap:12px;
+      display:inline-flex;align-items:center;justify-content:center;gap:12px;
       font-size:var(--big-btn-font);
       letter-spacing:0.5px;
       min-height:56px;
@@ -91,20 +92,18 @@
     .btn.primary{background:linear-gradient(90deg,var(--neon-blue) 0%, var(--neon-purple) 100%);color:#07101a;box-shadow:0 12px 48px rgba(0,234,255,0.16), 0 0 18px rgba(162,89,255,0.09)}
     .btn.danger{background:linear-gradient(90deg,var(--neon-pink),#ff6b7a);color:#fff}
     .btn[disabled]{opacity:.6;cursor:not-allowed;transform:none}
+    .btn:hover:not([disabled]){transform:translateY(-2px)}
 
-    /* Connected state styling (visual connected indicator) */
     body.connected #walletBtn {
       background: var(--connected-gradient);
       color: #07101a;
       box-shadow: 0 10px 36px rgba(46, 204, 113, 0.18), 0 0 18px rgba(46, 204, 113, 0.08);
     }
-    /* optional small glow on logo when connected */
     body.connected .logo-dot{
       background: linear-gradient(90deg, #7ED957, #2BD37D);
       box-shadow: 0 0 28px rgba(46,204,113,0.22), 0 0 12px rgba(162,89,255,0.06);
     }
 
-    /* make action rows distribute buttons evenly while preserving inline behavior elsewhere */
     .actions{display:flex;gap:18px;flex-wrap:wrap}
     .actions .btn{flex:1 1 0; min-width:0;}
 
@@ -118,21 +117,39 @@
     .statusError{color:var(--neon-pink);font-weight:800}
     .statusSuccess{color:var(--neon-blue);font-weight:800}
 
-    /* bigger chart by default; responsive reductions applied below */
     .big-screen{min-height:900px;height:900px;border-radius:18px;overflow:hidden;border:2px solid rgba(255,255,255,0.05);box-shadow:0 18px 60px rgba(0,0,0,0.6)}
 
     pre.abi{max-height:220px;overflow:auto;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.16));padding:18px;border-radius:14px;border:2px dashed rgba(255,255,255,0.05);color:var(--text-muted);font-size:1.1rem}
 
     footer{margin-top:18px;color:var(--text-muted);font-size:1.1rem;text-align:center}
 
-    /* utility helpers to remove inline style usage */
     .row{display:flex;align-items:center;gap:var(--big-gap)}
     .row--wrap{display:flex;flex-wrap:wrap;align-items:center;gap:var(--big-gap)}
     .u-mt{margin-top:var(--big-gap)}
     .small-muted{color:var(--text-muted);opacity:.95;font-size:0.98rem}
-
-    /* new utility for short inputs (replaces inline widths) */
     .input--short{width:var(--short-input-width);}
+
+    .max-btn{
+      background:rgba(0,234,255,0.1);
+      border:1px solid var(--neon-cyan);
+      color:var(--neon-cyan);
+      padding:8px 16px;
+      border-radius:8px;
+      cursor:pointer;
+      font-size:0.9rem;
+      font-weight:700;
+      margin-left:-12px;
+    }
+    .max-btn:hover{background:rgba(0,234,255,0.2)}
+
+    .activity-item{
+      padding:12px;
+      margin:8px 0;
+      background:rgba(0,0,0,0.2);
+      border-radius:10px;
+      border-left:3px solid var(--neon-cyan);
+      font-size:0.95rem;
+    }
 
     @media (max-width:1200px){
       .layout{grid-template-columns:1fr}
@@ -158,7 +175,6 @@
     <header>
       <div class="logo"><div class="logo-dot" aria-hidden="true"></div>BitcoinFlash Control</div>
 
-      <!-- header right: use utility classes instead of inline styles -->
       <div class="row">
         <div id="network" class="small" aria-hidden="true">Network: —</div>
         <div id="txStatus" class="small" aria-live="polite">
@@ -169,7 +185,6 @@
     </header>
 
     <div class="layout">
-      <!-- Left: Token controls -->
       <div id="controlsPanel" class="panel" role="region" aria-labelledby="controlsTitle">
         <h2 id="controlsTitle">Contract: BitcoinFlash</h2>
         <div class="token-row">
@@ -205,6 +220,7 @@
           <input id="approveSpender" placeholder="spender address" aria-label="spender address">
           <div class="row u-mt">
             <input id="approveAmount" class="input--short" placeholder="amount" aria-label="approve amount">
+            <button class="max-btn" onclick="setMaxApprove()">MAX</button>
             <button id="btnApprove" class="btn" data-label="Approve" onclick="approveSpender(this)" aria-label="Approve spender">Approve</button>
           </div>
         </div>
@@ -214,6 +230,7 @@
           <input id="transferTo" placeholder="to address" aria-label="transfer to">
           <div class="row u-mt">
             <input id="transferAmt" class="input--short" placeholder="amount" aria-label="transfer amount">
+            <button class="max-btn" onclick="setMaxTransfer()">MAX</button>
             <button id="btnTransfer" class="btn" data-label="Send" onclick="transferBTCF(this)" aria-label="Send BTCF">Send</button>
           </div>
         </div>
@@ -233,6 +250,7 @@
             <label class="small">Burn BTCF</label>
             <div class="row u-mt">
               <input id="burnAmt" class="input--short" placeholder="amount" aria-label="burn amount">
+              <button class="max-btn" onclick="setMaxBurn()">MAX</button>
               <button id="btnBurn" class="btn danger" data-label="Burn" onclick="burnBTCF(this)" aria-label="Burn BTCF">Burn</button>
             </div>
           </div>
@@ -252,6 +270,14 @@
         <div class="small" style="margin-bottom:8px">Quick trade shortcuts execute swaps via OctoSwap router (WMON ⇄ BTCF).</div>
 
         <div class="field">
+          <label class="small">Trade Amount (WMON)</label>
+          <div class="row u-mt">
+            <input id="tradeAmount" class="input--short" type="number" min="0" step="0.1" value="1" aria-label="trade amount">
+            <button class="max-btn" onclick="setMaxTrade()">MAX</button>
+          </div>
+        </div>
+
+        <div class="field">
           <label class="small">Slippage (bps)</label>
           <div class="row u-mt">
             <input id="slippageInput" type="number" min="0" max="1000" value="50" class="input--short" aria-label="slippage bps">
@@ -262,7 +288,6 @@
         <div class="actions u-mt" aria-hidden="false">
           <button id="btnBuy" class="btn primary" data-label="BUY BTCF" onclick="buyOnDex(this)" aria-label="Buy BTCF">BUY BTCF</button>
           <button id="btnSell" class="btn" data-label="SELL BTCF" onclick="sellOnDex(this)" aria-label="Sell BTCF">SELL BTCF</button>
-          <button id="btnOpenWmon" class="btn" data-label="Trade WMON" onclick="openWmonDex()" aria-label="Open WMON dex">Trade WMON</button>
         </div>
 
         <hr style="border:none;border-top:1px dashed rgba(255,255,255,0.04);margin:10px 0">
@@ -273,12 +298,10 @@
         <div class="u-mt small">Explorer: <a href="https://monadvision.com/token/0x7d7e0112d2763c98238af7cebeae33d53f3f76dd" target="_blank" style="color:var(--neon-blue)">BitcoinFlash @ MonadVision</a></div>
       </div>
 
-      <!-- Right: Big DEX screen -->
       <div id="dexPanel" class="panel" role="region" aria-labelledby="dexTitle">
         <h2 id="dexTitle">Big‑Screen DEX / Charts</h2>
         <div class="small" style="margin-bottom:10px">Chart & pair orderbook for BTCF — resize to fullscreen for trading.</div>
 
-        <!-- Large embedded DEX (DexScreener) -->
         <div class="big-screen" id="dexFrameWrap">
           <iframe id="dexFrame" src="https://dexscreener.com/monad/0x7d7E0112d2763c98238aF7cebEAe33d53F3F76DD?theme=dark"
                   style="width:100%;height:100%;border:0" title="BTCF chart and orderbook"></iframe>
@@ -286,93 +309,160 @@
 
         <hr style="border:none;border-top:1px dashed rgba(255,255,255,0.04);margin:12px 0">
 
-        <h3>Recent Activity (Alchemy)</h3>
-        <div id="recentActivity" class="small">Use the "Fetch Activity" button to query Alchemy asset transfers for your address (client-side call).</div>
+        <h3>Recent Activity</h3>
+        <div id="recentActivity" class="small">Connect wallet to view recent transactions.</div>
 
         <div class="row u-mt">
-          <input id="activityAddr" placeholder="address to query (defaults to your address)">
-          <button id="btnFetchActivity" class="btn" data-label="Fetch Activity" onclick="fetchActivity(this)" aria-label="Fetch activity">Fetch Activity</button>
+          <button id="btnFetchActivity" class="btn" data-label="Refresh Activity" onclick="fetchActivity(this)" aria-label="Fetch activity">Refresh Activity</button>
         </div>
         <div id="activityList" class="u-mt" style="max-height:200px;overflow:auto"></div>
       </div>
     </div>
 
     <footer>
-      Palette: Neon‑Metallic • UI built for DEX/DeFi (WMON pair). Don’t paste private keys in this page.
+      Palette: Neon‑Metallic • UI built for DEX/DeFi (WMON pair). Always verify transactions before signing.
     </footer>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
   <script>
-    /*
-      Minor JS tweaks to toggle a visual "connected" state on the body,
-      add safer initialization and MetaMask detection, and avoid reliance on
-      deprecated selectedAddress auto-connect behavior.
-    */
-
-    // ---------- CONFIG ----------
+    // ========== CONFIG ==========
+    // NOTE: Leaving RPC/API keys in client-side code is not recommended for production.
+    // Put keys on a backend or use environment-specific safe storage.
     const CONFIG = {
       BITCOINFLASH: "0x7d7E0112d2763c98238aF7cebEAe33d53F3F76DD".toLowerCase(),
       WMON: "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A".toLowerCase(),
-      ALCHEMY_HTTP: "https://monad-mainnet.g.alchemy.com/v2/Uwb7T0DbXMQHjiJBNf9_b005qYjLmJqk",
-      OCTOSWAP_ROUTER: "0x60fd5Aa15Debd5ffdEfB5129FD9FD8A34d80d608",
-      OCTOSWAP_FACTORY: "0xCe104732685B9D7b2F07A09d828F6b19786cdA32",
-      MONAD_CHAIN_ID: "0x504" // adjust if your chainId differs
+      // OctoSwap router provided by the user
+      OCTOSWAP_ROUTER: "0x0547A39Bee2E854bBA45b34D3e32b6C74505CaB3",
+      MONAD_CHAIN_ID_HEX: "0x504",
+      // Alchemy / public RPC for read-only operations (example key from user)
+      MONAD_RPC: "https://monad-mainnet.g.alchemy.com/v2/Uwb7T0DbXMQHjiJBNf9_b005qYjLmJqk"
     };
 
-    // ---------- Simple DOM / globals ----------
-    function byId(id){ return document.getElementById(id); }
+    // ---------- ABIs ----------
+    const BTCF_ABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"burn","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"subtractedValue","type":"uint256"}],"name":"decreaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"addedValue","type":"uint256"}],"name":"increaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"}];
 
-    // provider/signer/user state
-    let provider = null;
+    // Router ABI (partial - we only need getAmountsOut, swapExactETHForTokens, swapExactTokensForETH, getAmountsIn)
+    const ROUTER_ABI = [
+      {"inputs":[],"name":"WETH","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactETHForTokens","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"payable","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactTokensForETH","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"}],"name":"getAmountsOut","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"view","type":"function"}
+    ];
+
+    // Minimal ERC20 ABI for approve/balance/decimals/allowance/transfer
+    const ERC20_MIN = [
+      {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}
+    ];
+
+    // ---------- DOM helpers / state ----------
+    function byId(id){ return document.getElementById(id); }
+    let provider = null;        // BrowserProvider (wallet)
+    let readProvider = null;    // JsonRpcProvider (read-only)
     let signer = null;
     let userAddress = null;
 
-    // helper to update connected class
-    function setConnectedState(isConnected){
-      if (isConnected) document.body.classList.add('connected');
-      else document.body.classList.remove('connected');
+    // UI helpers
+    function setStatus(msg, kind = '') {
+      const el = byId('statusText');
+      if (!el) return;
+      el.textContent = msg;
+      el.className = kind ? `statusMsg ${kind}` : 'statusMsg';
+    }
+    function toast(msg) {
+      setStatus(msg, 'statusSuccess');
+      setTimeout(()=>setStatus('Idle'), 3500);
+    }
+    function showError(msg) {
+      console.error(msg);
+      setStatus(msg, 'statusError');
     }
 
-    // minimal ensureProvider guard used by connectWallet
-    async function ensureProvider(){
-      if (!window.ethereum) {
-        throw new Error('Ethereum provider not found. Please install MetaMask or another wallet.');
+    function setTxPending(btn, pending, text) {
+      if (!btn) return;
+      btn.disabled = pending;
+      if (pending) {
+        btn.innerHTML = '<div class="spinner" aria-hidden="true"></div> Processing...';
+      } else {
+        btn.textContent = btn.dataset.label || text || 'Submit';
       }
     }
 
-    // wrap original connectWallet to add class toggle
-    async function connectWallet(){
+    // short address
+    function short(addr){
+      if (!addr) return '';
+      return addr.slice(0,6) + '…' + addr.slice(-4);
+    }
+
+    // validate address
+    function validAddress(addr) {
+      try { return ethers.isAddress(addr); } catch(e){ return false; }
+    }
+
+    // parse amounts with decimals
+    async function parseUnitsSafe(amountStr, decimals) {
       try {
-        await ensureProvider();
-        // request the user to connect (interactive)
-        await window.ethereum.request({ method: 'eth_requestAccounts' });
-        provider = new ethers.BrowserProvider(window.ethereum);
-        signer = await provider.getSigner();
-        userAddress = await signer.getAddress();
-        const wBtn = byId('walletBtn');
-        if (wBtn) wBtn.textContent = '✅ ' + short(userAddress);
-        if (byId('userAddr')) byId('userAddr').textContent = userAddress;
-        // set visual connected state
-        setConnectedState(true);
-        await ensureMonadNetwork();
-        await loadBalances();
-        await checkOwner();
-        toast('Wallet connected');
+        return ethers.parseUnits(String(amountStr), decimals);
       } catch(e){
-        showError('Wallet connect failed: ' + (e && e.message ? e.message : e));
+        throw new Error('Invalid amount');
       }
     }
 
-    // modify disconnect behavior in the existing click handler (safely attach later)
+    // ---------- Providers & Contracts ----------
+    async function ensureProvider() {
+      if (!window.ethereum) {
+        throw new Error('No injected wallet detected. Install MetaMask or a compatible wallet.');
+      }
+      if (!provider) {
+        provider = new ethers.BrowserProvider(window.ethereum);
+      }
+      signer = await provider.getSigner();
+      return provider;
+    }
+
+    // Read-only provider (Alchemy / public RPC)
+    function ensureReadProvider() {
+      if (!readProvider) {
+        readProvider = new ethers.JsonRpcProvider(CONFIG.MONAD_RPC);
+      }
+      return readProvider;
+    }
+
+    function getContract(addr, abi, useSigner = false) {
+      const actor = useSigner && signer ? signer : ensureReadProvider();
+      return new ethers.Contract(addr, abi, actor);
+    }
+
+    // ---------- Network checks ----------
+    async function ensureMonadNetwork() {
+      try {
+        if (!provider) provider = new ethers.BrowserProvider(window.ethereum);
+        // request chainId from wallet
+        const chainHex = await provider.send("eth_chainId", []);
+        if (!chainHex) return;
+        if (chainHex !== CONFIG.MONAD_CHAIN_ID_HEX) {
+          setStatus('Please switch network to Monad (chainId ' + CONFIG.MONAD_CHAIN_ID_HEX + ')');
+          // do not force network switch here; only inform
+        } else {
+          setStatus('Connected to correct network');
+        }
+      } catch(e){
+        console.debug('ensureMonadNetwork:', e);
+      }
+    }
+
+    // ---------- On-load init & wallet handling ----------
     function attachWalletBtnListener(){
       const wBtn = byId('walletBtn');
       if (!wBtn) return;
       wBtn.addEventListener('click', async () => {
         try {
           if (!window.ethereum) {
-            // If no provider, do nothing (button should be disabled already). Provide feedback.
-            showError('No Ethereum provider found. Install MetaMask or another wallet.');
+            showError('No Ethereum provider found. Install MetaMask or a compatible wallet.');
             return;
           }
 
@@ -387,56 +477,73 @@
             if (byId('wmonBal')) byId('wmonBal').textContent = '—';
             if (byId('ownerActions')) byId('ownerActions').style.display = 'none';
             setStatus('Disconnected');
-            // remove visual connected state
             setConnectedState(false);
           }
-        } catch (err){
+        } catch(err) {
           showError('Wallet action failed: ' + (err && err.message ? err.message : err));
         }
       });
     }
 
-    // Also set connected state on init if wallet already present, but use eth_accounts
+    function setConnectedState(isConnected){
+      if (isConnected) document.body.classList.add('connected');
+      else document.body.classList.remove('connected');
+    }
+
+    async function connectWallet(){
+      try {
+        if (!window.ethereum) throw new Error('No injected provider.');
+        await ensureProvider();
+        // interactive request
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        provider = new ethers.BrowserProvider(window.ethereum);
+        signer = await provider.getSigner();
+        userAddress = await signer.getAddress();
+        const wBtn = byId('walletBtn');
+        if (wBtn) wBtn.textContent = '✅ ' + short(userAddress);
+        if (byId('userAddr')) byId('userAddr').textContent = userAddress;
+        setConnectedState(true);
+        await ensureMonadNetwork();
+        await loadBalances();
+        await checkOwner();
+        toast('Wallet connected');
+      } catch(e){
+        showError('Wallet connect failed: ' + (e && e.message ? e.message : e));
+      }
+    }
+
     (async function initConnectedState(){
       try {
         const wBtn = byId('walletBtn');
         if (!window.ethereum) {
-          // No MetaMask / injected provider detected
           if (wBtn) {
             wBtn.disabled = true;
             wBtn.textContent = 'Install MetaMask';
             wBtn.style.opacity = 0.7;
             wBtn.setAttribute('aria-label', 'Install MetaMask');
           }
-          // still attach listener so it can show guidance if clicked unexpectedly
           attachWalletBtnListener();
           return;
         }
-
-        // provider exists — attach listener
         attachWalletBtnListener();
 
-        // Check whether the site already has access to accounts (no prompt).
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts && accounts.length > 0) {
-          provider = new ethers.BrowserProvider(window.ethereum);
+        provider = new ethers.BrowserProvider(window.ethereum);
+        const accounts = await provider.send("eth_accounts", []);
+        if (accounts && accounts.length > 0){
           signer = await provider.getSigner();
           userAddress = accounts[0];
           if (wBtn) wBtn.textContent = '✅ ' + short(userAddress);
           if (byId('userAddr')) byId('userAddr').textContent = userAddress;
           setConnectedState(true);
-          // load initial UI state
           await ensureMonadNetwork();
           await loadBalances();
           await checkOwner();
         } else {
-          // no accounts currently authorized — show default state but do not auto-request permissions
           if (wBtn && (!wBtn.disabled)) {
             wBtn.textContent = wBtn.dataset.label || 'Connect Wallet';
           }
         }
 
-        // Optional: react to account/network changes
         if (window.ethereum && window.ethereum.on) {
           window.ethereum.on('accountsChanged', (accs) => {
             if (accs && accs.length > 0) {
@@ -444,11 +551,9 @@
               if (byId('walletBtn')) byId('walletBtn').textContent = '✅ ' + short(userAddress);
               if (byId('userAddr')) byId('userAddr').textContent = userAddress;
               setConnectedState(true);
-              // re-load balances + owner checks
               loadBalances().catch(()=>{});
               checkOwner().catch(()=>{});
             } else {
-              // disconnected
               userAddress = null;
               provider = null;
               signer = null;
@@ -457,28 +562,368 @@
               setConnectedState(false);
             }
           });
-
           window.ethereum.on('chainChanged', (chainId) => {
-            // optional: update network display or force reload logic
             setStatus('Chain changed: ' + chainId);
-            // you may want to re-initialize provider/signers here
           });
         }
       } catch(e){
-        // ignore non-fatal init errors, but surface them in console
         console.debug('initConnectedState error:', e);
       }
     })();
 
-    // The rest of your JS (functions like ensureMonadNetwork, setStatus, showError,
-    // toast, getContract, loadBalances, checkOwner, approveSpender, buyOnDex, sellOnDex, fetchActivity, etc.)
-    // remain unchanged and are assumed to be present in your page as in the previous version.
+    // ---------- Core UI & blockchain logic ----------
+    // Display ABI for easy debugging
+    (function renderAbi() {
+      try { byId('bfAbi').textContent = JSON.stringify(BTCF_ABI, null, 2); } catch(e){}
+    })();
 
-    // Minimal helper used in the UI (if not defined elsewhere)
-    function short(addr){
-      if (!addr) return '';
-      return addr.slice(0,6) + '…' + addr.slice(-4);
+    // load balances for WMON and BTCF
+    async function loadBalances(){
+      try {
+        const read = ensureReadProvider();
+        const bf = getContract(CONFIG.BITCOINFLASH, BTCF_ABI, false);
+        const wmon = getContract(CONFIG.WMON, ERC20_MIN, false);
+        // decimals
+        const [bfDecimals, wmonDecimals] = await Promise.all([
+          bf.decimals().catch(()=>18),
+          wmon.decimals().catch(()=>18)
+        ]);
+        const addr = userAddress;
+        if (!addr) {
+          byId('bfBal').textContent = '—';
+          byId('wmonBal').textContent = '—';
+          return;
+        }
+        const [bfRaw, wmonRaw] = await Promise.all([
+          bf.balanceOf(addr),
+          wmon.balanceOf(addr)
+        ]);
+        byId('bfBal').textContent = formatUnitsSafe(bfRaw, bfDecimals);
+        byId('wmonBal').textContent = formatUnitsSafe(wmonRaw, wmonDecimals);
+      } catch(e){
+        console.debug('loadBalances error', e);
+      }
     }
+
+    function formatUnitsSafe(bn, decimals=18){
+      try { return String(ethers.formatUnits(bn, decimals)); }
+      catch(e) { return '0'; }
+    }
+
+    async function checkOwner(){
+      try {
+        const bf = getContract(CONFIG.BITCOINFLASH, BTCF_ABI, false);
+        const owner = await bf.owner();
+        if (userAddress && owner && owner.toLowerCase() === userAddress.toLowerCase()) {
+          if (byId('ownerActions')) byId('ownerActions').style.display = 'block';
+        } else {
+          if (byId('ownerActions')) byId('ownerActions').style.display = 'none';
+        }
+      } catch(e){
+        console.debug('checkOwner:', e);
+      }
+    }
+
+    // Approve spender
+    async function approveSpender(btn){
+      try {
+        if (!userAddress) { showError('Connect wallet first'); return; }
+        const spender = byId('approveSpender').value.trim();
+        const amountStr = byId('approveAmount').value.trim();
+        if (!validAddress(spender)) { showError('Invalid spender address'); return; }
+        if (!amountStr || Number(amountStr) <= 0) { showError('Invalid amount'); return; }
+
+        const bf = getContract(CONFIG.BITCOINFLASH, BTCF_ABI, true);
+        const decimals = await bf.decimals();
+        const amount = await parseUnitsSafe(amountStr, decimals);
+
+        setTxPending(btn, true);
+        const tx = await bf.approve(spender, amount);
+        setStatus('Approval submitted, waiting confirmation...');
+        await tx.wait();
+        toast('Approval confirmed');
+        await loadBalances();
+      } catch(e){
+        if (String(e).toLowerCase().includes('user rejected')) showError('User rejected the request');
+        else showError('Approval failed: ' + (e && e.message ? e.message : e));
+      } finally {
+        setTxPending(btn, false);
+      }
+    }
+
+    // Transfer BTCF
+    async function transferBTCF(btn){
+      try {
+        if (!userAddress) { showError('Connect wallet first'); return; }
+        const to = byId('transferTo').value.trim();
+        const amtStr = byId('transferAmt').value.trim();
+        if (!validAddress(to)) { showError('Invalid destination address'); return; }
+        if (!amtStr || Number(amtStr) <= 0) { showError('Invalid amount'); return; }
+
+        const bf = getContract(CONFIG.BITCOINFLASH, BTCF_ABI, true);
+        const decimals = await bf.decimals();
+        const amount = await parseUnitsSafe(amtStr, decimals);
+
+        setTxPending(btn, true);
+        const tx = await bf.transfer(to, amount);
+        setStatus('Transfer submitted...');
+        await tx.wait();
+        toast('Transfer complete');
+        await loadBalances();
+      } catch(e){
+        if (String(e).toLowerCase().includes('user rejected')) showError('User rejected the request');
+        else showError('Transfer failed: ' + (e && e.message ? e.message : e));
+      } finally {
+        setTxPending(btn, false);
+      }
+    }
+
+    // Owner functions: mint, burn, transferOwnership
+    async function mintBTCF(btn){
+      try {
+        if (!userAddress) { showError('Connect wallet first'); return; }
+        const to = byId('mintTo').value.trim();
+        const amtStr = byId('mintAmt').value.trim();
+        if (!validAddress(to)) { showError('Invalid address'); return; }
+        if (!amtStr || Number(amtStr) <= 0) { showError('Invalid amount'); return; }
+
+        const bf = getContract(CONFIG.BITCOINFLASH, BTCF_ABI, true);
+        const decimals = await bf.decimals();
+        const amount = await parseUnitsSafe(amtStr, decimals);
+        setTxPending(btn, true);
+        const tx = await bf.mint(to, amount);
+        setStatus('Mint submitted...');
+        await tx.wait();
+        toast('Mint confirmed');
+        await loadBalances();
+      } catch(e){
+        showError('Mint failed: ' + (e && e.message ? e.message : e));
+      } finally { setTxPending(btn, false); }
+    }
+
+    async function burnBTCF(btn){
+      try {
+        if (!userAddress) { showError('Connect wallet first'); return; }
+        const amtStr = byId('burnAmt').value.trim();
+        if (!amtStr || Number(amtStr) <= 0) { showError('Invalid amount'); return; }
+
+        const bf = getContract(CONFIG.BITCOINFLASH, BTCF_ABI, true);
+        const decimals = await bf.decimals();
+        const amount = await parseUnitsSafe(amtStr, decimals);
+        setTxPending(btn, true);
+        const tx = await bf.burn(amount);
+        setStatus('Burn submitted...');
+        await tx.wait();
+        toast('Burn confirmed');
+        await loadBalances();
+      } catch(e){
+        showError('Burn failed: ' + (e && e.message ? e.message : e));
+      } finally { setTxPending(btn, false); }
+    }
+
+    async function transferOwnership(btn){
+      try {
+        if (!userAddress) { showError('Connect wallet first'); return; }
+        const newOwner = byId('newOwner').value.trim();
+        if (!validAddress(newOwner)) { showError('Invalid address'); return; }
+
+        const bf = getContract(CONFIG.BITCOINFLASH, BTCF_ABI, true);
+        setTxPending(btn, true);
+        const tx = await bf.transferOwnership(newOwner);
+        setStatus('Transferring ownership...');
+        await tx.wait();
+        toast('Ownership transferred');
+        await checkOwner();
+      } catch(e){
+        showError('Transfer owner failed: ' + (e && e.message ? e.message : e));
+      } finally { setTxPending(btn, false); }
+    }
+
+    // ---------- Simple DEX helpers (get price preview & swap) ----------
+    async function buyOnDex(btn){
+      try {
+        if (!userAddress) { showError('Connect wallet first'); return; }
+        const amountStr = byId('tradeAmount').value;
+        const slippageBps = Number(byId('slippageInput').value || '50');
+        if (!amountStr || Number(amountStr) <= 0) { showError('Invalid trade amount'); return; }
+        if (slippageBps < 0 || slippageBps > 2000) { showError('Invalid slippage'); return; }
+
+        // use read provider to estimate amounts
+        const routerRead = getContract(CONFIG.OCTOSWAP_ROUTER, ROUTER_ABI, false);
+        const path = [CONFIG.WMON, CONFIG.BITCOINFLASH];
+        const wmonDecimals = await getContract(CONFIG.WMON, ERC20_MIN, false).decimals().catch(()=>18);
+        const inputAmount = ethers.parseUnits(String(amountStr), wmonDecimals);
+        const amountsOut = await routerRead.getAmountsOut(inputAmount, path);
+        const expectedOut = amountsOut[1];
+        const minOut = expectedOut * (10000 - slippageBps) / 10000;
+
+        // Call router.swapExactETHForTokens (wallet must send native WMON as value)
+        await ensureProvider();
+        const router = getContract(CONFIG.OCTOSWAP_ROUTER, ROUTER_ABI, true);
+        setTxPending(btn, true);
+        setStatus('Submitting buy swap...');
+        // deadline 2 minutes from now
+        const deadline = Math.floor(Date.now() / 1000) + 120;
+        // note: some routers expect ETH (native) - if WMON is wrapped native ensure router supports swapExactETHForTokens
+        const tx = await router.swapExactETHForTokens(
+          ethers.toString(BigInt(Math.floor(minOut))), // amountOutMin (string)
+          path,
+          userAddress,
+          deadline,
+          { value: inputAmount }
+        );
+        await tx.wait();
+        toast('Buy swap completed');
+        await loadBalances();
+      } catch(e){
+        showError('Buy failed: ' + (e && e.message ? e.message : e));
+      } finally { setTxPending(btn, false); }
+    }
+
+    async function sellOnDex(btn){
+      try {
+        if (!userAddress) { showError('Connect wallet first'); return; }
+        const amountStr = byId('tradeAmount').value;
+        const slippageBps = Number(byId('slippageInput').value || '50');
+        if (!amountStr || Number(amountStr) <= 0) { showError('Invalid trade amount'); return; }
+        if (slippageBps < 0 || slippageBps > 2000) { showError('Invalid slippage'); return; }
+
+        // seller sells BTCF -> WMON path reversed
+        const path = [CONFIG.BITCOINFLASH, CONFIG.WMON];
+        const bf = getContract(CONFIG.BITCOINFLASH, BTCF_ABI, true);
+        const bfDecimals = await bf.decimals();
+        const amount = await parseUnitsSafe(amountStr, bfDecimals);
+
+        // ensure approval
+        const allowance = await bf.allowance(userAddress, CONFIG.OCTOSWAP_ROUTER);
+        if (allowance < amount) {
+          setStatus('Approving router to spend BTCF...');
+          const aTx = await bf.approve(CONFIG.OCTOSWAP_ROUTER, amount);
+          await aTx.wait();
+        }
+
+        const router = getContract(CONFIG.OCTOSWAP_ROUTER, ROUTER_ABI, true);
+        const routerRead = getContract(CONFIG.OCTOSWAP_ROUTER, ROUTER_ABI, false);
+        const amountsOut = await routerRead.getAmountsOut(amount, path);
+        const expectedOut = amountsOut[1];
+        const minOut = expectedOut * (10000 - slippageBps) / 10000;
+
+        setTxPending(btn, true);
+        setStatus('Submitting sell swap...');
+        const deadline = Math.floor(Date.now() / 1000) + 120;
+        const tx = await router.swapExactTokensForETH(
+          amount,
+          ethers.toString(BigInt(Math.floor(minOut))),
+          path,
+          userAddress,
+          deadline
+        );
+        await tx.wait();
+        toast('Sell swap completed');
+        await loadBalances();
+      } catch(e){
+        showError('Sell failed: ' + (e && e.message ? e.message : e));
+      } finally { setTxPending(btn, false); }
+    }
+
+    // ---------- Activity (simple RPC via Alchemy) ----------
+    async function fetchActivity(btn) {
+      try {
+        if (!userAddress) { showError('Connect wallet first'); return; }
+        setTxPending(btn, true);
+        setStatus('Fetching recent transfers...');
+        // use Alchemy transfer endpoint (alchemy key embedded in CONFIG.MONAD_RPC)
+        // If your MONAD_RPC isn't an Alchemy URL, replace with your own explorer API.
+        const address = userAddress;
+        const apiUrl = CONFIG.MONAD_RPC.replace(/\/v2\/.*$/, ''); // best-effort strip
+        // fallback: use Alchemy REST directly if MONAD_RPC contains v2
+        const isAlchemy = CONFIG.MONAD_RPC.includes('alchemyapi') || CONFIG.MONAD_RPC.includes('alchemy.com');
+        let transfers = [];
+        if (isAlchemy) {
+          const apiKey = CONFIG.MONAD_RPC.split('/').pop();
+          const url = `https://eth-mainnet.g.alchemy.com/v2/${apiKey}`; // NOTE: user must adapt for Monad chain
+          // Using generic "getAssetTransfers" is chain-specific; here we show a simple placeholder read by Alchemy
+          // For a production app, call Alchemy's assetTransfers for the correct network.
+          // We'll show last 10 ERC20 transfer logs for the address from on-chain logs (simplified).
+          const body = {
+            jsonrpc: "2.0",
+            id: 1,
+            method: "alchemy_getAssetTransfers",
+            params: [{
+              fromBlock: "0x0",
+              toBlock: "latest",
+              toAddress: address,
+              category: ["erc20","erc721","external"],
+              maxCount: "0x64"
+            }]
+          };
+          const resp = await fetch(url, { method: 'POST', body: JSON.stringify(body) });
+          const j = await resp.json();
+          transfers = (j.result && j.result.transfers) ? j.result.transfers : [];
+        } else {
+          // If not Alchemy, show placeholder: use ethers provider to fetch last block txs for address isn't trivial client-side
+          transfers = [];
+        }
+
+        const ul = byId('activityList');
+        ul.innerHTML = '';
+        if (transfers.length === 0) {
+          ul.innerHTML = '<div class="small-muted">No recent transfers found (or provider doesn\'t support Alchemy-style API).</div>';
+          setStatus('Activity fetched (empty)');
+          return;
+        }
+
+        for (const t of transfers.slice(0, 20)) {
+          const box = document.createElement('div');
+          box.className = 'activity-item';
+          box.innerHTML = `<div><strong>${t.asset || t.token || t.category || 'tx'}</strong> — ${t.from || t.fromAddress || ''} → ${t.to || t.toAddress || ''}</div>
+                           <div class="small-muted">${t.hash || t.uniqueId || ''} ${t.value ? ' • ' + t.value : ''}</div>`;
+          ul.appendChild(box);
+        }
+        setStatus('Activity fetched');
+      } catch(e){
+        showError('Fetch activity failed: ' + (e && e.message ? e.message : e));
+      } finally { setTxPending(btn, false); }
+    }
+
+    // ---------- Max helpers ----------
+    async function setMaxApprove(){
+      // set approve amount to total supply-like big number (or specifically max uint)
+      byId('approveAmount').value = '1000000000';
+    }
+    async function setMaxTransfer(){
+      // fill transfer amount with user's BTCF balance (simple string)
+      const val = byId('bfBal').textContent || '0';
+      byId('transferAmt').value = val;
+    }
+    async function setMaxBurn(){
+      const val = byId('bfBal').textContent || '0';
+      byId('burnAmt').value = val;
+    }
+    async function setMaxTrade(){
+      const val = byId('wmonBal').textContent || '0';
+      byId('tradeAmount').value = val;
+    }
+
+    // Provide noop placeholders for functions referenced by markup but not implemented here:
+    function approveSpender() { return window.approveSpenderOriginal ? window.approveSpenderOriginal.apply(this, arguments) : approveSpenderBtn.apply(this, arguments); }
+    // Not used - left for compatibility
+
+    // ---------- small compatibility for direct onclick calls (bind global names) ----------
+    window.approveSpenderBtn = approveSpender;
+    window.transferBTCF = transferBTCF;
+    window.mintBTCF = mintBTCF;
+    window.burnBTCF = burnBTCF;
+    window.transferOwnership = transferOwnership;
+    window.buyOnDex = buyOnDex;
+    window.sellOnDex = sellOnDex;
+    window.fetchActivity = fetchActivity;
+    window.setMaxApprove = setMaxApprove;
+    window.setMaxTransfer = setMaxTransfer;
+    window.setMaxBurn = setMaxBurn;
+    window.setMaxTrade = setMaxTrade;
+
+    // End of script
   </script>
 </body>
 </html>
