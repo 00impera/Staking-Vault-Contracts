@@ -120,13 +120,86 @@
   const USDC_ADDRESS  = "0x754704Bc059F8C67012fEd69BC8A327a5aafb603";
   const BITCOINFLASH_ADDRESS = "0x7d7E0112d2763c98238aF7cebEAe33d53F3F76DD";
 
-  // Minimal ABIs used by UI (trimmed)
-  const ERC20_FULL_ABI = [ {"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"type":"function"},{"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"},{"constant":true,"inputs":[{"name":"owner","type":"address"},{"name":"spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"type":"function"},{"constant":false,"inputs":[{"name":"spender","type":"address"},{"name":"amount","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"type":"function"},{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"} ];
-  const WMON_ABI = [ {"constant":true,"inputs":[{"name":"","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"type":"function"},{"constant":false,"inputs":[],"name":"deposit","outputs":[],"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"name":"wad","type":"uint256"}],"name":"withdraw","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"guy","type":"address"},{"name":"wad","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"type":"function"},{"constant":true,"inputs":[{"name":"owner","type":"address"},{"name":"spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"type":"function"} ];
-  const VAULT_ABI = [ {"inputs":[],"name":"getSupportedTokens","outputs":[{"type":"address[]","name":""}],"stateMutability":"view","type":"function"},{"inputs":[{"name":"user","type":"address"}],"name":"getUserStakes","outputs":[{"type":"uint256[]","name":""}],"stateMutability":"view","type":"function"},{"inputs":[{"name":"user","type":"address"},{"name":"stakeId","type":"uint256"}],"name":"getStakeInfo","outputs":[{"type":"address","name":"token"},{"type":"uint256","name":"amount"},{"type":"uint256","name":"stakedAt"},{"type":"uint256","name":"unlockTime"},{"type":"bool","name":"withdrawn"},{"type":"bool","name":"canWithdraw"}],"stateMutability":"view","type":"function"},{"inputs":[{"name":"token","type":"address"},{"name":"amount","type":"uint256"},{"name":"duration","type":"uint256"}],"name":"stake","outputs":[{"name":"stakeId","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"stakeId","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"token","type":"address"}],"name":"totalStaked","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"anonymous":false,"inputs":[{"indexed":true,"name":"user","type":"address"},{"indexed":true,"name":"stakeId","type":"uint256"},{"indexed":true,"name":"token","type":"address"},{"indexed":false,"name":"amount","type":"uint256"},{"indexed":false,"name":"unlockTime","type":"uint256"}],"name":"TokenStaked","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"user","type":"address"},{"indexed":true,"name":"stakeId","type":"uint256"},{"indexed":false,"name":"amount","type":"uint256"}],"name":"StakeWithdrawn","type":"event"} ];
+  // --------------------------
+  // Updated ABIs (from user)
+  // --------------------------
 
-  const TOKEN_ABIS = { [WMON_ADDRESS.toLowerCase()]: WMON_ABI, [USDC_ADDRESS.toLowerCase()]: ERC20_FULL_ABI, [BITCOINFLASH_ADDRESS.toLowerCase()]: ERC20_FULL_ABI };
-  function createTokenContract(address, providerOrSigner) { const a = address.toLowerCase(); const abi = TOKEN_ABIS[a] || ERC20_FULL_ABI; return new ethers.Contract(address, abi, providerOrSigner); }
+  // VAULT proxy ABI (ERC1967-style proxy minimal ABI - exposes constructor/errors/fallback/upgraded event)
+  const VAULT_PROXY_ABI = [
+    {"inputs":[{"internalType":"address","name":"implementation","type":"address"},{"internalType":"bytes","name":"_data","type":"bytes"}],"stateMutability":"payable","type":"constructor"},
+    {"inputs":[{"internalType":"address","name":"target","type":"address"}],"name":"AddressEmptyCode","type":"error"},
+    {"inputs":[{"internalType":"address","name":"implementation","type":"address"}],"name":"ERC1967InvalidImplementation","type":"error"},
+    {"inputs":[],"name":"ERC1967NonPayable","type":"error"},
+    {"inputs":[],"name":"FailedCall","type":"error"},
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"implementation","type":"address"}],"name":"Upgraded","type":"event"},
+    {"stateMutability":"payable","type":"fallback"}
+  ];
+
+  // Implementation ABI (v2) - user provided the proxy ABI again for implementation note.
+  // If you have a full implementation ABI (with stake/getSupportedTokens etc), replace VAULT_IMPL_ABI below with it.
+  // For now we keep the proxy ABI as a minimal placeholder to match the provided data.
+  const VAULT_IMPL_ABI = VAULT_PROXY_ABI.slice();
+
+  // WMON token ABI (full-ish as provided by user; wrapped ETH-like token)
+  const WMON_ABI = [
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":true,"internalType":"address","name":"guy","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Approval","type":"event"},
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"dst","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Deposit","type":"event"},
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":true,"internalType":"address","name":"dst","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Transfer","type":"event"},
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Withdrawal","type":"event"},
+    {"payable":true,"stateMutability":"payable","type":"fallback"},
+    {"constant":true,"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},
+    {"constant":false,"inputs":[{"internalType":"address","name":"guy","type":"address"},{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},
+    {"constant":true,"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},
+    {"constant":true,"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},
+    {"constant":false,"inputs":[],"name":"deposit","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},
+    {"constant":true,"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},
+    {"constant":true,"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},
+    {"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},
+    {"constant":false,"inputs":[{"internalType":"address","name":"dst","type":"address"},{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},
+    {"constant":false,"inputs":[{"internalType":"address","name":"src","type":"address"},{"internalType":"address","name":"dst","type":"address"},{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},
+    {"constant":false,"inputs":[{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"withdraw","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}
+  ];
+
+  // USDC (proxy/admin style ABI as provided)
+  const USDC_PROXY_ADMIN_ABI = [
+    {"inputs":[{"internalType":"address","name":"implementationContract","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},
+    {"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"previousAdmin","type":"address"},{"indexed":false,"internalType":"address","name":"newAdmin","type":"address"}],"name":"AdminChanged","type":"event"},
+    {"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"implementation","type":"address"}],"name":"Upgraded","type":"event"},
+    {"stateMutability":"payable","type":"fallback"},
+    {"inputs":[],"name":"admin","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"address","name":"newAdmin","type":"address"}],"name":"changeAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[],"name":"implementation","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"address","name":"newImplementation","type":"address"}],"name":"upgradeTo","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"address","name":"newImplementation","type":"address"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"upgradeToAndCall","outputs":[],"stateMutability":"payable","type":"function"}
+  ];
+
+  // Fallback/general minimal ERC20 ABI used for tokens we don't have explicit ABIs for
+  const ERC20_FULL_ABI = [
+    {"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"type":"function"},
+    {"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"type":"function"},
+    {"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"},
+    {"constant":true,"inputs":[{"name":"owner","type":"address"},{"name":"spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"type":"function"},
+    {"constant":false,"inputs":[{"name":"spender","type":"address"},{"name":"amount","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"type":"function"},
+    {"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"}
+  ];
+
+  // Map token ABIs by address (lowercase)
+  const TOKEN_ABIS = {
+    [WMON_ADDRESS.toLowerCase()]: WMON_ABI,
+    [USDC_ADDRESS.toLowerCase()]: USDC_PROXY_ADMIN_ABI
+    // other tokens will fall back to ERC20_FULL_ABI
+  };
+
+  function createTokenContract(address, providerOrSigner) {
+    const a = address.toLowerCase();
+    const abi = TOKEN_ABIS[a] || ERC20_FULL_ABI;
+    return new ethers.Contract(address, abi, providerOrSigner);
+  }
+
+  // For vault interactions we will use the implementation ABI if you provide it.
+  // For now use the proxy ABI (minimal). If you have the implementation ABI (with stake/getSupportedTokens/getUserStakes etc),
+  // replace VAULT_IMPL_ABI with that data and set VAULT_ABI = VAULT_IMPL_ABI below.
+  const VAULT_ABI = VAULT_IMPL_ABI.slice();
 
   // === Runtime state ===
   let web3auth = null;
@@ -374,8 +447,10 @@
   async function loadSupportedTokens() {
     log('loadSupportedTokens');
     try {
+      // Use a read-only provider against the proxy; note: if the proxy doesn't expose implementation methods,
+      // this will fall back to the default list below.
       const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
-      const tokens = await vaultRead.getSupportedTokens().catch(()=>null);
+      const tokens = await vaultRead.getSupportedTokens?.().catch(()=>null);
       let list = tokens && tokens.length ? tokens.map(t => t.toLowerCase()) : [WMON_ADDRESS.toLowerCase(), USDC_ADDRESS.toLowerCase(), BITCOINFLASH_ADDRESS.toLowerCase()];
       ui.stakeToken.innerHTML = '';
       for (const t of list) {
@@ -506,12 +581,13 @@
     if (!currentAddress) { if (ui.stakesGrid) ui.stakesGrid.textContent = 'Connect wallet to view stakes'; return; }
     try {
       const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
-      const ids = await vaultRead.getUserStakes(currentAddress).catch(()=>[]);
+      const ids = await vaultRead.getUserStakes?.(currentAddress).catch(()=>[]);
       if (!ids || ids.length === 0) { if (ui.stakesGrid) ui.stakesGrid.innerHTML = '<div class="muted">No stakes</div>'; return; }
       const rows = [];
       for (const id of ids) {
         try {
-          const info = await vaultRead.getStakeInfo(currentAddress, id);
+          const info = await vaultRead.getStakeInfo?.(currentAddress, id);
+          if (!info) continue;
           const tokenAddr = (info.token || WMON_ADDRESS).toLowerCase();
           const token = createTokenContract(tokenAddr, rpcFallbackProvider);
           const dec = await token.decimals().catch(()=>18);
