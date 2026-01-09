@@ -34,6 +34,8 @@
     .debug-controls button{padding:6px 10px;border-radius:8px;border:0;cursor:pointer;background:rgba(255,255,255,0.04);color:var(--muted)}
     .debug-controls .danger{background:linear-gradient(90deg,#ff5a5a,#ff8a5a);color:#081018}
     .address-copy{cursor:pointer;text-decoration:underline dotted;opacity:0.85}
+    .token-select-wrap{display:flex;align-items:center;gap:10px}
+    .token-icon{width:28px;height:28px;border-radius:8px;background:#0003;display:inline-block;object-fit:cover}
     .tx-badge{padding:6px 10px;border-radius:10px;background:#071a2a;color:#8fe6ff;font-weight:700}
     .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.08);border-top:2px solid #5fd0ff;border-radius:50%;animation:spin 1s linear infinite;display:inline-block;vertical-align:middle;margin-left:8px}
     @keyframes spin{to{transform:rotate(360deg)}}
@@ -42,8 +44,7 @@
     .tx-status { font-weight:700; margin-left:8px; }
     @media (max-width:880px){ .container{padding:16px;margin:18px auto} header{flex-direction:column;align-items:flex-start;gap:12px} }
 
-    /* --- New debug panel / console styles (applied per your request) --- */
-    /* Full-width bottom "developer console" */
+    /* Full-width bottom debug panel */
     #debugPanel.glass-card {
       position: fixed;
       left: 0;
@@ -67,6 +68,7 @@
       background: transparent;
     }
   </style>
+
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.1/dist/ethers.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@web3auth/modal@7.2.0/dist/modal.umd.min.js"></script>
 </head>
@@ -91,12 +93,18 @@
 
     <div class="card">
       <h3 style="margin:0 0 8px 0">Quick Stake</h3>
-      <div class="muted-small">Token <select id="stakeToken"></select></div>
+      <div class="muted-small token-select-wrap">
+        Token
+        <select id="stakeToken"></select>
+        <img id="tokenIcon" class="token-icon" src="" alt="token">
+      </div>
+
       <div style="display:flex;gap:12px;margin-top:12px;align-items:center">
         <div>Balance: <strong id="selectedTokenBalance">0.0000</strong></div>
         <div>Price: <strong id="selectedTokenPrice">N/A</strong></div>
         <div>USD: <strong id="selectedTokenUsd">N/A</strong></div>
       </div>
+
       <div style="margin-top:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
         <input id="stakeAmount" placeholder="Amount" style="width:160px">
         <select id="lockDuration"><option value="30">30d</option><option value="60">60d</option><option value="90">90d</option></select>
@@ -104,6 +112,7 @@
         <button id="stakeBtn" class="btn">Stake</button>
         <button id="revokeBtn" class="btn secondary">Revoke</button>
       </div>
+
       <div style="margin-top:12px;display:flex;gap:16px;flex-wrap:wrap">
         <div class="muted-small">Allowance: <strong id="allowanceValue">—</strong></div>
         <div class="muted-small">Pending rewards: <strong id="pendingRewards">—</strong></div>
@@ -116,7 +125,6 @@
       <div id="txList" class="muted-small">No recent activity</div>
     </div>
 
-    <!-- debugPanel: display:none removed so panel is present in DOM and can be auto-opened -->
     <div class="glass-card" id="debugPanel">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <h4 style="margin:0 0 8px 0">Debug / Console</h4>
@@ -137,549 +145,560 @@
     <div id="overlayList"></div>
   </div>
 
-  <script>
-  // --- Config & ABIs (kept minimal for brevity) ---
-  const WEB3AUTH_CLIENT_ID = "BM_xtlDAKQnuJR2-_N6dQuVvkSP7TTIglL1ho47LG7DP_ZbJT1HftQJ7F0RCoA0HvZKRfMeyRfwgJmZYgM-ZVSs";
-  const urlParams = new URLSearchParams(window.location.search);
-  const SELECTED_NETWORK = (urlParams.get('network') || 'sapphire').toLowerCase();
-  const CHAIN_CONFIGS = {
-    sapphire: { chainNamespace:"eip155", chainIdHex:"0x5afe", rpcTarget:"https://rpc.oasys.sapphire-mainnet.oasys.games", displayName:"Sapphire Mainnet", blockExplorer:"https://explorer.oasys.games", ticker:"ETH", tickerName:"Ethereum" },
-    monad:    { chainNamespace:"eip155", chainIdHex:"0x8e3", rpcTarget:"https://monad-mainnet.g.alchemy.com/v2/Uwb7T0DbXMQHjiJBNf9_b005qYjLmJqk", displayName:"Monad Mainnet", blockExplorer:"https://monadscan.io", ticker:"MON", tickerName:"Monad" }
-  };
-  const CHAIN = CHAIN_CONFIGS[SELECTED_NETWORK] || CHAIN_CONFIGS.sapphire;
-  document.getElementById('network-indicator').textContent = `Network: ${CHAIN.displayName} (chainId ${parseInt(CHAIN.chainIdHex,16)})`;
-  const FALLBACK_JSONRPC = CHAIN.rpcTarget;
+<script>
+/*
+  Changes made:
+  - Added token icon UI (image shown beside the select).
+  - Included complete ABIs used by the UI for each token:
+    - WMON_ABI (wrapped-like token functions + deposit/withdraw)
+    - Standard ERC20_FULL_ABI used for USDC (sufficient for UI calls)
+    - BITCOINFLASH_ABI (more complete ERC20-like ABI provided earlier)
+  - Mapped token logos (user-provided URLs).
+  - Ensured createTokenContract chooses correct ABI and all functions the UI calls exist.
+  - The vault ABI remains a placeholder; to fully interact with staking methods through a proxy you must paste the vault implementation ABI into VAULT_IMPL_ABI below.
+*/
 
-  const VAULT_ADDRESS = "0x2C18eb6708cb7c03C19c7C793345bd22E9d261b8";
-  const WMON_ADDRESS  = "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A";
-  const USDC_ADDRESS  = "0x754704Bc059F8C67012fEd69BC8A327a5aafb603";
-  const BITCOINFLASH_ADDRESS = "0x7d7E0112d2763c98238aF7cebEAe33d53F3F76DD";
+// Config
+const WEB3AUTH_CLIENT_ID = "BM_xtlDAKQnuJR2-_N6dQuVvkSP7TTIglL1ho47LG7DP_ZbJT1HftQJ7F0RCoA0HvZKRfMeyRfwgJmZYgM-ZVSs";
+const urlParams = new URLSearchParams(window.location.search);
+const SELECTED_NETWORK = (urlParams.get('network') || 'sapphire').toLowerCase();
+const CHAIN_CONFIGS = {
+  sapphire: { chainNamespace:"eip155", chainIdHex:"0x5afe", rpcTarget:"https://rpc.oasys.sapphire-mainnet.oasys.games", displayName:"Sapphire Mainnet", blockExplorer:"https://explorer.oasys.games", ticker:"ETH", tickerName:"Ethereum" },
+  monad:    { chainNamespace:"eip155", chainIdHex:"0x8e3", rpcTarget:"https://monad-mainnet.g.alchemy.com/v2/Uwb7T0DbXMQHjiJBNf9_b005qYjLmJqk", displayName:"Monad Mainnet", blockExplorer:"https://monadscan.io", ticker:"MON", tickerName:"Monad" }
+};
+const CHAIN = CHAIN_CONFIGS[SELECTED_NETWORK] || CHAIN_CONFIGS.sapphire;
+document.getElementById('network-indicator').textContent = `Network: ${CHAIN.displayName} (chainId ${parseInt(CHAIN.chainIdHex,16)})`;
+const FALLBACK_JSONRPC = CHAIN.rpcTarget;
 
-  // --- ABIs ---
-  const ERC20_FULL_ABI = [
-    {"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"type":"function"},
-    {"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"type":"function"},
-    {"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"},
-    {"constant":true,"inputs":[{"name":"owner","type":"address"},{"name":"spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"type":"function"},
-    {"constant":false,"inputs":[{"name":"spender","type":"address"},{"name":"amount","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"type":"function"},
-    {"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"}
-  ];
+const VAULT_ADDRESS = "0x2C18eb6708cb7c03C19c7C793345bd22E9d261b8";
+const WMON_ADDRESS  = "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A";
+const USDC_ADDRESS  = "0x754704Bc059F8C67012fEd69BC8A327a5aafb603";
+const BITCOINFLASH_ADDRESS = "0x7d7E0112d2763c98238aF7cebEAe33d53F3F76DD";
 
-  const WMON_ABI = [
-    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":true,"internalType":"address","name":"guy","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Approval","type":"event"},
-    {"constant":true,"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-    {"constant":true,"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
-    {"constant":false,"inputs":[{"internalType":"address","name":"guy","type":"address"},{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-    {"constant":true,"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}
-  ];
+// Token logos (user-provided)
+const TOKEN_LOGOS = {
+  [WMON_ADDRESS.toLowerCase()]: "https://files.catbox.moe/hwlhih.png",
+  [USDC_ADDRESS.toLowerCase()]: "https://files.catbox.moe/ujzf30.gif",
+  [BITCOINFLASH_ADDRESS.toLowerCase()]: "https://files.catbox.moe/lk7mrk.png"
+};
 
-  const BITCOINFLASH_ABI = [
-    {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
-    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},
-    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},
-    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},
-    {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-    {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-    {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-    {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"burn","outputs":[],"stateMutability":"nonpayable","type":"function"},
-    {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
-    {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"subtractedValue","type":"uint256"}],"name":"decreaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-    {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"addedValue","type":"uint256"}],"name":"increaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-    {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},
-    {"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-    {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-    {"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},
-    {"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-    {"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-    {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-    {"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-    {"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"}
-  ];
+// ABIs
+const ERC20_FULL_ABI = [
+  {"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"type":"function"},
+  {"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"type":"function"},
+  {"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"},
+  {"constant":true,"inputs":[{"name":"owner","type":"address"},{"name":"spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"type":"function"},
+  {"constant":false,"inputs":[{"name":"spender","type":"address"},{"name":"amount","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"type":"function"},
+  {"constant":false,"inputs":[{"name":"dst","type":"address"},{"name":"wad","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"type":"function"},
+  {"constant":false,"inputs":[{"name":"src","type":"address"},{"name":"dst","type":"address"},{"name":"wad","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"","type":"bool"}],"type":"function"},
+  {"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"}
+];
 
-  // VAULT ABI (minimal fallback, replace with full if available)
-  const VAULT_IMPL_ABI = [
-    // placeholder: if you have the full implementation ABI, paste it here so the UI can call stake/getSupportedTokens...
-  ];
-  const VAULT_ABI = VAULT_IMPL_ABI.length ? VAULT_IMPL_ABI : [
-    {"stateMutability":"payable","type":"fallback"}
-  ];
+// WMON ABI (wrapped token-like; includes deposit/withdraw/approve)
+const WMON_ABI = [
+  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":true,"internalType":"address","name":"guy","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Approval","type":"event"},
+  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"dst","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Deposit","type":"event"},
+  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":true,"internalType":"address","name":"dst","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Transfer","type":"event"},
+  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Withdrawal","type":"event"},
+  {"stateMutability":"payable","type":"fallback"},
+  {"constant":true,"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"constant":false,"inputs":[{"internalType":"address","name":"guy","type":"address"},{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+  {"constant":true,"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"constant":true,"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
+  {"constant":false,"inputs":[],"name":"deposit","outputs":[],"stateMutability":"payable","type":"function"},
+  {"constant":true,"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+  {"constant":true,"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+  {"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"constant":false,"inputs":[{"internalType":"address","name":"dst","type":"address"},{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+  {"constant":false,"inputs":[{"internalType":"address","name":"src","type":"address"},{"internalType":"address","name":"dst","type":"address"},{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+  {"constant":false,"inputs":[{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}
+];
 
-  // --- ABI mapping ---
-  const TOKEN_ABIS = {
-    [WMON_ADDRESS.toLowerCase()]: WMON_ABI,
-    [USDC_ADDRESS.toLowerCase()]: ERC20_FULL_ABI,
-    [BITCOINFLASH_ADDRESS.toLowerCase()]: BITCOINFLASH_ABI
-  };
+// BitcoinFlash ABI (as provided earlier)
+const BITCOINFLASH_ABI = [
+  {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
+  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},
+  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},
+  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},
+  {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"burn","outputs":[],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"subtractedValue","type":"uint256"}],"name":"decreaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"addedValue","type":"uint256"}],"name":"increaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+  {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+  {"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+  {"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"}
+];
 
-  function createTokenContract(address, providerOrSigner) {
-    const a = address.toLowerCase();
-    const abi = TOKEN_ABIS[a] || ERC20_FULL_ABI;
-    return new ethers.Contract(address, abi, providerOrSigner);
-  }
-
-  // --- Runtime state ---
-  let web3auth = null;
-  let walletProvider = null;
-  let ethersProvider = null;
-  let signer = null;
-  let currentAddress = null;
-  let vaultContract = null;
-  const rpcFallbackProvider = new ethers.providers.JsonRpcProvider(FALLBACK_JSONRPC);
-
- // UI references
-  const ui = {
-    connectBtn: document.getElementById('w3a-connect'),
-    address: document.getElementById('w3a-address'),
-    stakeToken: document.getElementById('stakeToken'),
-    selectedTokenBalance: document.getElementById('selectedTokenBalance'),
-    selectedTokenPrice: document.getElementById('selectedTokenPrice'),
-    selectedTokenUsd: document.getElementById('selectedTokenUsd'),
-    allowanceValue: document.getElementById('allowanceValue'),
-    revokeBtn: document.getElementById('revokeBtn'),
-    pendingRewards: document.getElementById('pendingRewards'),
-    apyDisplay: document.getElementById('apyDisplay'),
-    stakeBtn: document.getElementById('stakeBtn'),
-    stakeAmount: document.getElementById('stakeAmount'),
-    lockDuration: document.getElementById('lockDuration'),
-    referrerAddress: document.getElementById('referrerAddress'),
-    stakesGrid: document.getElementById('stakesGrid'),
-    txList: document.getElementById('txList'),
-    tokensList: document.getElementById('tokensList'),
-    refRewards: document.getElementById('refRewards'),
-    debugPanel: document.getElementById('debugPanel'),
-    debugLog: document.getElementById('debugLog'),
-    debugClearBtn: document.getElementById('debugClear'),
-    debugToggleBtn: document.getElementById('debugToggle'),
-    txOverlay: document.getElementById('txOverlay'),
-    overlayList: document.getElementById('overlayList')
-  };
-
-  // Auto-open the debug panel (per your request)
-  try { if (ui.debugPanel) { ui.debugPanel.style.display = 'block'; ui.debugToggleBtn && (ui.debugToggleBtn.textContent = 'Hide'); } } catch(e) { console.warn('Could not auto-open debug panel', e); }
-  function appendDebugLine(level, tag, message) {
-    try {
-      if (!ui.debugLog) return;
-      ui.debugPanel.style.display = 'block';
-      const line = document.createElement('div');
-      line.className = 'debug-line';
-      const ts = document.createElement('div'); ts.className='log-timestamp'; ts.textContent=new Date().toLocaleTimeString();
-      const tagEl = document.createElement('div'); tagEl.className='log-tag';
-      tagEl.textContent=`[${(tag||'LOG').toUpperCase()}]`;
-      const colorClass = level==='error'?'log-error':level==='warn'?'log-warn':level==='success'?'log-success':level==='module'?'log-module':'log-info';
-      tagEl.classList.add(colorClass);
-      const msg = document.createElement('div'); msg.style.whiteSpace='pre-wrap'; msg.textContent=String(message);
-      line.appendChild(ts); line.appendChild(tagEl); line.appendChild(msg);
-      ui.debugLog.appendChild(line);
-      ui.debugLog.scrollTop = ui.debugLog.scrollHeight;
-    } catch (e) { console.log('appendDebugLine failed', e); }
-  }
-  function log(...args) {
-    try { console.log(...args); } catch(e){}
-    const text = args.map(a => (typeof a==='string'?a: (a && a.stack)?a.stack: JSON.stringify(a,null,2))).join(' ');
-    let level='info';
-    const lower=text.toLowerCase();
-    if (lower.includes('error')||lower.includes('failed')||lower.includes('exception')) level='error';
-    else if (lower.includes('warn')) level='warn';
-    else if (lower.includes('success')||lower.includes('confirmed')||lower.includes('connected')) level='success';
-    else if (lower.includes('debug')||lower.includes('module')) level='module';
-    appendDebugLine(level, (args[0] && typeof args[0] === 'string' ? args[0].split(' ')[0].replace(/[:]/g,'') : 'LOG'), text);
-  }
-  window.addEventListener('unhandledrejection', ev => { log('UnhandledRejection:', ev.reason); ui.debugPanel.style.display='block'; });
-
-  // --- Wallet request lock (prevents duplicate signing requests) ---
-  let walletRequestLock = false;
-  function showOverlay() { if (ui.txOverlay) ui.txOverlay.style.display='block'; }
-  function hideOverlayIfEmpty() { if (!ui.overlayList || ui.overlayList.children.length===0) ui.txOverlay.style.display='none'; }
-
-  function pushOverlayItem(text, id) {
-    if (!ui.overlayList) return;
-    ui.txOverlay.style.display='block';
-    const el = document.createElement('div');
-    el.className = 'tx-item';
-    el.id = id;
-    el.innerHTML = `<div><strong>${text}</strong><span class="tx-status" id="${id}-status">PENDING</span></div>`;
-    ui.overlayList.prepend(el);
-  }
-  function updateOverlayItem(id, status, extra) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const s = document.getElementById(id + '-status');
-    if (s) s.textContent = status;
-    if (extra) el.appendChild(document.createElement('div')).textContent = extra;
-    // remove on final states after delay
-    if (status === 'CONFIRMED' || status === 'FAILED') {
-      setTimeout(()=>{ el.remove(); hideOverlayIfEmpty(); }, 4200);
-    }
-  }
-
-  async function acquireWalletLock() {
-    if (walletRequestLock) return false;
-    walletRequestLock = true;
-    showOverlay();
-    return true;
-  }
-  function releaseWalletLock() { walletRequestLock = false; }
-
-  // --- Web3Auth + injected fallback (unchanged logic, but robust) ---
-  async function initWeb3Auth() {
-    ui.connectBtn.disabled = true; ui.connectBtn.textContent = 'Initializing...';
-    try {
-      const Web3AuthConstructor = (window.Web3AuthModal && window.Web3AuthModal.Web3Auth) || window.Web3Auth || (window.Web3AuthModal && window.Web3AuthModal.default && window.Web3AuthModal.default.Web3Auth);
-      if (!Web3AuthConstructor) {
-        const msg='Web3Auth modal library not found. Falling back to injected wallet (MetaMask) if available.';
-        console.warn(msg); log('Wallet', msg); ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect (Injected)'; ui.connectBtn.onclick=connectInjectedWallet; ui.debugPanel.style.display='block'; return;
+// Vault implementation ABI — paste this into VAULT_IMPL_ABI
+const VAULT_IMPL_ABI = [
+  {
+    "inputs": [],
+    "name": "getSupportedTokens",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "",
+        "type": "address[]"
       }
-      web3auth = new Web3AuthConstructor({ clientId: WEB3AUTH_CLIENT_ID, chainConfig: { chainNamespace: CHAIN.chainNamespace, chainId: CHAIN.chainIdHex, rpcTarget: CHAIN.rpcTarget, displayName: CHAIN.displayName, blockExplorer: CHAIN.blockExplorer, ticker: CHAIN.ticker, tickerName: CHAIN.tickerName }, web3AuthNetwork:"mainnet" });
-      await web3auth.initModal();
-      log('Web3Auth','initModal finished');
-      ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect (Web3Auth)'; ui.connectBtn.onclick=()=>connectWeb3Auth();
-      if (web3auth.provider) { log('Web3Auth','Auto-connecting with existing Web3Auth session'); await connectWeb3Auth(true); }
-    } catch (err) {
-      console.error('initWeb3Auth error', err); log('Error', 'initWeb3Auth error: ' + (err.message||err)); ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect (Injected)'; ui.connectBtn.onclick=connectInjectedWallet; ui.debugPanel.style.display='block';
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "user", "type": "address" }
+    ],
+    "name": "getUserStakes",
+    "outputs": [
+      { "internalType": "uint256[]", "name": "", "type": "uint256[]" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "user", "type": "address" },
+      { "internalType": "uint256", "name": "stakeId", "type": "uint256" }
+    ],
+    "name": "getStakeInfo",
+    "outputs": [
+      { "internalType": "address", "name": "token", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" },
+      { "internalType": "uint256", "name": "stakedAt", "type": "uint256" },
+      { "internalType": "uint256", "name": "unlockTime", "type": "uint256" },
+      { "internalType": "bool", "name": "withdrawn", "type": "bool" },
+      { "internalType": "bool", "name": "canWithdraw", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "token", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" },
+      { "internalType": "uint256", "name": "duration", "type": "uint256" }
+    ],
+    "name": "stake",
+    "outputs": [
+      { "internalType": "uint256", "name": "stakeId", "type": "uint256" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "stakeId", "type": "uint256" }
+    ],
+    "name": "withdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "token", "type": "address" }
+    ],
+    "name": "totalStaked",
+    "outputs": [
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "user", "type": "address" },
+      { "indexed": true, "internalType": "uint256", "name": "stakeId", "type": "uint256" },
+      { "indexed": true, "internalType": "address", "name": "token", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "unlockTime", "type": "uint256" }
+    ],
+    "name": "TokenStaked",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "user", "type": "address" },
+      { "indexed": true, "internalType": "uint256", "name": "stakeId", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "StakeWithdrawn",
+    "type": "event"
+  }
+];
+const VAULT_ABI = VAULT_IMPL_ABI.length ? VAULT_IMPL_ABI : [{"stateMutability":"payable","type":"fallback"}];
+
+// ABI mapping
+const TOKEN_ABIS = {
+  [WMON_ADDRESS.toLowerCase()]: WMON_ABI,
+  [USDC_ADDRESS.toLowerCase()]: ERC20_FULL_ABI,
+  [BITCOINFLASH_ADDRESS.toLowerCase()]: BITCOINFLASH_ABI
+};
+
+function createTokenContract(address, providerOrSigner) {
+  const a = address.toLowerCase();
+  const abi = TOKEN_ABIS[a] || ERC20_FULL_ABI;
+  return new ethers.Contract(address, abi, providerOrSigner);
+}
+
+// Runtime state & UI refs
+let web3auth = null;
+let walletProvider = null;
+let ethersProvider = null;
+let signer = null;
+let currentAddress = null;
+let vaultContract = null;
+const rpcFallbackProvider = new ethers.providers.JsonRpcProvider(FALLBACK_JSONRPC);
+
+const ui = {
+  connectBtn: document.getElementById('w3a-connect'),
+  address: document.getElementById('w3a-address'),
+  stakeToken: document.getElementById('stakeToken'),
+  tokenIcon: document.getElementById('tokenIcon'),
+  selectedTokenBalance: document.getElementById('selectedTokenBalance'),
+  selectedTokenPrice: document.getElementById('selectedTokenPrice'),
+  selectedTokenUsd: document.getElementById('selectedTokenUsd'),
+  allowanceValue: document.getElementById('allowanceValue'),
+  revokeBtn: document.getElementById('revokeBtn'),
+  pendingRewards: document.getElementById('pendingRewards'),
+  apyDisplay: document.getElementById('apyDisplay'),
+  stakeBtn: document.getElementById('stakeBtn'),
+  stakeAmount: document.getElementById('stakeAmount'),
+  lockDuration: document.getElementById('lockDuration'),
+  referrerAddress: document.getElementById('referrerAddress'),
+  stakesGrid: document.getElementById('stakesGrid'),
+  txList: document.getElementById('txList'),
+  tokensList: document.getElementById('tokensList'),
+  refRewards: document.getElementById('refRewards'),
+  debugPanel: document.getElementById('debugPanel'),
+  debugLog: document.getElementById('debugLog'),
+  debugClearBtn: document.getElementById('debugClear'),
+  debugToggleBtn: document.getElementById('debugToggle'),
+  txOverlay: document.getElementById('txOverlay'),
+  overlayList: document.getElementById('overlayList')
+};
+
+// Auto-open debug panel
+try { if (ui.debugPanel) { ui.debugPanel.style.display = 'block'; ui.debugToggleBtn && (ui.debugToggleBtn.textContent = 'Hide'); } } catch(e){ console.warn('Could not auto-open debug panel', e); }
+
+// Debug utilities
+function appendDebugLine(level, tag, message) {
+  try {
+    if (!ui.debugLog) return;
+    ui.debugPanel.style.display = 'block';
+    const line = document.createElement('div');
+    line.className = 'debug-line';
+    const ts = document.createElement('div'); ts.className='log-timestamp'; ts.textContent=new Date().toLocaleTimeString();
+    const tagEl = document.createElement('div'); tagEl.className='log-tag'; tagEl.textContent=`[${(tag||'LOG').toUpperCase()}]`;
+    const colorClass = level==='error'?'log-error':level==='warn'?'log-warn':level==='success'?'log-success':level==='module'?'log-module':'log-info';
+    tagEl.classList.add(colorClass);
+    const msg = document.createElement('div'); msg.style.whiteSpace='pre-wrap'; msg.textContent=String(message);
+    line.appendChild(ts); line.appendChild(tagEl); line.appendChild(msg);
+    ui.debugLog.appendChild(line); ui.debugLog.scrollTop = ui.debugLog.scrollHeight;
+  } catch (e) { console.log('appendDebugLine failed', e); }
+}
+function log(...args) {
+  try { console.log(...args); } catch(e){}
+  const text = args.map(a => (typeof a === 'string' ? a : (a && a.stack) ? a.stack : JSON.stringify(a,null,2))).join(' ');
+  let level = 'info';
+  const lower = text.toLowerCase();
+  if (lower.includes('error')||lower.includes('failed')||lower.includes('exception')) level='error';
+  else if (lower.includes('warn')) level='warn';
+  else if (lower.includes('success')||lower.includes('confirmed')||lower.includes('connected')) level='success';
+  else if (lower.includes('debug')||lower.includes('module')) level='module';
+  appendDebugLine(level, (args[0] && typeof args[0]==='string'?args[0].split(' ')[0].replace(/[:]/g,''):'LOG'), text);
+}
+window.addEventListener('unhandledrejection', (ev) => { log('UnhandledRejection:', ev.reason); ui.debugPanel.style.display='block'; });
+
+// Wallet-request lock & overlay
+let walletRequestLock = false;
+function showOverlay(){ if (ui.txOverlay) ui.txOverlay.style.display='block'; }
+function hideOverlayIfEmpty(){ if (!ui.overlayList || ui.overlayList.children.length===0) ui.txOverlay.style.display='none'; }
+function pushOverlayItem(text, id){
+  if (!ui.overlayList) return;
+  ui.txOverlay.style.display='block';
+  const el = document.createElement('div'); el.className='tx-item'; el.id=id;
+  el.innerHTML = `<div><strong>${text}</strong><span class="tx-status" id="${id}-status">PENDING</span></div>`;
+  ui.overlayList.prepend(el);
+}
+function updateOverlayItem(id,status,extra){
+  const el = document.getElementById(id); if (!el) return;
+  const s = document.getElementById(id+'-status'); if (s) s.textContent = status;
+  if (extra) el.appendChild(document.createElement('div')).textContent = extra;
+  if (status==='CONFIRMED' || status==='FAILED') setTimeout(()=>{ el.remove(); hideOverlayIfEmpty(); },4200);
+}
+async function acquireWalletLock(){ if (walletRequestLock) return false; walletRequestLock = true; showOverlay(); return true; }
+function releaseWalletLock(){ walletRequestLock = false; }
+
+// Web3Auth init & injected fallback
+async function initWeb3Auth(){
+  ui.connectBtn.disabled = true; ui.connectBtn.textContent = 'Initializing...';
+  try {
+    const Web3AuthConstructor = (window.Web3AuthModal && window.Web3AuthModal.Web3Auth) || window.Web3Auth || (window.Web3AuthModal && window.Web3AuthModal.default && window.Web3AuthModal.default.Web3Auth);
+    if (!Web3AuthConstructor) {
+      const msg='Web3Auth modal library not found. Falling back to injected wallet (MetaMask) if available.';
+      console.warn(msg); log('Wallet', msg);
+      ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect (Injected)'; ui.connectBtn.onclick=connectInjectedWallet; ui.debugPanel.style.display='block'; return;
     }
+    web3auth = new Web3AuthConstructor({ clientId: WEB3AUTH_CLIENT_ID, chainConfig: { chainNamespace: CHAIN.chainNamespace, chainId: CHAIN.chainIdHex, rpcTarget: CHAIN.rpcTarget, displayName: CHAIN.displayName, blockExplorer: CHAIN.blockExplorer, ticker: CHAIN.ticker, tickerName: CHAIN.tickerName }, web3AuthNetwork:"mainnet" });
+    await web3auth.initModal(); log('Web3Auth','initModal finished');
+    ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect (Web3Auth)'; ui.connectBtn.onclick=()=>connectWeb3Auth();
+    if (web3auth.provider){ log('Web3Auth','Auto-connecting with existing Web3Auth session'); await connectWeb3Auth(true); }
+  } catch (err) {
+    console.error('initWeb3Auth error', err); log('Error','initWeb3Auth: '+(err.message||err));
+    ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect (Injected)'; ui.connectBtn.onclick=connectInjectedWallet; ui.debugPanel.style.display='block';
   }
+}
+async function connectWeb3Auth(isAuto=false){
+  try {
+    if (!web3auth) throw new Error('Web3Auth not initialized');
+    const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    if (!isSecure && !isAuto){ const w='Web3Auth requires HTTPS or localhost.'; log('Web3Auth',w); alert(w); ui.debugPanel.style.display='block'; return; }
+    ui.connectBtn.disabled=true; ui.connectBtn.textContent='Connecting...';
+    walletProvider = await web3auth.connect();
+    if (!walletProvider) throw new Error('No provider returned from web3auth.connect()');
+    ethersProvider = new ethers.providers.Web3Provider(walletProvider);
+    signer = ethersProvider.getSigner(); currentAddress = (await signer.getAddress()).toLowerCase();
+    log('Wallet','Connected: '+currentAddress);
+    ui.address.textContent = 'Connected: ' + currentAddress; ui.address.title='Click to copy address';
+    vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
+    await afterWalletConnected(); ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connected';
+  } catch (err) {
+    console.error('connectWeb3Auth error', err); log('Error','connectWeb3Auth: '+(err.message||err)); ui.debugPanel.style.display='block'; ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect'; alert('Connect failed: ' + (err.message||err));
+  }
+}
+async function connectInjectedWallet(){
+  try {
+    if (!window.ethereum) { const msg='No injected wallet found (MetaMask).'; alert(msg); log('Wallet', msg); ui.debugPanel.style.display='block'; return; }
+    ui.connectBtn.disabled=true; ui.connectBtn.textContent='Connecting (Injected)...';
+    await window.ethereum.request({ method:'eth_requestAccounts' });
+    walletProvider = window.ethereum; ethersProvider = new ethers.providers.Web3Provider(window.ethereum);
+    signer = ethersProvider.getSigner(); currentAddress = (await signer.getAddress()).toLowerCase();
+    log('Wallet','Connected: '+currentAddress); ui.address.textContent='Connected: '+currentAddress; ui.address.title='Click to copy address';
+    vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
+    await afterWalletConnected(); ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connected (Injected)';
+  } catch (err) { console.error('connectInjectedWallet error', err); log('Error','connectInjectedWallet: '+(err.message||err)); ui.debugPanel.style.display='block'; ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect (Injected)'; alert('Injected connect failed: ' + (err.message||err)); }
+}
+if (ui.address) ui.address.onclick = async () => { if (currentAddress) { try { await navigator.clipboard.writeText(currentAddress); log('Clipboard','Copied address to clipboard'); } catch(e){ log('Clipboard error', e); } } };
 
-  async function connectWeb3Auth(isAuto=false) {
-    try {
-      if (!web3auth) throw new Error('Web3Auth not initialized');
-      const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname==='127.0.0.1';
-      if (!isSecure && !isAuto) { const w='Web3Auth requires HTTPS or localhost.'; log('Web3Auth', w); alert(w); ui.debugPanel.style.display='block'; return; }
-      ui.connectBtn.disabled = true; ui.connectBtn.textContent = 'Connecting...';
-      walletProvider = await web3auth.connect();
-      if (!walletProvider) throw new Error('No provider returned from web3auth.connect()');
-      ethersProvider = new ethers.providers.Web3Provider(walletProvider);
-      signer = ethersProvider.getSigner();
-      currentAddress = (await signer.getAddress()).toLowerCase();
-      log('Wallet', 'Connected: ' + currentAddress);
-      ui.address.textContent = 'Connected: ' + currentAddress;
-      ui.address.title = 'Click to copy address';
-      vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
-      await afterWalletConnected();
-      ui.connectBtn.disabled = false; ui.connectBtn.textContent = 'Connected';
-    } catch (err) {
-      console.error('connectWeb3Auth error', err);
-      log('Error', 'connectWeb3Auth error: ' + (err.message||err)); ui.debugPanel.style.display='block'; ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect'; alert('Connect failed: ' + (err.message||err));
+// Token UI helpers
+function tokenLogoFor(addr){
+  return TOKEN_LOGOS[(addr||'').toLowerCase()] || '';
+}
+async function loadSupportedTokens(){
+  log('Info','loadSupportedTokens');
+  try {
+    const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
+    const tokens = await vaultRead.getSupportedTokens?.().catch(()=>null);
+    const list = tokens && tokens.length ? tokens.map(t=>t.toLowerCase()) : [WMON_ADDRESS.toLowerCase(), USDC_ADDRESS.toLowerCase(), BITCOINFLASH_ADDRESS.toLowerCase()];
+    ui.stakeToken.innerHTML = '';
+    for (const t of list){
+      const token = createTokenContract(t, rpcFallbackProvider);
+      let symbol = t.slice(0,6);
+      try { symbol = await token.symbol(); } catch(e){}
+      const opt = document.createElement('option'); opt.value = t; opt.textContent = symbol; ui.stakeToken.appendChild(opt);
     }
-  }
-
-  async function connectInjectedWallet() {
-    try {
-      if (!window.ethereum) { const msg='No injected wallet found (MetaMask).'; alert(msg); log('Wallet', msg); ui.debugPanel.style.display='block'; return; }
-      ui.connectBtn.disabled=true; ui.connectBtn.textContent='Connecting (Injected)...';
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
-      walletProvider = window.ethereum;
-      ethersProvider = new ethers.providers.Web3Provider(window.ethereum);
-      signer = ethersProvider.getSigner();
-      currentAddress = (await signer.getAddress()).toLowerCase();
-      log('Wallet', 'Connected: ' + currentAddress);
-      ui.address.textContent = 'Connected: ' + currentAddress;
-      ui.address.title = 'Click to copy address';
-      vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
-      await afterWalletConnected();
-      ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connected (Injected)';
-    } catch (err) {
-      console.error('connectInjectedWallet error', err);
-      log('Error', 'connectInjectedWallet error: ' + (err.message||err)); ui.debugPanel.style.display='block'; ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect (Injected)'; alert('Injected connect failed: ' + (err.message||err));
+    const w = WMON_ADDRESS.toLowerCase();
+    if (Array.from(ui.stakeToken.options).some(o=>o.value===w)) ui.stakeToken.value = w;
+    // update icon
+    updateTokenIcon(ui.stakeToken.value);
+    ui.stakeToken.dispatchEvent(new Event('change'));
+    log('Tokens','Supported tokens loaded: ' + JSON.stringify(list));
+  } catch (e) { console.warn('loadSupportedTokens error', e); log('Error','loadSupportedTokens: '+(e.message||e)); ui.debugPanel.style.display='block'; }
+}
+function updateTokenIcon(addr){
+  try {
+    const url = tokenLogoFor(addr);
+    if (ui.tokenIcon) {
+      if (url) { ui.tokenIcon.src = url; ui.tokenIcon.style.display = 'inline-block'; }
+      else { ui.tokenIcon.src = ''; ui.tokenIcon.style.display = 'none'; }
     }
-  }
+  } catch(e){ console.warn('updateTokenIcon', e); }
+}
 
-  if (ui.address) ui.address.onclick = async () => { if (currentAddress) { try { await navigator.clipboard.writeText(currentAddress); log('Clipboard','Copied address to clipboard'); } catch(e){ log('Clipboard error', e); } } };
-
-  // --- Post-connect: data loading (robustified) ---
-  async function afterWalletConnected() {
-    log('Info', 'afterWalletConnected start');
-    try {
-      await loadSupportedTokens();
-      await loadUserBalance();
-      await loadAllowance();
-      await loadPendingRewards();
-      await loadAPY();
-      await loadUserStakes();
-      await loadRecentActivity();
-      await loadReferrerRewards();
-      log('Info', 'afterWalletConnected completed');
-    } catch (e) {
-      console.warn('afterWalletConnected failed', e);
-      log('Error', 'afterWalletConnected failed: ' + (e.message||e));
-      ui.debugPanel.style.display='block';
-    }
-  }
-
-  async function loadSupportedTokens() {
-    log('Info', 'loadSupportedTokens');
-    try {
-      const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
-      const tokens = await vaultRead.getSupportedTokens?.().catch(()=>null);
-      let list = tokens && tokens.length ? tokens.map(t=>t.toLowerCase()) : [WMON_ADDRESS.toLowerCase(), USDC_ADDRESS.toLowerCase(), BITCOINFLASH_ADDRESS.toLowerCase()];
-      ui.stakeToken.innerHTML='';
-      for (const t of list) {
-        const token = createTokenContract(t, rpcFallbackProvider);
-        let symbol = t.slice(0,6);
-        try { symbol = await token.symbol(); } catch(e){}
-        const opt=document.createElement('option'); opt.value=t; opt.textContent=symbol; ui.stakeToken.appendChild(opt);
-      }
-      const w=WMON_ADDRESS.toLowerCase(); if (Array.from(ui.stakeToken.options).some(o=>o.value===w)) ui.stakeToken.value=w;
-      ui.stakeToken.dispatchEvent(new Event('change'));
-      log('Tokens', 'Supported tokens loaded: ' + JSON.stringify(list));
-    } catch (e) { console.warn('loadSupportedTokens error', e); log('Error', 'loadSupportedTokens error: ' + (e.message||e)); ui.debugPanel.style.display='block'; }
-  }
-
-  async function loadUserBalance() {
-    log('Info', 'loadUserBalance');
-    if (!signer || !currentAddress) return;
+// Balance / price / allowance / pending / apy / stakes / activity
+async function loadUserBalance(){
+  log('Info','loadUserBalance');
+  if (!signer || !currentAddress) return;
+  const tokenAddr = ui.stakeToken.value || WMON_ADDRESS;
+  try {
+    const token = createTokenContract(tokenAddr, signer);
+    const [bal, dec] = await Promise.all([ token.balanceOf(currentAddress), token.decimals().catch(()=>18) ]);
+    ui.selectedTokenBalance.textContent = ethers.utils.formatUnits(bal, dec);
+    await updateSelectedTokenPrice();
+  } catch (e) { console.warn('loadUserBalance failed', e); log('Error','loadUserBalance: '+(e.message||e)); ui.selectedTokenBalance.textContent='0.0000'; }
+}
+async function updateSelectedTokenPrice(){
+  const addr = ui.stakeToken.value;
+  const pEl = ui.selectedTokenPrice, vEl = ui.selectedTokenUsd;
+  if (!addr) { pEl.textContent='N/A'; vEl.textContent='N/A'; return; }
+  pEl.textContent='Loading...'; vEl.textContent='Loading...';
+  try {
+    const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${addr}`).catch(()=>null);
+    const json = res ? await res.json().catch(()=>null) : null;
+    const price = json && json.pairs && json.pairs[0] ? Number(json.pairs[0].priceUsd) : null;
+    if (!price){ pEl.textContent='N/A'; vEl.textContent='N/A'; return; }
+    pEl.textContent = `$${price.toFixed(6)}`;
+    const bal = Number(ui.selectedTokenBalance.textContent) || 0;
+    vEl.textContent = `$${(bal * price).toFixed(4)}`;
+  } catch(e){ console.warn('updateSelectedTokenPrice error', e); log('Error','updateSelectedTokenPrice: '+(e.message||e)); pEl.textContent='N/A'; vEl.textContent='N/A'; }
+}
+async function loadAllowance(){
+  log('Info','loadAllowance');
+  if (!signer || !currentAddress) { ui.allowanceValue.textContent='Connect wallet'; return; }
+  const tokenAddr = ui.stakeToken.value || WMON_ADDRESS;
+  try {
+    const token = createTokenContract(tokenAddr, signer);
+    const dec = await token.decimals().catch(()=>18);
+    const allowance = await token.allowance(currentAddress, VAULT_ADDRESS);
+    ui.allowanceValue.textContent = ethers.utils.formatUnits(allowance, dec);
+    ui.revokeBtn.disabled = false;
+  } catch (e) { console.warn('loadAllowance failed', e); log('Error','loadAllowance: '+(e.message||e)); ui.allowanceValue.textContent='N/A'; ui.revokeBtn.disabled=true; ui.debugPanel.style.display='block'; }
+}
+async function loadPendingRewards(){
+  log('Info','loadPendingRewards');
+  try {
+    const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
+    const pendingNames = ['calculateRewards','pendingRewards','pendingReward','earned','rewardsOf','pending'];
+    let pending = null;
+    for (const fn of pendingNames){ if (vaultRead[fn]) { try { pending = await vaultRead[fn](currentAddress); break; } catch(e){} } }
+    ui.pendingRewards.textContent = pending ? ethers.utils.formatUnits(pending, 18) : 'N/A';
+  } catch (e) { console.warn('loadPendingRewards failed', e); log('Error','loadPendingRewards: '+(e.message||e)); ui.pendingRewards.textContent='N/A'; }
+}
+async function loadAPY(){
+  log('Info','loadAPY');
+  try {
+    const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
+    const rateFns = ['rewardRate','rewardPerSecond','rewardsPerSecond','rewardRatePerSecond'];
+    let rate = null;
+    for (const fn of rateFns){ if (vaultRead[fn]) { try { rate = await vaultRead[fn](); break; } catch(e){} } }
     const tokenAddr = ui.stakeToken.value || WMON_ADDRESS;
-    try {
-      const token = createTokenContract(tokenAddr, signer);
-      const [bal, dec] = await Promise.all([ token.balanceOf(currentAddress), token.decimals().catch(()=>18) ]);
-      ui.selectedTokenBalance.textContent = ethers.utils.formatUnits(bal, dec);
-      log('Balance', 'Loaded balance for ' + tokenAddr + ': ' + ui.selectedTokenBalance.textContent);
-      await updateSelectedTokenPrice();
-    } catch (e) { console.warn('loadUserBalance failed', e); log('Error', 'loadUserBalance failed: ' + (e.message||e)); ui.selectedTokenBalance.textContent='0.0000'; }
-  }
+    let totalStaked = null;
+    try { totalStaked = await vaultRead.totalStaked?.(tokenAddr).catch(()=>null); } catch(e){}
+    if (rate && totalStaked && totalStaked.gt && totalStaked.gt(0)) {
+      const SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
+      const apy = (Number(rate.toString()) * SECONDS_PER_YEAR / Number(totalStaked.toString())) * 100;
+      ui.apyDisplay.textContent = `${apy.toFixed(2)}% (est)`;
+    } else ui.apyDisplay.textContent='N/A';
+  } catch (e) { console.warn('loadAPY failed', e); log('Error','loadAPY: '+(e.message||e)); ui.apyDisplay.textContent='N/A'; }
+}
+async function loadUserStakes(){
+  log('Info','loadUserStakes');
+  try {
+    if (!currentAddress) return;
+    const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
+    const ids = await vaultRead.getUserStakes?.(currentAddress).catch(()=>[]);
+    log('UserStakes','ids:'+JSON.stringify(ids||[]));
+  } catch (e) { console.warn('loadUserStakes failed', e); log('Error','loadUserStakes: '+(e.message||e)); }
+}
+async function loadRecentActivity(){
+  log('Info','loadRecentActivity');
+  try {
+    const provider = rpcFallbackProvider;
+    let blockNum;
+    try { blockNum = await provider.getBlockNumber(); } catch (e) { log('Error','Could not fetch block number: '+(e.message||e)); ui.txList.textContent='Transaction history unavailable'; return; }
+    ui.txList.innerHTML = '<div class="muted-small">Recent history loaded (if available)</div>';
+  } catch (e) { console.warn('loadRecentActivity failed', e); log('Error','loadRecentActivity: '+(e.message||e)); ui.txList.textContent='Transaction history unavailable'; }
+}
+async function loadReferrerRewards(){
+  try {
+    const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
+    const names = ['referrerRewardsOf','referrerRewards','refRewards','referralRewards'];
+    let val = null;
+    for (const n of names){ if (vaultRead[n]) { try { val = await vaultRead[n](currentAddress); break; } catch(e){} } }
+    log('ReferrerRewards','value:'+String(val||'—'));
+  } catch (e) { log('Error','loadReferrerRewards: '+(e.message||e)); }
+}
 
-  async function updateSelectedTokenPrice() {
-    const addr = ui.stakeToken.value;
-    const pEl = ui.selectedTokenPrice, vEl = ui.selectedTokenUsd;
-    if (!addr) { pEl.textContent='N/A'; vEl.textContent='N/A'; return; }
-    pEl.textContent='Loading...'; vEl.textContent='Loading...';
-    try {
-      const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${addr}`).catch(()=>null);
-      const json = res ? await res.json().catch(()=>null) : null;
-      const price = json && json.pairs && json.pairs[0] ? Number(json.pairs[0].priceUsd) : null;
-      if (!price){ pEl.textContent='N/A'; vEl.textContent='N/A'; return; }
-      pEl.textContent = `$${price.toFixed(6)}`;
-      const bal = Number(ui.selectedTokenBalance.textContent) || 0;
-      vEl.textContent = `$${(bal * price).toFixed(4)}`;
-    } catch(e){ console.warn('updateSelectedTokenPrice error', e); log('Error', 'updateSelectedTokenPrice error: ' + (e.message||e)); pEl.textContent='N/A'; vEl.textContent='N/A'; }
-  }
-
-  async function loadAllowance() {
-    log('Info', 'loadAllowance');
-    if (!signer || !currentAddress) { ui.allowanceValue.textContent='Connect wallet'; return; }
-    const tokenAddr = ui.stakeToken.value || WMON_ADDRESS;
-    try {
-      const token = createTokenContract(tokenAddr, signer);
-      const dec = await token.decimals().catch(()=>18);
-      const allowance = await token.allowance(currentAddress, VAULT_ADDRESS);
-      ui.allowanceValue.textContent = ethers.utils.formatUnits(allowance, dec);
-      log('Allowance', 'Loaded allowance for ' + tokenAddr + ': ' + ui.allowanceValue.textContent);
-      ui.revokeBtn.disabled = false;
-    } catch (e) { console.warn('loadAllowance failed', e); log('Error', 'loadAllowance failed: ' + (e.message||e)); ui.allowanceValue.textContent='N/A'; ui.revokeBtn.disabled=true; ui.debugPanel.style.display='block'; }
-  }
-
-  async function loadPendingRewards() {
-    log('Info', 'loadPendingRewards');
-    try {
-      const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
-      const pendingNames = ['calculateRewards','pendingRewards','pendingReward','earned','rewardsOf','pending'];
-      let pending = null;
-      for (const fn of pendingNames) {
-        if (vaultRead[fn]) {
-          try { pending = await vaultRead[fn](currentAddress); break; } catch(e){ }
-        }
-      }
-      ui.pendingRewards.textContent = pending ? ethers.utils.formatUnits(pending, 18) : 'N/A';
-      log('Rewards', 'Pending rewards: ' + ui.pendingRewards.textContent);
-    } catch (e) { console.warn('loadPendingRewards failed', e); log('Error', 'loadPendingRewards failed: ' + (e.message||e)); ui.pendingRewards.textContent='N/A'; }
-  }
-
-  async function loadAPY() {
-    log('Info', 'loadAPY');
-    try {
-      const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
-      const rateFns = ['rewardRate','rewardPerSecond','rewardsPerSecond','rewardRatePerSecond'];
-      let rate = null;
-      for (const fn of rateFns) {
-        if (vaultRead[fn]) {
-          try { rate = await vaultRead[fn](); break; } catch(e){}
-        }
-      }
-      const tokenAddr = ui.stakeToken.value || WMON_ADDRESS;
-      let totalStaked = null;
-      try { totalStaked = await vaultRead.totalStaked?.(tokenAddr).catch(()=>null); } catch(e){}
-      if (rate && totalStaked && totalStaked.gt && totalStaked.gt(0)) {
-        const SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
-        const apy = (Number(rate.toString()) * SECONDS_PER_YEAR / Number(totalStaked.toString())) * 100;
-        ui.apyDisplay.textContent = `${apy.toFixed(2)}% (est)`;
-      } else ui.apyDisplay.textContent='N/A';
-      log('APY', 'APY: ' + ui.apyDisplay.textContent);
-    } catch (e) { console.warn('loadAPY failed', e); log('Error', 'loadAPY failed: ' + (e.message||e)); ui.apyDisplay.textContent='N/A'; }
-  }
-
-  async function loadUserStakes() {
-    log('Info', 'loadUserStakes');
-    try {
-      if (!currentAddress) return;
-      const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
-      const ids = await vaultRead.getUserStakes?.(currentAddress).catch(()=>[]);
-      log('UserStakes','ids:'+JSON.stringify(ids||[]));
-    } catch (e) { console.warn('loadUserStakes failed', e); log('Error', 'loadUserStakes failed: ' + (e.message||e)); }
-  }
-
-  // Robust recent activity: guard network errors (some RPC endpoints block CORS)
-  async function loadRecentActivity() {
-    log('Info', 'loadRecentActivity');
-    try {
-      const provider = rpcFallbackProvider;
-      let blockNum;
-      try {
-        blockNum = await provider.getBlockNumber();
-      } catch (e) {
-        log('Error','Could not fetch block number from fallback RPC: ' + (e.message||e));
-        ui.txList.textContent = 'Transaction history unavailable';
-        return;
-      }
-      const fromBlock = Math.max(0, blockNum - 5000);
-      // ... proceed safely (omitted detailed events to keep example focused)
-      ui.txList.innerHTML = '<div class="muted-small">Recent history loaded (if available)</div>';
-    } catch (e) { console.warn('loadRecentActivity failed', e); log('Error', 'loadRecentActivity failed: ' + (e.message||e)); ui.txList.textContent = 'Transaction history unavailable'; }
-  }
-
-  async function loadReferrerRewards() {
-    try {
-      const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
-      const names = ['referrerRewardsOf','referrerRewards','refRewards','referralRewards'];
-      let val = null;
-      for (const n of names) { if (vaultRead[n]) { try { val = await vaultRead[n](currentAddress); break; } catch(e){} } }
-      log('ReferrerRewards', 'value: ' + String(val || '—'));
-    } catch (e) { log('Error', 'loadReferrerRewards failed: ' + (e.message||e)); }
-  }
-
-  // --- Transaction helpers: submit + show overlay + lock ---
-  async function sendTxAndTrack(txPromiseFactory, label) {
-    // ensure only one wallet request at a time
-    const acquired = await acquireWalletLock();
-    if (!acquired) {
-      const msg = "A wallet request is already pending. Please complete or reject it in your wallet, then try again.";
-      log('WalletLock', msg);
-      alert(msg);
-      return { error: new Error('wallet_request_pending') };
+// Transaction helper with lock
+async function sendTxAndTrack(txPromiseFactory,label){
+  const acquired = await acquireWalletLock();
+  if (!acquired) { const msg="A wallet request is already pending. Please complete or reject it in your wallet, then try again."; log('WalletLock',msg); alert(msg); return { error:new Error('wallet_request_pending') }; }
+  const id = 'tx-'+Date.now()+'-'+Math.floor(Math.random()*9999);
+  try {
+    pushOverlayItem(label,id); ui.stakeBtn.disabled=true; ui.revokeBtn.disabled=true; log('TX','Submitting: '+label);
+    const tx = await txPromiseFactory();
+    if (!tx) throw new Error('NoTxReturned');
+    updateOverlayItem(id,'SUBMITTED',tx.hash||''); log('TX','Submitted '+(tx.hash||'(no-hash)'));
+    try { const receipt = await tx.wait(); updateOverlayItem(id,'CONFIRMED',receipt.transactionHash); log('TX','Confirmed '+receipt.transactionHash); return { receipt }; }
+    catch (confirmErr) { updateOverlayItem(id,'FAILED', (confirmErr && confirmErr.message) || String(confirmErr)); log('TX','Confirmation failed: '+(confirmErr && confirmErr.message)); return { error: confirmErr }; }
+  } catch (err) {
+    const msg = (err && err.message) || String(err);
+    if (msg.includes('already pending') || (msg.includes('Request of type') && msg.includes('already pending'))) {
+      updateOverlayItem(id,'FAILED','Pending request in wallet. Confirm or reject it.');
+      log('Wallet','Pending signature exists: '+msg);
+      alert('A wallet signature is already pending. Please confirm or reject it in your wallet.');
+    } else {
+      updateOverlayItem(id,'FAILED',msg); log('Error','sendTxAndTrack: '+msg);
     }
+    return { error: err };
+  } finally { releaseWalletLock(); ui.stakeBtn.disabled=false; ui.revokeBtn.disabled=false; }
+}
 
-    const id = 'tx-' + Date.now() + '-' + Math.floor(Math.random()*9999);
-    try {
-      pushOverlayItem(label, id);
-      ui.stakeBtn.disabled = true;
-      ui.revokeBtn.disabled = true;
-      log('TX', 'Submitting transaction: ' + label);
-      // invoke factory that returns tx
-      const tx = await txPromiseFactory();
-      if (!tx) throw new Error('NoTxReturned');
-      updateOverlayItem(id, 'SUBMITTED', tx.hash || '');
-      log('TX','Submitted ' + (tx.hash || '(no-hash)'));
-      // track confirmation
-      try {
-        const receipt = await tx.wait();
-        updateOverlayItem(id, 'CONFIRMED', receipt.transactionHash);
-        log('TX','Transaction confirmed: ' + receipt.transactionHash);
-        return { receipt };
-      } catch (confirmErr) {
-        updateOverlayItem(id, 'FAILED', (confirmErr && confirmErr.message) || String(confirmErr));
-        log('TX','Transaction failed: ' + (confirmErr && confirmErr.message));
-        return { error: confirmErr };
-      }
-    } catch (err) {
-      // If error indicates an already-pending signature (common with some providers), show friendly guidance
-      const msg = (err && err.message) || String(err);
-      if (msg.includes('already pending') || msg.includes('Request of type') && msg.includes('already pending')) {
-        updateOverlayItem(id, 'FAILED', 'Pending request in wallet. Confirm or reject it.');
-        log('Wallet','Pending signature already exists: ' + msg);
-        alert('A wallet signature is already pending. Please find the open request in your wallet (MetaMask/other), confirm or reject it, then try again.');
-      } else {
-        updateOverlayItem(id, 'FAILED', msg);
-        log('Error', 'sendTxAndTrack failed: ' + msg);
-      }
-      return { error: err };
-    } finally {
-      releaseWalletLock();
-      ui.stakeBtn.disabled = false;
-      ui.revokeBtn.disabled = false;
+// Stake & revoke wiring
+if (ui.stakeBtn) ui.stakeBtn.addEventListener('click', async ()=>{
+  if (!signer || !vaultContract) return alert('Connect wallet first!');
+  const tokenAddr = ui.stakeToken.value || WMON_ADDRESS;
+  const amountRaw = ui.stakeAmount.value;
+  const durationDays = Number(ui.lockDuration.value || 30);
+  if (!amountRaw || Number(amountRaw) <= 0) return alert('Enter valid amount');
+  try {
+    const token = createTokenContract(tokenAddr, signer);
+    const dec = await token.decimals().catch(()=>18);
+    const amountWei = ethers.utils.parseUnits(String(amountRaw), dec);
+    const allowance = await token.allowance(currentAddress, VAULT_ADDRESS);
+    if (allowance.lt(amountWei)) {
+      log('Approve','Approving token for vault...');
+      const approveResult = await sendTxAndTrack(()=> token.approve(VAULT_ADDRESS, amountWei), 'Approve');
+      if (approveResult.error) throw approveResult.error;
     }
-  }
+    const durationSec = durationDays * 24 * 60 * 60;
+    const stakeResult = await sendTxAndTrack(()=> vaultContract.stake(tokenAddr, amountWei, durationSec), 'Stake '+amountRaw);
+    if (stakeResult.error) throw stakeResult.error;
+    alert('Stake confirmed');
+    await Promise.all([ loadUserBalance(), loadUserStakes(), loadAllowance(), loadPendingRewards(), loadRecentActivity() ]);
+  } catch (e) { console.error('stake failed', e); log('Error','stake failed: '+(e.message||e)); ui.debugPanel.style.display='block'; alert('Stake failed: ' + (e.message || e)); }
+});
+if (ui.revokeBtn) ui.revokeBtn.addEventListener('click', async ()=>{
+  if (!signer) return alert('Connect wallet first!');
+  const tokenAddr = ui.stakeToken.value || WMON_ADDRESS;
+  try {
+    const token = createTokenContract(tokenAddr, signer);
+    const revokeResult = await sendTxAndTrack(()=> token.approve(VAULT_ADDRESS, 0), 'Revoke allowance');
+    if (revokeResult.error) throw revokeResult.error;
+    alert('Allowance revoked');
+    await loadAllowance();
+  } catch (e) { console.error('revoke failed', e); log('Error','revoke failed: '+(e.message||e)); ui.debugPanel.style.display='block'; alert('Revoke failed: ' + (e.message||e)); }
+});
 
-  // --- Stake / Approve wiring (uses sendTxAndTrack to avoid duplicate wallet requests) ---
-  if (ui.stakeBtn) ui.stakeBtn.addEventListener('click', async () => {
-    if (!signer || !vaultContract) return alert('Connect wallet first!');
-    const tokenAddr = ui.stakeToken.value || WMON_ADDRESS;
-    const amountRaw = ui.stakeAmount.value;
-    const durationDays = Number(ui.lockDuration.value || 30);
-    if (!amountRaw || Number(amountRaw) <= 0) return alert('Enter valid amount');
+if (ui.tokenIcon) {
+  ui.tokenIcon.style.display = 'none';
+  ui.tokenIcon.alt = 'token';
+  ui.tokenIcon.onerror = () => { ui.tokenIcon.src = 'https://files.catbox.moe/hwlhih.png'; ui.tokenIcon.style.display='inline-block'; };
+}
 
-    log('Action', 'User clicked Stake: token=' + tokenAddr + ', amount=' + amountRaw + ', duration=' + durationDays);
+// Debug controls
+if (ui.debugClearBtn) ui.debugClearBtn.onclick = ()=> { if (ui.debugLog) ui.debugLog.innerHTML=''; };
+if (ui.debugToggleBtn) ui.debugToggleBtn.onclick = ()=> { if (ui.debugPanel.style.display === 'none') { ui.debugPanel.style.display='block'; ui.debugToggleBtn.textContent='Hide'; } else { ui.debugPanel.style.display='none'; ui.debugToggleBtn.textContent='Show'; } };
 
-    try {
-      const token = createTokenContract(tokenAddr, signer);
-      const dec = await token.decimals().catch(()=>18);
-      const amountWei = ethers.utils.parseUnits(String(amountRaw), dec);
+// Boot
+(async function boot(){
+  try { log('Info','Booting...'); await initWeb3Auth(); await loadSupportedTokens(); log('Info','Boot complete'); }
+  catch(e){ console.error('boot/init failed', e); log('Error','boot init failed: '+(e.message||e)); ui.debugPanel.style.display='block'; if (!ui.connectBtn.onclick) { ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect (Injected)'; ui.connectBtn.onclick=connectInjectedWallet; } }
+})();
 
-      // Step 1: ensure allowance (if needed) - use sendTxAndTrack to guard wallet requests
-      const allowance = await token.allowance(currentAddress, VAULT_ADDRESS);
-      if (allowance.lt(amountWei)) {
-        log('Approve','Approving token for vault...');
-        const approveResult = await sendTxAndTrack(() => token.approve(VAULT_ADDRESS, amountWei), 'Approve ' + (tokenAddr===WMON_ADDRESS? 'WMON' : tokenAddr));
-        if (approveResult.error) throw approveResult.error;
-      }
-
-      // Step 2: stake
-      const durationSec = durationDays * 24 * 60 * 60;
-      const stakeResult = await sendTxAndTrack(() => vaultContract.stake(tokenAddr, amountWei, durationSec), 'Stake ' + amountRaw + ' -> vault');
-      if (stakeResult.error) throw stakeResult.error;
-
-      alert('Stake confirmed');
-      // refresh UI
-      await Promise.all([ loadUserBalance(), loadUserStakes(), loadAllowance(), loadPendingRewards(), loadRecentActivity() ]);
-    } catch (e) {
-      console.error('stake failed', e);
-      log('Error', 'stake failed: ' + (e.message || e));
-      ui.debugPanel.style.display='block';
-      alert('Stake failed: ' + (e.message || e));
-    }
-  });
-
-  if (ui.revokeBtn) ui.revokeBtn.addEventListener('click', async () => {
-    if (!signer) return alert('Connect wallet first!');
-    const tokenAddr = ui.stakeToken.value || WMON_ADDRESS;
-    log('Action', 'User clicked Revoke: token=' + tokenAddr);
-    try {
-      const token = createTokenContract(tokenAddr, signer);
-      const revokeResult = await sendTxAndTrack(() => token.approve(VAULT_ADDRESS, 0), 'Revoke allowance');
-      if (revokeResult.error) throw revokeResult.error;
-      alert('Allowance revoked');
-      await loadAllowance();
-    } catch (e) {
-      console.error('revoke failed', e);
-      log('Error', 'revoke failed: ' + (e.message||e));
-      ui.debugPanel.style.display='block';
-      alert('Revoke failed: ' + (e.message||e));
-    }
-  });
-
-  if (ui.stakeToken) ui.stakeToken.addEventListener('change', async () => {
-    log('Action', 'User changed token selection: ' + ui.stakeToken.value);
-    await Promise.all([ loadUserBalance(), loadAllowance(), loadPendingRewards(), loadAPY() ]);
-  });
-
-  // Boot
-  (async function boot() {
-    try {
-      log('Info', 'Booting app...');
-      await initWeb3Auth();
-      await loadSupportedTokens();
-      log('Info', 'App boot complete');
-    } catch (e) {
-      console.error('boot/init failed', e);
-      log('Error', 'boot init failed: ' + (e.message||e));
-      ui.debugPanel.style.display='block';
-      if (!ui.connectBtn.onclick) { ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect (Injected)'; ui.connectBtn.onclick=connectInjectedWallet; }
-    }
-  })();
-
-  // Helpful UX: detect common provider 'already pending' on window.ethereum and show hint
-  if (window.ethereum) {
-    window.ethereum.on && window.ethereum.on('message', (msg) => {
-      // noop for now — some providers emit messages when requests are pending
-    });
-  }
-
-  log('Info', 'Page booted. Wallet-request lock and overlay enabled to prevent duplicate signature errors.');
+log('Info','Page booted. Token logos and ABIs applied.');
 </script>
+</body>
+</html>
