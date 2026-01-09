@@ -346,8 +346,82 @@ Network:
 - Uniswap V3 Docs: https://docs.uniswap.org  
 - OpenZeppelin Contracts: https://docs.openzeppelin.com
 
-Owner: `0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e`  
-Donate: https://moon.monad.xyz/donate/0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e
+Owner: `0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e`
+
+**Donate (UI + README):**  
+The donate flow uses two links:
+
+1. Preferred (MonadVision wallet/profile)
+- Opens the owner's MonadVision wallet/profile page (useful if the user wants to open the owner's portfolio/wallet UI):  
+  https://monadvision.com/myspace?feature=Wallet&type=Portfolio&address=0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e
+
+2. Fallback (direct donation link)
+- Direct donation page (works if a dedicated donation widget is hosted there):  
+  https://moon.monad.xyz/donate/0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e
+
+If the "donate" button in your UI wasn't working because it pointed only to the fallback or used a relative link, make it explicit and include both: open the MonadVision link first (for wallet UI), and show the fallback link if the user has trouble.
+
+---
+
+## Donate button: suggested front-end fix
+
+Add a donate button (or update existing donate link) like this in your UI HTML:
+
+```html
+<!-- Example donate button -->
+<a id="donateBtn" class="btn" target="_blank" rel="noopener noreferrer"
+   href="https://monadvision.com/myspace?feature=Wallet&type=Portfolio&address=0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e">
+  Donate
+</a>
+```
+
+And include the small JS helper (place before </body>) to set both primary (MonadVision) and fallback (moon) links and show fallback to the user when needed:
+
+```javascript name=donate-fix.js
+// Donate button helper — try MonadVision as primary, show fallback link tooltip/label
+(function () {
+  const OWNER = '0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e';
+  const MONADVISION_URL = `https://monadvision.com/myspace?feature=Wallet&type=Portfolio&address=${OWNER}`;
+  const MOON_DONATE_URL = `https://moon.monad.xyz/donate/${OWNER}`;
+
+  const btn = document.getElementById('donateBtn');
+  if (!btn) return;
+
+  // Primary target: MonadVision profile/wallet view
+  btn.href = MONADVISION_URL;
+  btn.target = '_blank';
+  btn.rel = 'noopener noreferrer';
+
+  // Provide a tooltip or small fallback action if MonacoVision doesn't open properly:
+  btn.addEventListener('auxclick', () => { /* middle-click works as normal */ });
+
+  // On long-press / right-click we can't detect, but provide a small fallback UI on normal click if needed:
+  btn.addEventListener('click', (e) => {
+    // give browser a moment to open external site; optionally show fallback if popup blocked
+    setTimeout(async () => {
+      // optional: for browsers with popup blocking, user will still be able to copy fallback link
+      // We won't try to fetch cross-origin resources (CORS) — just provide the fallback to user.
+      // Show a small confirmation offering the fallback link (non-blocking)
+      if (!confirm('Open MonadVision wallet? Click "Cancel" to copy a direct donate link instead.')) {
+        e.preventDefault();
+        try {
+          await navigator.clipboard.writeText(MOON_DONATE_URL);
+          alert('Fallback donation link copied to clipboard:\n' + MOON_DONATE_URL);
+        } catch (err) {
+          // If clipboard fails, open fallback in new tab
+          window.open(MOON_DONATE_URL, '_blank', 'noopener');
+        }
+      }
+    }, 150);
+    // Let the default navigation happen (opening MonadVision in new tab).
+  });
+})();
+```
+
+This approach:
+- Opens MonadVision first (preferred wallet/profile UI).
+- If user cancels the confirm prompt, copies the fallback donate link to clipboard or opens it in a new tab.
+- Avoids CORS/fetch issues (no cross-origin fetch attempts).
 
 ---
 
