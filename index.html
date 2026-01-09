@@ -470,7 +470,7 @@
       <div id="txList" class="muted-small">No recent activity</div>
     </div>
 
-    <!-- My Stakes card (restored) -->
+    <!-- My Stakes card -->
     <div class="card" id="myStakesCard">
       <h4>My Stakes</h4>
       <div id="myStakesList" class="muted-small">No stakes found</div>
@@ -498,7 +498,7 @@
 
 <script>
 // ------------------------
-// Config & ABIs (unchanged)
+// Config & ABIs
 // ------------------------
 const WEB3AUTH_CLIENT_ID = "BM_xtlDAKQnuJR2-_N6dQuVvkSP7TTIglL1ho47LG7DP_ZbJT1HftQJ7F0RCoA0HvZKRfMeyRfwgJmZYgM-ZVSs";
 const urlParams = new URLSearchParams(window.location.search);
@@ -522,64 +522,69 @@ const TOKEN_LOGOS = {
   [BITCOINFLASH_ADDRESS.toLowerCase()]: "https://files.catbox.moe/lk7mrk.png"
 };
 
-// ABIs (kept as in your file)
+// Standard ERC-20 ABI (expanded)
 const ERC20_FULL_ABI = [
-  {"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"type":"function"},
-  {"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"type":"function"},
-  {"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"},
-  {"constant":true,"inputs":[{"name":"owner","type":"address"},{"name":"spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"type":"function"},
-  {"constant":false,"inputs":[{"name":"spender","type":"address"},{"name":"amount","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"type":"function"},
-  {"constant":false,"inputs":[{"name":"dst","type":"address"},{"name":"wad","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"type":"function"},
-  {"constant":false,"inputs":[{"name":"src","type":"address"},{"name":"dst","type":"address"},{"name":"wad","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"","type":"bool"}],"type":"function"},
-  {"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"}
+  { "constant": true, "inputs": [], "name": "name", "outputs": [{ "name": "", "type": "string" }], "type": "function", "stateMutability": "view" },
+  { "constant": true, "inputs": [], "name": "symbol", "outputs": [{ "name": "", "type": "string" }], "type": "function", "stateMutability": "view" },
+  { "constant": true, "inputs": [], "name": "decimals", "outputs": [{ "name": "", "type": "uint8" }], "type": "function", "stateMutability": "view" },
+  { "constant": true, "inputs": [], "name": "totalSupply", "outputs": [{ "name": "", "type": "uint256" }], "type": "function", "stateMutability": "view" },
+  { "constant": true, "inputs": [{ "name": "account", "type": "address" }], "name": "balanceOf", "outputs": [{ "name": "", "type": "uint256" }], "type": "function", "stateMutability": "view" },
+  { "constant": false, "inputs": [{ "name": "to", "type": "address" }, { "name": "amount", "type": "uint256" }], "name": "transfer", "outputs": [{ "name": "", "type": "bool" }], "type": "function", "stateMutability": "nonpayable" },
+  { "constant": false, "inputs": [{ "name": "from", "type": "address" }, { "name": "to", "type": "address" }, { "name": "amount", "type": "uint256" }], "name": "transferFrom", "outputs": [{ "name": "", "type": "bool" }], "type": "function", "stateMutability": "nonpayable" },
+  { "constant": false, "inputs": [{ "name": "spender", "type": "address" }, { "name": "amount", "type": "uint256" }], "name": "approve", "outputs": [{ "name": "", "type": "bool" }], "type": "function", "stateMutability": "nonpayable" },
+  { "constant": true, "inputs": [{ "name": "owner", "type": "address" }, { "name": "spender", "type": "address" }], "name": "allowance", "outputs": [{ "name": "", "type": "uint256" }], "type": "function", "stateMutability": "view" },
+  { "constant": false, "inputs": [{ "name": "spender", "type": "address" }, { "name": "addedValue", "type": "uint256" }], "name": "increaseAllowance", "outputs": [{ "name": "", "type": "bool" }], "type": "function", "stateMutability": "nonpayable" },
+  { "constant": false, "inputs": [{ "name": "spender", "type": "address" }, { "name": "subtractedValue", "type": "uint256" }], "name": "decreaseAllowance", "outputs": [{ "name": "", "type": "bool" }], "type": "function", "stateMutability": "nonpayable" },
+  { "anonymous": false, "inputs": [{ "indexed": true, "name": "owner", "type": "address" }, { "indexed": true, "name": "spender", "type": "address" }, { "indexed": false, "name": "value", "type": "uint256" }], "name": "Approval", "type": "event" },
+  { "anonymous": false, "inputs": [{ "indexed": true, "name": "from", "type": "address" }, { "indexed": true, "name": "to", "type": "address" }, { "indexed": false, "name": "value", "type": "uint256" }], "name": "Transfer", "type": "event" }
 ];
 
+// WMON (wrapped native) ABI — WETH-style (deposit/withdraw + ERC20)
 const WMON_ABI = [
-  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":true,"internalType":"address","name":"guy","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Approval","type":"event"},
-  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"dst","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Deposit","type":"event"},
-  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":true,"internalType":"address","name":"dst","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Transfer","type":"event"},
-  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Withdrawal","type":"event"},
-  {"stateMutability":"payable","type":"fallback"},
-  {"constant":true,"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-  {"constant":false,"inputs":[{"internalType":"address","name":"guy","type":"address"},{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-  {"constant":true,"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-  {"constant":true,"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
-  {"constant":false,"inputs":[],"name":"deposit","outputs":[],"stateMutability":"payable","type":"function"},
-  {"constant":true,"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-  {"constant":true,"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-  {"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-  {"constant":false,"inputs":[{"internalType":"address","name":"dst","type":"address"},{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-  {"constant":false,"inputs":[{"internalType":"address","name":"src","type":"address"},{"internalType":"address","name":"dst","type":"address"},{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-  {"constant":false,"inputs":[{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}
+  { "constant": true, "inputs": [], "name": "name", "outputs": [{ "name": "", "type": "string" }], "type": "function", "stateMutability": "view" },
+  { "constant": true, "inputs": [], "name": "symbol", "outputs": [{ "name": "", "type": "string" }], "type": "function", "stateMutability": "view" },
+  { "constant": true, "inputs": [], "name": "decimals", "outputs": [{ "name": "", "type": "uint8" }], "type": "function", "stateMutability": "view" },
+  { "constant": true, "inputs": [], "name": "totalSupply", "outputs": [{ "name": "", "type": "uint256" }], "type": "function", "stateMutability": "view" },
+  { "constant": true, "inputs": [{ "name": "owner", "type": "address" }], "name": "balanceOf", "outputs": [{ "name": "", "type": "uint256" }], "type": "function", "stateMutability": "view" },
+  { "constant": true, "inputs": [{ "name": "owner", "type": "address" }, { "name": "spender", "type": "address" }], "name": "allowance", "outputs": [{ "name": "", "type": "uint256" }], "type": "function", "stateMutability": "view" },
+  { "constant": false, "inputs": [{ "name": "to", "type": "address" }, { "name": "value", "type": "uint256" }], "name": "transfer", "outputs": [{ "name": "", "type": "bool" }], "type": "function", "stateMutability": "nonpayable" },
+  { "constant": false, "inputs": [{ "name": "from", "type": "address" }, { "name": "to", "type": "address" }, { "name": "value", "type": "uint256" }], "name": "transferFrom", "outputs": [{ "name": "", "type": "bool" }], "type": "function", "stateMutability": "nonpayable" },
+  { "constant": false, "inputs": [{ "name": "spender", "type": "address" }, { "name": "value", "type": "uint256" }], "name": "approve", "outputs": [{ "name": "", "type": "bool" }], "type": "function", "stateMutability": "nonpayable" },
+  { "constant": false, "inputs": [], "name": "deposit", "outputs": [], "type": "function", "stateMutability": "payable" },
+  { "constant": false, "inputs": [{ "name": "wad", "type": "uint256" }], "name": "withdraw", "outputs": [], "type": "function", "stateMutability": "nonpayable" },
+  { "anonymous": false, "inputs": [{ "indexed": true, "name": "src", "type": "address" }, { "indexed": true, "name": "guy", "type": "address" }, { "indexed": false, "name": "wad", "type": "uint256" }], "name": "Approval", "type": "event" },
+  { "anonymous": false, "inputs": [{ "indexed": true, "name": "dst", "type": "address" }, { "indexed": false, "name": "wad", "type": "uint256" }], "name": "Deposit", "type": "event" },
+  { "anonymous": false, "inputs": [{ "indexed": true, "name": "src", "type": "address" }, { "indexed": true, "name": "dst", "type": "address" }, { "indexed": false, "name": "wad", "type": "uint256" }], "name": "Transfer", "type": "event" },
+  { "anonymous": false, "inputs": [{ "indexed": true, "name": "src", "type": "address" }, { "indexed": false, "name": "wad", "type": "uint256" }], "name": "Withdrawal", "type": "event" }
 ];
 
+// BitcoinFlash ABI (expanded)
 const BITCOINFLASH_ABI = [
-  {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
-  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},
-  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},
-  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},
-  {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-  {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-  {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-  {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"burn","outputs":[],"stateMutability":"nonpayable","type":"function"},
-  {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
-  {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"subtractedValue","type":"uint256"}],"name":"decreaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-  {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"addedValue","type":"uint256"}],"name":"increaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-  {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},
-  {"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-  {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-  {"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},
-  {"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-  {"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-  {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-  {"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-  {"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"}
+  { "constant": true, "inputs": [], "name": "name", "outputs": [{ "name": "", "type": "string" }], "type": "function", "stateMutability": "view" },
+  { "constant": true, "inputs": [], "name": "symbol", "outputs": [{ "name": "", "type": "string" }], "type": "function", "stateMutability": "view" },
+  { "constant": true, "inputs": [], "name": "decimals", "outputs": [{ "name": "", "type": "uint8" }], "type": "function", "stateMutability": "view" },
+  { "constant": true, "inputs": [], "name": "totalSupply", "outputs": [{ "name": "", "type": "uint256" }], "type": "function", "stateMutability": "view" },
+  { "constant": true, "inputs": [{ "name": "account", "type": "address" }], "name": "balanceOf", "outputs": [{ "name": "", "type": "uint256" }], "type": "function", "stateMutability": "view" },
+  { "constant": false, "inputs": [{ "name": "to", "type": "address" }, { "name": "amount", "type": "uint256" }], "name": "transfer", "outputs": [{ "name": "", "type": "bool" }], "type": "function", "stateMutability": "nonpayable" },
+  { "constant": false, "inputs": [{ "name": "from", "type": "address" }, { "name": "to", "type": "address" }, { "name": "amount", "type": "uint256" }], "name": "transferFrom", "outputs": [{ "name": "", "type": "bool" }], "type": "function", "stateMutability": "nonpayable" },
+  { "constant": false, "inputs": [{ "name": "spender", "type": "address" }, { "name": "amount", "type": "uint256" }], "name": "approve", "outputs": [{ "name": "", "type": "bool" }], "type": "function", "stateMutability": "nonpayable" },
+  { "constant": true, "inputs": [{ "name": "owner", "type": "address" }, { "name": "spender", "type": "address" }], "name": "allowance", "outputs": [{ "name": "", "type": "uint256" }], "type": "function", "stateMutability": "view" },
+  { "constant": false, "inputs": [{ "name": "spender", "type": "address" }, { "name": "addedValue", "type": "uint256" }], "name": "increaseAllowance", "outputs": [{ "name": "", "type": "bool" }], "type": "function", "stateMutability": "nonpayable" },
+  { "constant": false, "inputs": [{ "name": "spender", "type": "address" }, { "name": "subtractedValue", "type": "uint256" }], "name": "decreaseAllowance", "outputs": [{ "name": "", "type": "bool" }], "type": "function", "stateMutability": "nonpayable" },
+  { "constant": false, "inputs": [{ "name": "to", "type": "address" }, { "name": "amount", "type": "uint256" }], "name": "mint", "outputs": [], "type": "function", "stateMutability": "nonpayable" },
+  { "constant": false, "inputs": [{ "name": "amount", "type": "uint256" }], "name": "burn", "outputs": [], "type": "function", "stateMutability": "nonpayable" },
+  { "constant": true, "inputs": [], "name": "owner", "outputs": [{ "name": "", "type": "address" }], "type": "function", "stateMutability": "view" },
+  { "constant": false, "inputs": [{ "name": "newOwner", "type": "address" }], "name": "transferOwnership", "outputs": [], "type": "function", "stateMutability": "nonpayable" },
+  { "constant": false, "inputs": [], "name": "renounceOwnership", "outputs": [], "type": "function", "stateMutability": "nonpayable" },
+  { "anonymous": false, "inputs": [{ "indexed": true, "name": "owner", "type": "address" }, { "indexed": true, "name": "spender", "type": "address" }, { "indexed": false, "name": "value", "type": "uint256" }], "name": "Approval", "type": "event" },
+  { "anonymous": false, "inputs": [{ "indexed": true, "name": "from", "type": "address" }, { "indexed": true, "name": "to", "type": "address" }, { "indexed": false, "name": "value", "type": "uint256" }], "name": "Transfer", "type": "event" },
+  { "anonymous": false, "inputs": [{ "indexed": true, "name": "previousOwner", "type": "address" }, { "indexed": true, "name": "newOwner", "type": "address" }], "name": "OwnershipTransferred", "type": "event" }
 ];
 
-// Vault implementation ABI — paste this into VAULT_IMPL_ABI
+// Vault implementation ABI
 const VAULT_IMPL_ABI = [
   {"inputs":[],"name":"getSupportedTokens","outputs":[{"internalType":"address[]","name":"","type":"address[]"}],"stateMutability":"view","type":"function"},
-  {"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getUserStakes","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getUserStakes","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]}],"stateMutability":"view","type":"function"},
   {"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"uint256","name":"stakeId","type":"uint256"}],"name":"getStakeInfo","outputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"uint256","name":"stakedAt","type":"uint256"},{"internalType":"uint256","name":"unlockTime","type":"uint256"},{"internalType":"bool","name":"withdrawn","type":"bool"},{"internalType":"bool","name":"canWithdraw","type":"bool"}],"stateMutability":"view","type":"function"},
   {"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"uint256","name":"duration","type":"uint256"}],"name":"stake","outputs":[{"internalType":"uint256","name":"stakeId","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},
   {"inputs":[{"internalType":"uint256","name":"stakeId","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},
@@ -589,7 +594,7 @@ const VAULT_IMPL_ABI = [
 ];
 const VAULT_ABI = VAULT_IMPL_ABI.length ? VAULT_IMPL_ABI : [{"stateMutability":"payable","type":"fallback"}];
 
-// ABI mapping
+// Token ABI mapping
 const TOKEN_ABIS = {
   [WMON_ADDRESS.toLowerCase()]: WMON_ABI,
   [USDC_ADDRESS.toLowerCase()]: ERC20_FULL_ABI,
@@ -640,13 +645,13 @@ const ui = {
   overlayList: document.getElementById('overlayList')
 };
 
-// tokenLogoFor helper (was missing)
+// tokenLogoFor helper
 function tokenLogoFor(addr){
   if (!addr) return TOKEN_LOGOS[WMON_ADDRESS.toLowerCase()] || '';
   return TOKEN_LOGOS[(addr||'').toLowerCase()] || TOKEN_LOGOS[WMON_ADDRESS.toLowerCase()] || '';
 }
 
-// tokenIcon fallback initialization (single robust handler)
+// tokenIcon fallback initialization
 if (ui.tokenIcon) {
   ui.tokenIcon.style.display = 'none';
   ui.tokenIcon.alt = 'token';
@@ -659,7 +664,7 @@ if (ui.tokenIcon) {
   };
 }
 
-// Debug utilities
+// Debug helpers
 function appendDebugLine(level, tag, message) {
   try {
     if (!ui.debugLog) return;
@@ -688,7 +693,7 @@ function log(...args) {
 }
 window.addEventListener('unhandledrejection', (ev) => { log('UnhandledRejection:', ev.reason); ui.debugPanel.style.display='block'; });
 
-// Wallet-request lock & overlay (unchanged)
+// Wallet-request lock & overlay
 let walletRequestLock = false;
 function showOverlay(){ if (ui.txOverlay) ui.txOverlay.style.display='block'; }
 function hideOverlayIfEmpty(){ if (!ui.overlayList || ui.overlayList.children.length===0) ui.txOverlay.style.display='none'; }
@@ -708,7 +713,7 @@ function updateOverlayItem(id,status,extra){
 async function acquireWalletLock(){ if (walletRequestLock) return false; walletRequestLock = true; showOverlay(); return true; }
 function releaseWalletLock(){ walletRequestLock = false; }
 
-// Web3Auth init & injected fallback (unchanged)
+// Web3Auth init & injected fallback
 async function initWeb3Auth(){
   ui.connectBtn.disabled = true; ui.connectBtn.textContent = 'Initializing...';
   try {
@@ -759,7 +764,7 @@ async function connectInjectedWallet(){
 }
 if (ui.address) ui.address.onclick = async () => { if (currentAddress) { try { await navigator.clipboard.writeText(currentAddress); log('Clipboard','Copied address to clipboard'); } catch(e){ log('Clipboard error', e); } } };
 
-// Post-connect logic (unchanged)
+// Post-connect logic
 async function afterWalletConnected() {
   log('Info', 'afterWalletConnected start');
   try {
@@ -779,7 +784,6 @@ async function afterWalletConnected() {
   }
 }
 
-// loadSupportedTokens & updateTokenIcon (unchanged)
 async function loadSupportedTokens() {
   log('Info', 'loadSupportedTokens');
   try {
@@ -795,7 +799,6 @@ async function loadSupportedTokens() {
     }
     const w = WMON_ADDRESS.toLowerCase();
     if (Array.from(ui.stakeToken.options).some(o=>o.value===w)) ui.stakeToken.value = w;
-    // update icon
     updateTokenIcon(ui.stakeToken.value);
     ui.stakeToken.dispatchEvent(new Event('change'));
     log('Tokens','Supported tokens loaded: ' + JSON.stringify(list));
@@ -805,18 +808,100 @@ function updateTokenIcon(addr){
   try {
     const url = tokenLogoFor(addr);
     if (ui.tokenIcon) {
-      if (url) { ui.tokenIcon.src = url; /* onload handler will show */ }
+      if (url) { ui.tokenIcon.src = url; ui.tokenIcon.style.display = 'inline-block'; }
       else { ui.tokenIcon.src = ''; ui.tokenIcon.style.display = 'none'; }
     }
   } catch(e){ console.warn('updateTokenIcon', e); }
 }
 
-// -----------------------------
+// Improved loadUserStakes (renders table and withdraw button)
+async function loadUserStakes() {
+  log('Info', 'loadUserStakes (UI table)');
+  const listEl = document.getElementById('myStakesList');
+  if (!listEl) return;
+  if (!currentAddress) {
+    listEl.textContent = 'Connect wallet to view your stakes.';
+    return;
+  }
+  try {
+    const vaultReader = vaultContract || new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
+    const stakeIds = await vaultReader.getUserStakes?.(currentAddress).catch(()=>[]);
+    if (!stakeIds || stakeIds.length === 0) {
+      listEl.textContent = 'No stakes found.';
+      return;
+    }
+
+    let html = '<table><thead><tr><th>ID</th><th>Token</th><th>Amount</th><th>Unlock</th><th>Status</th><th></th></tr></thead><tbody>';
+    for (const rawId of stakeIds) {
+      const idBn = ethers.BigNumber.isBigNumber(rawId) ? rawId : ethers.BigNumber.from(rawId);
+      const idStr = idBn.toString();
+      let info = null;
+      try {
+        info = await vaultReader.getStakeInfo?.(currentAddress, idBn);
+      } catch (e) {
+        console.warn('getStakeInfo failed for', idStr, e);
+        continue;
+      }
+      if (!info) continue;
+      const tokenAddr = (info.token || WMON_ADDRESS).toLowerCase();
+      const tokenContract = createTokenContract(tokenAddr, rpcFallbackProvider);
+      const decimals = await tokenContract.decimals().catch(()=>18);
+      const amountBn = info.amount || ethers.constants.Zero;
+      let amountStr = '0';
+      try { amountStr = ethers.utils.formatUnits(amountBn, decimals); } catch(e){ amountStr = amountBn.toString(); }
+      const unlockTs = info.unlockTime ? Number(info.unlockTime.toString()) : 0;
+      const unlockStr = unlockTs > 0 ? new Date(unlockTs * 1000).toLocaleString() : '—';
+      const withdrawn = !!info.withdrawn;
+      const canWithdraw = !!info.canWithdraw;
+      const status = withdrawn ? 'Withdrawn' : (canWithdraw ? 'Unlocked' : 'Locked');
+      let symbol = tokenAddr.slice(0,6);
+      try { symbol = await tokenContract.symbol().catch(()=>symbol); } catch(e){}
+      let action = '';
+      if (!withdrawn && canWithdraw && vaultContract) {
+        action = `<button class="btn secondary" style="font-size:12px;padding:6px 10px" onclick="withdrawStake('${idStr}')">Withdraw</button>`;
+      }
+      html += `<tr>
+        <td>#${idStr}</td>
+        <td>${symbol} <small style="color:var(--text-muted);margin-left:6px">${tokenAddr.slice(0,6)}...</small></td>
+        <td>${Number(amountStr).toLocaleString(undefined,{maximumFractionDigits: 6})}</td>
+        <td>${unlockStr}</td>
+        <td>${status}</td>
+        <td>${action}</td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    listEl.innerHTML = html;
+  } catch (e) {
+    console.error('loadUserStakes error', e);
+    log('Error', 'loadUserStakes: ' + (e.message || e));
+    listEl.textContent = 'Error loading stakes.';
+  }
+}
+
+// withdrawStake uses sendTxAndTrack
+async function withdrawStake(stakeIdStr) {
+  if (!vaultContract || !signer) return alert('Connect wallet first');
+  try {
+    const stakeIdBn = ethers.BigNumber.from(stakeIdStr);
+    const confirmed = confirm('Withdraw stake #' + stakeIdStr + '?');
+    if (!confirmed) return;
+    const res = await sendTxAndTrack(() => vaultContract.withdraw(stakeIdBn), 'Withdraw stake #' + stakeIdStr);
+    if (res && res.receipt) {
+      alert('Withdraw successful');
+      await Promise.all([ loadUserStakes(), loadUserBalance(), loadPendingRewards(), loadRecentActivity() ]);
+    } else if (res && res.error) {
+      throw res.error;
+    }
+  } catch (e) {
+    console.error('withdrawStake failed', e);
+    log('Error', 'withdrawStake: ' + (e.message || e));
+    alert('Withdraw failed: ' + (e.message || e));
+  }
+}
+
 // Improved loadUserBalance + price helper
-// -----------------------------
 async function loadUserBalance() {
   log('Info', 'loadUserBalance');
-  // Clear UI quickly if no wallet connected
   if (!currentAddress) {
     ui.selectedTokenBalance.textContent = '0.0000';
     ui.selectedTokenPrice.textContent = 'N/A';
@@ -833,22 +918,18 @@ async function loadUserBalance() {
       return;
     }
 
-    // Prefer using the connected signer for up-to-date view, otherwise fall back to JSON-RPC
     const providerOrSigner = signer || rpcFallbackProvider;
     const token = createTokenContract(tokenAddr, providerOrSigner);
 
-    // read decimals and balance
     const decimals = await token.decimals().catch(() => 18);
     const balanceBn = await token.balanceOf(currentAddress).catch(() => ethers.constants.Zero);
     const formatted = ethers.utils.formatUnits(balanceBn, decimals);
 
-    // Format balance for UI
     ui.selectedTokenBalance.textContent = Number(formatted).toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 6
     });
 
-    // Fetch token price (replace fetchTokenPrice with real oracle later)
     const price = await fetchTokenPrice(tokenAddr);
     if (price && !Number.isNaN(Number(price))) {
       ui.selectedTokenPrice.textContent = `$${Number(price).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 6 })}`;
@@ -869,11 +950,10 @@ async function loadUserBalance() {
   }
 }
 
-// Simple price lookup (placeholder). Replace with real price oracle/API.
+// Simple price lookup (placeholder)
 async function fetchTokenPrice(tokenAddr) {
   try {
     const key = (tokenAddr || '').toLowerCase();
-    // Static fallback prices for UI (replace with real API call)
     const prices = {
       [WMON_ADDRESS.toLowerCase()]: 2.45,
       [USDC_ADDRESS.toLowerCase()]: 1.00,
@@ -881,7 +961,6 @@ async function fetchTokenPrice(tokenAddr) {
     };
     if (prices[key] !== undefined) return prices[key];
 
-    // Example: try Dexscreener as fallback (best-effort; may fail or be rate-limited)
     try {
       const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${tokenAddr}`);
       if (!res.ok) return null;
@@ -897,7 +976,6 @@ async function fetchTokenPrice(tokenAddr) {
   }
 }
 
-// Allowance, pending, APY, stakes, activity (unchanged)
 async function loadAllowance(){
   log('Info','loadAllowance');
   if (!signer || !currentAddress) { ui.allowanceValue.textContent='Connect wallet'; return; }
@@ -937,20 +1015,6 @@ async function loadAPY(){
     } else ui.apyDisplay.textContent='N/A';
   } catch (e) { console.warn('loadAPY failed', e); log('Error','loadAPY: '+(e.message||e)); ui.apyDisplay.textContent='N/A'; }
 }
-async function loadUserStakes(){
-  log('Info','loadUserStakes');
-  try {
-    if (!currentAddress) return;
-    const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
-    const ids = await vaultRead.getUserStakes?.(currentAddress).catch(()=>[]);
-    log('UserStakes','ids:'+JSON.stringify(ids||[]));
-    // Minimal UI: show count in My Stakes (detailed table implementation optional)
-    const listEl = ui.myStakesList;
-    if (!listEl) return;
-    if (!ids || ids.length === 0) { listEl.textContent = 'No stakes found.'; return; }
-    listEl.textContent = `Found ${ids.length} stake(s). Open debug to see details.`;
-  } catch (e) { console.warn('loadUserStakes failed', e); log('Error','loadUserStakes: '+(e.message||e)); if (ui.myStakesList) ui.myStakesList.textContent='Error loading stakes.'; }
-}
 async function loadRecentActivity(){
   log('Info','loadRecentActivity');
   try {
@@ -970,7 +1034,7 @@ async function loadReferrerRewards(){
   } catch (e) { log('Error','loadReferrerRewards: '+(e.message||e)); }
 }
 
-// Transaction helper with lock (unchanged)
+// sendTxAndTrack implementation
 async function sendTxAndTrack(txPromiseFactory,label){
   const acquired = await acquireWalletLock();
   if (!acquired) { const msg="A wallet request is already pending. Please complete or reject it in your wallet, then try again."; log('WalletLock',msg); alert(msg); return { error:new Error('wallet_request_pending') }; }
@@ -995,7 +1059,7 @@ async function sendTxAndTrack(txPromiseFactory,label){
   } finally { releaseWalletLock(); ui.stakeBtn.disabled=false; ui.revokeBtn.disabled=false; }
 }
 
-// Stake & revoke wiring (unchanged)
+// Stake & revoke wiring
 if (ui.stakeBtn) ui.stakeBtn.addEventListener('click', async ()=>{
   if (!signer || !vaultContract) return alert('Connect wallet first!');
   const tokenAddr = ui.stakeToken.value || WMON_ADDRESS;
@@ -1031,11 +1095,13 @@ if (ui.revokeBtn) ui.revokeBtn.addEventListener('click', async ()=>{
   } catch (e) { console.error('revoke failed', e); log('Error','revoke failed: '+(e.message||e)); ui.debugPanel.style.display='block'; alert('Revoke failed: ' + (e.message||e)); }
 });
 
+// tokenIcon fallback handler already set above
+
 // Debug controls
 if (ui.debugClearBtn) ui.debugClearBtn.onclick = ()=> { if (ui.debugLog) ui.debugLog.innerHTML=''; };
 if (ui.debugToggleBtn) ui.debugToggleBtn.onclick = ()=> { if (ui.debugPanel.style.display === 'none') { ui.debugPanel.style.display='block'; ui.debugToggleBtn.textContent='Hide'; } else { ui.debugPanel.style.display='none'; ui.debugToggleBtn.textContent='Show'; } };
 
-// Ensure token icon updates and fallback are used right after loading tokens
+// Token change handler
 if (ui.stakeToken) {
   ui.stakeToken.addEventListener('change', async () => {
     updateTokenIcon(ui.stakeToken.value);
@@ -1043,13 +1109,23 @@ if (ui.stakeToken) {
   });
 }
 
-// Boot
+// Boot sequence
 (async function boot(){
-  try { log('Info','Booting...'); await initWeb3Auth(); await loadSupportedTokens(); log('Info','Boot complete'); }
-  catch(e){ console.error('boot/init failed', e); log('Error','boot init failed: '+(e.message||e)); ui.debugPanel.style.display='block'; if (!ui.connectBtn.onclick) { ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect (Injected)'; ui.connectBtn.onclick=connectInjectedWallet; } }
+  try {
+    log('Info','Booting app...');
+    await initWeb3Auth();
+    await loadSupportedTokens();
+    updateTokenIcon(ui.stakeToken.value);
+    log('Info','Boot complete');
+  } catch(e){
+    console.error('boot/init failed', e);
+    log('Error','boot init failed: '+(e.message||e));
+    ui.debugPanel.style.display='block';
+    if (!ui.connectBtn.onclick) { ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect (Injected)'; ui.connectBtn.onclick=connectInjectedWallet; }
+  }
 })();
 
-log('Info','Page booted. Token logos and ABIs applied.');
+log('Info','Page booted. Full script loaded.');
 </script>
 </body>
 </html>
