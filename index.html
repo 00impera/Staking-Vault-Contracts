@@ -42,6 +42,57 @@
     .tx-item { background: rgba(255,255,255,0.02); padding:10px; border-radius:12px; margin-bottom:8px; font-size:0.9rem; }
     .tx-status { font-weight:700; margin-left:8px; }
     @media (max-width:880px){ .container{padding:16px;margin:18px auto} header{flex-direction:column;align-items:flex-start;gap:12px} }
+
+    /* --- New debug panel / console styles (applied per your request) --- */
+    /* Full-width bottom "developer console" */
+    #debugPanel.glass-card {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100vw;
+      max-width: 100vw;
+      z-index: 1000;
+      border-radius: 0;
+      margin: 0;
+      padding: 0 32px 12px 32px;
+      background: rgba(30,34,54,0.98);
+      box-shadow: 0 -2px 24px 0 rgba(0,0,0,0.25);
+    }
+    #debugPanel .debug {
+      max-height: 40vh;
+      min-height: 180px;
+      overflow-y: auto;
+      font-size: 1.05rem;
+      padding: 16px 0 0 0;
+      background: transparent;
+    }
+    /* Optional: for a floating/resizable console, uncomment and use instead of the full-width styles above:
+    #debugPanel.glass-card {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      width: 600px;
+      max-width: 90vw;
+      max-height: 60vh;
+      z-index: 1000;
+      border-radius: 16px;
+      margin: 0;
+      padding: 0 24px 12px 24px;
+      background: rgba(30,34,54,0.98);
+      box-shadow: 0 2px 24px 0 rgba(0,0,0,0.25);
+      resize: both;
+      overflow: auto;
+    }
+    #debugPanel .debug {
+      max-height: 40vh;
+      min-height: 120px;
+      overflow-y: auto;
+      font-size: 1.05rem;
+      padding: 16px 0 0 0;
+      background: transparent;
+    }
+    */
   </style>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.1/dist/ethers.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@web3auth/modal@7.2.0/dist/modal.umd.min.js"></script>
