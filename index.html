@@ -4,424 +4,463 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>RPG MONAD MINET — Staking Vault</title>
-  <meta name="description" content="Stake WMON, earn rewards, and refer others. Cosmic glass UI." />
+  <meta name="description" content="Stake WMON, earn rewards, and refer others." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root { 
-      --bg-primary: #0f0f23;
-      --bg-secondary: #1a1a2e;
-      --card-bg: rgba(37, 40, 68, 0.75);
-      --card-border: rgba(99, 102, 241, 0.2);
-      --text-primary: #e4e7ff;
-      --text-secondary: #9ca3af;
-      --text-muted: #6b7280;
-      --accent-primary: #6366f1;
-      --accent-secondary: #8b5cf6;
-      --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
-      --success: #10b981;
-      --warning: #f59e0b;
-      --error: #ef4444;
+    /* ── DRAGON LOCK GREEN/BLACK FLAME PALETTE ── */
+    :root {
+      --bg:          #020805;
+      --bg2:         #030f06;
+      --card-bg:     rgba(2,15,6,0.95);
+      --card-border: rgba(0,255,179,0.15);
+      --text-primary:#e8fff5;
+      --text-secondary:#6abf8a;
+      --text-muted:  #1a4a2a;
+      --accent-primary:  #00ffb3;
+      --accent-secondary:#00cc88;
+      --accent-gradient: linear-gradient(135deg,#003322 0%,#006644 50%,#00ffb3 100%);
+      --success:     #00ff88;
+      --warning:     #ffaa00;
+      --error:       #ff2244;
+      --f1:          #ff3300;
+      --f2:          #ff6600;
+      --f3:          #ffaa00;
     }
-    
+
+    /* ── VIBRATE ON CLICK/TOUCH ── */
+    @keyframes vibrate {
+      0%   {transform:translate(0,0) rotate(0deg) scale(1);}
+      10%  {transform:translate(-3px,2px) rotate(-1deg) scale(1.02);}
+      20%  {transform:translate(3px,-2px) rotate(1deg) scale(0.98);}
+      30%  {transform:translate(-2px,3px) rotate(-.5deg) scale(1.02);}
+      40%  {transform:translate(2px,-3px) rotate(.5deg) scale(0.98);}
+      50%  {transform:translate(-3px,1px) rotate(-1deg) scale(1.01);}
+      60%  {transform:translate(3px,-1px) rotate(1deg) scale(0.99);}
+      70%  {transform:translate(-1px,2px) rotate(-.5deg) scale(1.01);}
+      80%  {transform:translate(1px,-2px) rotate(.5deg) scale(0.99);}
+      90%  {transform:translate(-2px,1px) rotate(-.3deg) scale(1);}
+      100% {transform:translate(0,0) rotate(0deg) scale(1);}
+    }
+    .vibrating { animation: vibrate 0.4s cubic-bezier(.36,.07,.19,.97) !important; }
+
     * { box-sizing: border-box; }
-    
+
     html, body {
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+      margin: 0; padding: 0;
+      background: var(--bg);
       color: var(--text-primary);
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-family: 'Rajdhani', 'Share Tech Mono', monospace;
       min-height: 100vh;
+      overflow-x: hidden;
     }
-    
+
+    /* ── FLAME + GREEN BACKGROUND ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse at 10% 100%, rgba(0,255,179,0.13) 0%, transparent 45%),
+        radial-gradient(ellipse at 90% 100%, rgba(0,200,100,0.09) 0%, transparent 45%),
+        radial-gradient(ellipse at 50% 80%,  rgba(0,255,120,0.06) 0%, transparent 40%),
+        radial-gradient(ellipse at 25% 40%,  rgba(255,80,0,0.05)  0%, transparent 35%),
+        radial-gradient(ellipse at 75% 20%,  rgba(0,100,30,0.07)  0%, transparent 40%);
+      pointer-events: none; z-index: 0;
+      animation: bgBreathe 6s ease-in-out infinite alternate;
+    }
+    @keyframes bgBreathe { 0%{opacity:.7} 100%{opacity:1} }
+
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,255,179,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,179,0.025) 1px, transparent 1px);
+      background-size: 34px 34px;
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── EMBER PARTICLES ── */
+    .ember-layer { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+    .ember { position:absolute; bottom:-8px; border-radius:50%; opacity:0; animation:riseEmber linear infinite; }
+    @keyframes riseEmber {
+      0%  {opacity:0;  transform:translateY(0) scale(1);}
+      12% {opacity:1;}
+      60% {opacity:.5; transform:translateY(-55vh) translateX(12px) scale(.6);}
+      100%{opacity:0;  transform:translateY(-100vh) translateX(-8px) scale(.2);}
+    }
+    .e1 {left:5%;  width:3px;height:3px;background:#00ffb3;box-shadow:0 0 6px #00ffb3;animation-duration:3.2s;animation-delay:0s;}
+    .e2 {left:14%; width:5px;height:5px;background:#00cc88;box-shadow:0 0 8px #00cc88;animation-duration:2.8s;animation-delay:.5s;}
+    .e3 {left:22%; width:3px;height:3px;background:#00ff88;box-shadow:0 0 6px #00ff88;animation-duration:3.6s;animation-delay:1s;}
+    .e4 {left:35%; width:4px;height:4px;background:#44ffaa;box-shadow:0 0 8px #44ffaa;animation-duration:2.4s;animation-delay:1.5s;}
+    .e5 {left:48%; width:6px;height:6px;background:#00ffb3;box-shadow:0 0 10px #00ffb3;animation-duration:3s;  animation-delay:.3s;}
+    .e6 {left:58%; width:3px;height:3px;background:#ffffff;box-shadow:0 0 6px #fff;   animation-duration:2.6s;animation-delay:.8s;}
+    .e7 {left:67%; width:4px;height:4px;background:#00cc88;box-shadow:0 0 8px #00cc88;animation-duration:3.4s;animation-delay:1.2s;}
+    .e8 {left:78%; width:3px;height:3px;background:#00ffb3;box-shadow:0 0 6px #00ffb3;animation-duration:2.9s;animation-delay:.6s;}
+    .e9 {left:88%; width:5px;height:5px;background:#88ffcc;box-shadow:0 0 8px #88ffcc;animation-duration:3.1s;animation-delay:1.8s;}
+    .e10{left:42%; width:4px;height:4px;background:#fff;   box-shadow:0 0 6px #fff;   animation-duration:2.7s;animation-delay:2.2s;}
+    .e11{left:8%;  width:3px;height:3px;background:#ff4400;box-shadow:0 0 6px #ff4400;animation-duration:3.8s;animation-delay:2s;}
+    .e12{left:55%; width:4px;height:4px;background:#ff8800;box-shadow:0 0 8px #ff8800;animation-duration:2.3s;animation-delay:1.1s;}
+    .e13{left:72%; width:3px;height:3px;background:#ffaa00;box-shadow:0 0 6px #ffaa00;animation-duration:3.3s;animation-delay:.7s;}
+    .e14{left:82%; width:5px;height:5px;background:#ff3300;box-shadow:0 0 8px #ff3300;animation-duration:2.5s;animation-delay:1.9s;}
+    .e15{left:18%; width:3px;height:3px;background:#ff6600;box-shadow:0 0 6px #ff6600;animation-duration:3s;  animation-delay:2.5s;}
+    .e16{left:62%; width:4px;height:4px;background:#ffcc00;box-shadow:0 0 8px #ffcc00;animation-duration:2.2s;animation-delay:.4s;}
+
+    /* ── LAYOUT ── */
     .container {
       max-width: 1200px;
       margin: 0 auto;
       padding: 32px 28px;
+      position: relative; z-index: 1;
     }
-    
+
+    /* ── HEADER ── */
     header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin-bottom: 32px;
       padding-bottom: 24px;
-      border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+      border-bottom: 1px solid rgba(0,255,179,0.12);
     }
-    
+
     .logo {
-      width: 56px;
-      height: 56px;
+      width: 56px; height: 56px;
       border-radius: 14px;
-      background: var(--accent-gradient);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 20px;
-      color: #fff;
-      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+      background: linear-gradient(135deg,#003322,#006644,#00ffb3);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Orbitron', monospace;
+      font-weight: 900; font-size: 18px; color: #000;
+      box-shadow: 0 8px 24px rgba(0,255,179,0.35);
+      border: 1px solid rgba(0,255,179,0.3);
+      animation: logoPulse 3s ease-in-out infinite alternate;
     }
-    
+    @keyframes logoPulse {
+      0%  { box-shadow:0 8px 24px rgba(0,255,179,0.35); }
+      100%{ box-shadow:0 8px 36px rgba(0,255,179,0.6), 0 0 60px rgba(0,255,179,0.15); }
+    }
+
     h1 {
       margin: 0;
-      font-size: 28px;
-      font-weight: 800;
-      background: var(--accent-gradient);
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(16px,2.5vw,26px);
+      font-weight: 900;
+      letter-spacing: 3px;
+      background: linear-gradient(90deg,#ff3300,#ff8800,#ffcc00,#00ffb3,#00cc88,#00ffb3,#ff8800,#ff3300);
+      background-size: 300% auto;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      animation: dragonFire 4s linear infinite;
+      filter: drop-shadow(0 0 16px rgba(0,255,179,0.4));
     }
-    
+    @keyframes dragonFire {
+      0%  { background-position:0% center; }
+      100%{ background-position:300% center; }
+    }
+
+    /* ── CARDS ── */
     .card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 20px;
       padding: 28px;
       margin-bottom: 24px;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+      position: relative;
+      overflow: hidden;
     }
-    
+    .card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg,transparent,#00ffb3,#00cc88,#00ffb3,transparent);
+      animation: cardGlow 2.5s ease-in-out infinite alternate;
+    }
+    @keyframes cardGlow { 0%{opacity:.4} 100%{opacity:1; box-shadow:0 0 8px #00ffb3;} }
+
     .card h3 {
       margin: 0 0 20px 0;
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--text-primary);
+      font-family: 'Orbitron', monospace;
+      font-size: 16px; font-weight: 700; letter-spacing: 2px;
+      color: var(--accent-primary);
+      text-shadow: 0 0 10px rgba(0,255,179,0.4);
     }
-    
     .card h4 {
       margin: 0 0 16px 0;
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--text-primary);
+      font-family: 'Orbitron', monospace;
+      font-size: 14px; font-weight: 700; letter-spacing: 2px;
+      color: var(--accent-primary);
     }
-    
-    .small {
-      font-size: 14px;
-      color: var(--text-secondary);
-    }
-    
-    .muted {
-      color: var(--text-muted);
-    }
-    
-    .muted-small {
-      color: var(--text-muted);
-      font-size: 14px;
-    }
-    
+
+    .small { font-size: 13px; color: var(--text-secondary); font-family: 'Share Tech Mono', monospace; }
+    .muted { color: var(--text-muted); }
+    .muted-small { color: var(--text-muted); font-size: 12px; font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; }
+
+    /* ── BUTTONS ── */
     .btn {
-      background: var(--accent-gradient);
-      color: #fff;
+      background: linear-gradient(135deg,#003322,#006644,#00ffb3);
+      color: #000;
       padding: 12px 24px;
       border-radius: 12px;
-      border: none;
+      border: 1px solid rgba(0,255,179,0.3);
       cursor: pointer;
-      font-weight: 600;
-      font-size: 15px;
-      transition: transform 0.2s, box-shadow 0.2s;
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 2px;
+      transition: filter .2s, box-shadow .2s;
+      box-shadow: 0 4px 16px rgba(0,255,179,0.3);
     }
-    
     .btn:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+      filter: brightness(1.18);
+      box-shadow: 0 6px 24px rgba(0,255,179,0.5);
     }
-    
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-    
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; filter: none !important; }
+
     .btn.secondary {
       background: transparent;
-      border: 2px solid var(--accent-primary);
+      border: 2px solid rgba(0,255,179,0.4);
       color: var(--accent-primary);
       box-shadow: none;
     }
-    
     .btn.secondary:hover:not(:disabled) {
-      background: rgba(99, 102, 241, 0.1);
+      background: rgba(0,255,179,0.08);
+      border-color: var(--accent-primary);
     }
-    
+
+    /* ── INPUTS & SELECTS ── */
     select, input {
       padding: 12px 16px;
       border-radius: 10px;
-      border: 1px solid var(--card-border);
-      background: rgba(15, 15, 35, 0.6);
-      color: var(--text-primary);
-      font-size: 15px;
-      transition: border-color 0.2s;
-    }
-    
-    select:focus, input:focus {
+      border: 1px solid rgba(0,255,179,0.15);
+      background: rgba(0,20,10,0.85);
+      color: var(--accent-primary);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      transition: border-color .2s;
       outline: none;
-      border-color: var(--accent-primary);
     }
-    
+    select:focus, input:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 10px rgba(0,255,179,0.15);
+    }
+    select option { background: #020c05; color: var(--accent-primary); }
+    input::placeholder { color: var(--text-muted); }
+
+    /* ── ADDRESS COPY ── */
     .address-copy {
       cursor: pointer;
+      color: var(--accent-primary);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
       text-decoration: underline dotted;
-      opacity: 0.9;
-      transition: opacity 0.2s;
+      opacity: .85;
+      transition: opacity .2s;
     }
-    
-    .address-copy:hover {
-      opacity: 1;
-    }
-    
+    .address-copy:hover { opacity: 1; }
+
+    /* ── TOKEN ICON ── */
     .token-select-wrap {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
     }
-    
     .token-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 10px;
-      background: rgba(0, 0, 0, 0.2);
-      display: inline-block;
-      object-fit: cover;
-      border: 2px solid var(--card-border);
+      width: 32px; height: 32px; border-radius: 10px;
+      background: rgba(0,0,0,.3);
+      display: inline-block; object-fit: cover;
+      border: 2px solid rgba(0,255,179,.25);
+      box-shadow: 0 0 8px rgba(0,255,179,.2);
     }
-    
+
+    /* ── STATS GRID ── */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin-top: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-top: 18px;
     }
-    
     .stat-item {
-      background: rgba(99, 102, 241, 0.05);
+      background: rgba(0,40,20,.5);
       padding: 16px;
       border-radius: 12px;
-      border: 1px solid rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(0,255,179,.12);
+      position: relative; overflow: hidden;
+      transition: border-color .3s;
     }
-    
+    .stat-item:hover { border-color: rgba(0,255,179,.3); }
     .stat-item strong {
       color: var(--accent-primary);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 15px;
       font-weight: 700;
+      text-shadow: 0 0 8px rgba(0,255,179,.4);
     }
-    
+
+    /* ── INPUT GROUP ── */
     .input-group {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-top: 16px;
+      display: flex; gap: 12px; align-items: center;
+      flex-wrap: wrap; margin-top: 16px;
     }
-    
+
+    /* ── SPINNER ── */
     .spinner {
-      width: 16px;
-      height: 16px;
-      border: 2px solid rgba(255, 255, 255, 0.2);
+      width: 14px; height: 14px;
+      border: 2px solid rgba(0,255,179,.15);
       border-top: 2px solid var(--accent-primary);
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      display: inline-block;
-      vertical-align: middle;
-      margin-left: 8px;
+      display: inline-block; vertical-align: middle; margin-left: 6px;
     }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* APY green badge */
+    /* ── APY BADGE ── */
     .apy-green {
-      color: #10b981 !important; /* Tailwind's emerald-500 */
-      background: #18181b;        /* Very dark background for contrast */
-      padding: 4px 10px;
-      border-radius: 8px;
-      font-weight: 700;
-      box-shadow: 0 2px 8px rgba(16,185,129,0.08);
-      display: inline-block;
+      color: #00ff88 !important;
+      background: rgba(0,40,20,.8);
+      padding: 4px 10px; border-radius: 8px;
+      font-weight: 700; display: inline-block;
+      box-shadow: 0 0 8px rgba(0,255,136,.2);
+      border: 1px solid rgba(0,255,136,.2);
+    }
+    .apy-neutral {
+      color: var(--text-muted);
+      padding: 2px 6px; border-radius: 6px; font-weight: 600;
     }
 
-    .apy-neutral {
-      color: var(--text-secondary);
-      background: transparent;
-      padding: 2px 6px;
-      border-radius: 6px;
-      font-weight: 600;
-    }
-    
+    /* ── OVERLAY ── */
     .overlay {
-      position: fixed;
-      right: 22px;
-      bottom: 22px;
-      width: 380px;
-      max-width: calc(100% - 44px);
+      position: fixed; right: 20px; bottom: 20px;
+      width: 360px; max-width: calc(100% - 40px);
       z-index: 60;
     }
-    
     .tx-badge {
-      padding: 8px 14px;
-      border-radius: 10px;
-      background: var(--accent-gradient);
-      color: #fff;
-      font-weight: 700;
-      font-size: 13px;
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+      padding: 8px 14px; border-radius: 10px;
+      background: linear-gradient(135deg,#003322,#006644,#00ffb3);
+      color: #000; font-family: 'Orbitron', monospace;
+      font-weight: 700; font-size: 11px; letter-spacing: 2px;
+      box-shadow: 0 4px 14px rgba(0,255,179,.4);
     }
-    
     .tx-item {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      padding: 14px;
-      border-radius: 12px;
-      margin-bottom: 10px;
-      font-size: 14px;
-      backdrop-filter: blur(10px);
+      background: rgba(2,15,6,.97);
+      border: 1px solid rgba(0,255,179,.18);
+      padding: 14px; border-radius: 12px;
+      margin-bottom: 10px; font-size: 13px;
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--accent-primary);
+      backdrop-filter: blur(16px);
     }
-    
     .tx-status {
-      font-weight: 700;
-      margin-left: 8px;
+      font-weight: 700; margin-left: 8px;
+      color: var(--warning);
     }
-    
-    /* My stakes table */
-    #myStakesList table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 8px;
-    }
+
+    /* ── MY STAKES TABLE ── */
+    #myStakesList table { width: 100%; border-collapse: collapse; margin-top: 8px; }
     #myStakesList th, #myStakesList td {
-      border-bottom: 1px solid rgba(99,102,241,0.08);
-      padding: 8px 6px;
-      text-align: left;
-      font-size: 14px;
+      border-bottom: 1px solid rgba(0,255,179,.08);
+      padding: 10px 8px; text-align: left;
+      font-size: 13px; font-family: 'Share Tech Mono', monospace;
       color: var(--text-primary);
     }
     #myStakesList th {
       color: var(--accent-primary);
-      font-weight: 700;
-      font-size: 13px;
+      font-weight: 700; font-size: 11px; letter-spacing: 1px;
     }
 
-    /* Debug panel - hidden by default */
+    /* ── DEBUG PANEL (inline card) ── */
     #debugPanel {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      width: 100vw;
-      max-width: 100vw;
-      z-index: 1000;
-      border-radius: 0;
-      margin: 0;
-      padding: 16px 32px;
-      background: rgba(15, 15, 35, 0.98);
-      border-top: 2px solid var(--accent-primary);
-      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
-      display: none; /* Hidden by default */
+      border-radius: 16px;
+      margin: 0 0 24px 0;
+      padding: 20px 24px;
+      background: rgba(0,8,2,0.98);
+      border: 1px solid rgba(0,255,179,0.15);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+      display: none;
+      position: relative;
     }
-    
+    #debugPanel::before {
+      content:'';
+      position:absolute;top:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg,transparent,#00ffb3,transparent);
+      border-radius:16px 16px 0 0;
+    }
     #debugPanel .debug {
-      max-height: 40vh;
-      min-height: 180px;
-      overflow-y: auto;
-      font-size: 13px;
-      padding: 12px 0;
-      background: transparent;
-      font-family: 'Courier New', monospace;
+      max-height: 40vh; min-height: 180px;
+      overflow-y: auto; font-size: 12px; padding: 12px 0;
+      background: transparent; font-family: 'Share Tech Mono', monospace;
     }
-    
-    .debug-line {
-      display: flex;
-      gap: 8px;
-      align-items: flex-start;
-      padding: 6px;
-      border-radius: 6px;
-      margin-bottom: 4px;
-    }
-    
-    .log-timestamp {
-      color: var(--text-muted);
-      font-size: 12px;
-      min-width: 100px;
-    }
-    
-    .log-tag {
-      font-weight: 700;
-      font-size: 12px;
-    }
-    
-    .log-info { color: #60a5fa; }
+    .debug-line { display:flex; gap:8px; align-items:flex-start; padding:5px; border-radius:5px; margin-bottom:3px; }
+    .log-timestamp { color: var(--text-muted); font-size: 11px; min-width: 90px; }
+    .log-tag { font-weight: 700; font-size: 11px; }
+    .log-info    { color: #00ffb3; }
     .log-success { color: var(--success); }
-    .log-warn { color: var(--warning); }
-    .log-error { color: var(--error); }
-    .log-module { color: var(--accent-secondary); }
-    
+    .log-warn    { color: var(--warning); }
+    .log-error   { color: var(--error); }
+    .log-module  { color: var(--accent-secondary); }
+
     .debug-controls {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      justify-content: flex-end;
-      margin-bottom: 12px;
+      display: flex; gap: 8px; align-items: center;
+      justify-content: flex-end; margin-bottom: 10px;
     }
-    
     .debug-controls button {
-      padding: 6px 12px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      background: rgba(255, 255, 255, 0.1);
-      color: var(--text-secondary);
-      font-size: 13px;
-      transition: background 0.2s;
+      padding: 5px 12px; border-radius: 7px; border: none; cursor: pointer;
+      background: rgba(0,255,179,.1); color: var(--text-secondary);
+      font-family: 'Share Tech Mono', monospace; font-size: 12px;
+      transition: background .2s;
     }
-    
-    .debug-controls button:hover {
-      background: rgba(255, 255, 255, 0.15);
-    }
-    
+    .debug-controls button:hover { background: rgba(0,255,179,.18); }
     .debug-controls .danger {
-      background: var(--accent-primary);
-      color: #fff;
+      background: linear-gradient(135deg,#003322,#00ffb3);
+      color: #000;
     }
-    
+
+    /* ── NETWORK INDICATOR ── */
+    #network-indicator {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px; letter-spacing: 2px;
+      color: var(--text-muted);
+      background: rgba(0,40,20,.5);
+      border: 1px solid rgba(0,255,179,.1);
+      border-radius: 6px; padding: 4px 10px;
+    }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,.3); }
+    ::-webkit-scrollbar-thumb { background: rgba(0,255,179,.3); border-radius: 3px; }
+
+    /* ── RESPONSIVE ── */
     @media (max-width: 880px) {
-      .container {
-        padding: 20px 16px;
-      }
-      
-      header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
-      }
-      
-      .input-group {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      
-      .input-group input,
-      .input-group select,
-      .input-group button {
-        width: 100%;
-      }
+      .container { padding: 16px 12px; }
+      header { flex-direction: column; align-items: flex-start; gap: 14px; }
+      .input-group { flex-direction: column; align-items: stretch; }
+      .input-group input, .input-group select, .input-group button { width: 100%; }
+      h1 { font-size: 16px; letter-spacing: 2px; }
     }
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.1/dist/ethers.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@web3auth/modal@7.2.0/dist/modal.umd.min.js"></script>
 </head>
 <body>
+
+<!-- EMBER PARTICLES -->
+<div class="ember-layer">
+  <div class="ember e1"></div><div class="ember e2"></div><div class="ember e3"></div>
+  <div class="ember e4"></div><div class="ember e5"></div><div class="ember e6"></div>
+  <div class="ember e7"></div><div class="ember e8"></div><div class="ember e9"></div>
+  <div class="ember e10"></div><div class="ember e11"></div><div class="ember e12"></div>
+  <div class="ember e13"></div><div class="ember e14"></div><div class="ember e15"></div>
+  <div class="ember e16"></div>
+</div>
+
   <div class="container">
     <header>
       <div style="display:flex;gap:16px;align-items:center">
         <div class="logo">RM</div>
         <div>
           <h1>RPG MONAD MINET — Staking Vault</h1>
-          <div class="small">Stake WMON, lock for rewards, invite friends.</div>
+          <div class="small" style="margin-top:4px;letter-spacing:2px;">Stake WMON · Lock for rewards · Invite friends</div>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px">
@@ -434,24 +473,24 @@
     </header>
 
     <div class="card">
-      <h3>Quick Stake</h3>
+      <h3>⚡ QUICK STAKE</h3>
       <div class="token-select-wrap">
-        <span class="muted-small">Token</span>
+        <span class="muted-small">TOKEN</span>
         <select id="stakeToken"></select>
         <img id="tokenIcon" class="token-icon" src="" alt="token">
       </div>
 
       <div class="stats-grid">
         <div class="stat-item">
-          <div class="muted-small">Balance</div>
+          <div class="muted-small">BALANCE</div>
           <strong id="selectedTokenBalance">0.0000</strong>
         </div>
         <div class="stat-item">
-          <div class="muted-small">Price</div>
+          <div class="muted-small">PRICE</div>
           <strong id="selectedTokenPrice">N/A</strong>
         </div>
         <div class="stat-item">
-          <div class="muted-small">USD Value</div>
+          <div class="muted-small">USD VALUE</div>
           <strong id="selectedTokenUsd">N/A</strong>
         </div>
       </div>
@@ -464,17 +503,17 @@
           <option value="90">90 days</option>
         </select>
         <input id="referrerAddress" placeholder="Referrer (optional)" style="flex:1;min-width:220px">
-        <button id="stakeBtn" class="btn">Stake</button>
-        <button id="revokeBtn" class="btn secondary">Revoke</button>
+        <button id="stakeBtn" class="btn">🔒 STAKE</button>
+        <button id="revokeBtn" class="btn secondary">↩ REVOKE</button>
       </div>
 
       <div class="stats-grid" style="margin-top:24px">
         <div class="stat-item">
-          <div class="muted-small">Allowance</div>
+          <div class="muted-small">ALLOWANCE</div>
           <strong id="allowanceValue">—</strong>
         </div>
         <div class="stat-item">
-          <div class="muted-small">Pending Rewards</div>
+          <div class="muted-small">PENDING REWARDS</div>
           <strong id="pendingRewards">—</strong>
         </div>
         <div class="stat-item">
@@ -485,31 +524,51 @@
     </div>
 
     <div class="card" id="activityCard">
-      <h4>Recent Activity</h4>
+      <h4>📋 RECENT ACTIVITY</h4>
       <div id="txList" class="muted-small">No recent activity</div>
     </div>
-  </div>
+
+    <!-- DEBUG CONSOLE INSIDE PAGE -->
+    <div id="debugPanel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h4 style="margin:0;color:var(--accent-primary);font-family:'Orbitron',monospace;font-size:12px;letter-spacing:2px;">// DEBUG CONSOLE</h4>
+        <div class="debug-controls">
+          <button id="debugClear">Clear</button>
+          <button id="debugToggle" class="danger">Hide</button>
+        </div>
+      </div>
+      <div id="debugLog" class="debug" aria-live="polite"></div>
+    </div>
+
+  </div><!-- end .container -->
 
   <div class="overlay" id="txOverlay" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div class="tx-badge">Wallet Requests</div>
-      <div style="font-size:13px;color:var(--text-muted);" id="overlayHint">One request at a time</div>
+      <div class="tx-badge">⚡ WALLET REQUESTS</div>
+      <div style="font-size:11px;color:var(--text-muted);font-family:'Share Tech Mono',monospace;" id="overlayHint">One request at a time</div>
     </div>
     <div id="overlayList"></div>
   </div>
 
-  <div id="debugPanel">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <h4 style="margin:0 0 8px 0;color:var(--accent-primary)">Debug Console</h4>
-      <div class="debug-controls">
-        <button id="debugClear">Clear</button>
-        <button id="debugToggle" class="danger">Hide</button>
-      </div>
-    </div>
-    <div id="debugLog" class="debug" aria-live="polite"></div>
-  </div>
-
 <script>
+// ── VIBRATE ON CLICK/TOUCH — ALL BUTTONS ──
+document.addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn || btn.disabled) return;
+  btn.classList.remove('vibrating');
+  void btn.offsetWidth;
+  btn.classList.add('vibrating');
+  btn.addEventListener('animationend', () => btn.classList.remove('vibrating'), { once: true });
+});
+document.addEventListener('touchstart', e => {
+  const btn = e.target.closest('button');
+  if (!btn || btn.disabled) return;
+  btn.classList.remove('vibrating');
+  void btn.offsetWidth;
+  btn.classList.add('vibrating');
+  btn.addEventListener('animationend', () => btn.classList.remove('vibrating'), { once: true });
+}, { passive: true });
+
 // ------------------------
 // Config & ABIs (unchanged)
 // ------------------------
@@ -535,7 +594,6 @@ const TOKEN_LOGOS = {
   [BITCOINFLASH_ADDRESS.toLowerCase()]: "https://files.catbox.moe/lk7mrk.png"
 };
 
-// ABIs (kept as in your file)
 const ERC20_FULL_ABI = [
   {"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"type":"function"},
   {"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"type":"function"},
@@ -589,7 +647,6 @@ const BITCOINFLASH_ABI = [
   {"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"}
 ];
 
-// Vault implementation ABI — corrected typo here (inputs array)
 const VAULT_IMPL_ABI = [
   {"inputs":[],"name":"getSupportedTokens","outputs":[{"internalType":"address[]","name":"","type":"address[]"}],"stateMutability":"view","type":"function"},
   {"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getUserStakes","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"},
@@ -602,7 +659,6 @@ const VAULT_IMPL_ABI = [
 ];
 const VAULT_ABI = VAULT_IMPL_ABI.length ? VAULT_IMPL_ABI : [{"stateMutability":"payable","type":"fallback"}];
 
-// ABI mapping
 const TOKEN_ABIS = {
   [WMON_ADDRESS.toLowerCase()]: WMON_ABI,
   [USDC_ADDRESS.toLowerCase()]: ERC20_FULL_ABI,
@@ -615,13 +671,7 @@ function createTokenContract(address, providerOrSigner) {
   return new ethers.Contract(address, abi, providerOrSigner);
 }
 
-// Runtime state & UI refs
-let web3auth = null;
-let walletProvider = null;
-let ethersProvider = null;
-let signer = null;
-let currentAddress = null;
-let vaultContract = null;
+let web3auth = null, walletProvider = null, ethersProvider = null, signer = null, currentAddress = null, vaultContract = null;
 const rpcFallbackProvider = new ethers.providers.JsonRpcProvider(FALLBACK_JSONRPC);
 
 const ui = {
@@ -652,674 +702,87 @@ const ui = {
   overlayList: document.getElementById('overlayList')
 };
 
-// tokenIcon fallback initialization
-if (ui.tokenIcon) {
-  ui.tokenIcon.style.display = 'none';
-  ui.tokenIcon.alt = 'token';
-  ui.tokenIcon.onerror = () => {
-    try {
-      ui.tokenIcon.src = TOKEN_LOGOS[WMON_ADDRESS.toLowerCase()];
-      ui.tokenIcon.style.display = 'inline-block';
-    } catch (e) { console.warn('tokenIcon fallback failed', e); }
-  };
-}
+if (ui.tokenIcon) { ui.tokenIcon.style.display='none'; ui.tokenIcon.alt='token'; ui.tokenIcon.onerror=()=>{ try{ ui.tokenIcon.src=TOKEN_LOGOS[WMON_ADDRESS.toLowerCase()]; ui.tokenIcon.style.display='inline-block'; }catch(e){} }; }
 
-// Debug utilities
-function appendDebugLine(level, tag, message) {
-  try {
-    if (!ui.debugLog) return;
-    ui.debugPanel.style.display = 'block';
-    const line = document.createElement('div');
-    line.className = 'debug-line';
-    const ts = document.createElement('div'); ts.className='log-timestamp'; ts.textContent=new Date().toLocaleTimeString();
-    const tagEl = document.createElement('div'); tagEl.className='log-tag'; tagEl.textContent=`[${(tag||'LOG').toUpperCase()}]`;
-    const colorClass = level==='error'?'log-error':level==='warn'?'log-warn':level==='success'?'log-success':level==='module'?'log-module':'log-info';
-    tagEl.classList.add(colorClass);
-    const msg = document.createElement('div'); msg.style.whiteSpace='pre-wrap'; msg.textContent=String(message);
-    line.appendChild(ts); line.appendChild(tagEl); line.appendChild(msg);
-    ui.debugLog.appendChild(line); ui.debugLog.scrollTop = ui.debugLog.scrollHeight;
-  } catch (e) { console.log('appendDebugLine failed', e); }
-}
-function log(...args) {
-  try { console.log(...args); } catch(e){}
-  const text = args.map(a => (typeof a === 'string' ? a : (a && a.stack) ? a.stack : JSON.stringify(a,null,2))).join(' ');
-  let level = 'info';
-  const lower = text.toLowerCase();
-  if (lower.includes('error')||lower.includes('failed')||lower.includes('exception')) level='error';
-  else if (lower.includes('warn')) level='warn';
-  else if (lower.includes('success')||lower.includes('confirmed')||lower.includes('connected')) level='success';
-  else if (lower.includes('debug')||lower.includes('module')) level='module';
-  appendDebugLine(level, (args[0] && typeof args[0]==='string'?args[0].split(' ')[0].replace(/[:]/g,''):'LOG'), text);
-}
-window.addEventListener('unhandledrejection', (ev) => { log('UnhandledRejection:', ev.reason); ui.debugPanel.style.display='block'; });
+function appendDebugLine(level,tag,message){try{if(!ui.debugLog)return;ui.debugPanel.style.display='block';const line=document.createElement('div');line.className='debug-line';const ts=document.createElement('div');ts.className='log-timestamp';ts.textContent=new Date().toLocaleTimeString();const tagEl=document.createElement('div');tagEl.className='log-tag';tagEl.textContent=`[${(tag||'LOG').toUpperCase()}]`;const colorClass=level==='error'?'log-error':level==='warn'?'log-warn':level==='success'?'log-success':level==='module'?'log-module':'log-info';tagEl.classList.add(colorClass);const msg=document.createElement('div');msg.style.whiteSpace='pre-wrap';msg.textContent=String(message);line.appendChild(ts);line.appendChild(tagEl);line.appendChild(msg);ui.debugLog.appendChild(line);ui.debugLog.scrollTop=ui.debugLog.scrollHeight;}catch(e){console.log('appendDebugLine failed',e);}}
+function log(...args){try{console.log(...args);}catch(e){}const text=args.map(a=>(typeof a==='string'?a:(a&&a.stack)?a.stack:JSON.stringify(a,null,2))).join(' ');let level='info';const lower=text.toLowerCase();if(lower.includes('error')||lower.includes('failed')||lower.includes('exception'))level='error';else if(lower.includes('warn'))level='warn';else if(lower.includes('success')||lower.includes('confirmed')||lower.includes('connected'))level='success';else if(lower.includes('debug')||lower.includes('module'))level='module';appendDebugLine(level,(args[0]&&typeof args[0]==='string'?args[0].split(' ')[0].replace(/[:]/g,''):'LOG'),text);}
+window.addEventListener('unhandledrejection',(ev)=>{log('UnhandledRejection:',ev.reason);ui.debugPanel.style.display='block';});
 
-// Wallet-request lock & overlay
-let walletRequestLock = false;
-function showOverlay(){ if (ui.txOverlay) ui.txOverlay.style.display='block'; }
-function hideOverlayIfEmpty(){ if (!ui.overlayList || ui.overlayList.children.length===0) ui.txOverlay.style.display='none'; }
-function pushOverlayItem(text, id){
-  if (!ui.overlayList) return;
-  ui.txOverlay.style.display='block';
-  const el = document.createElement('div'); el.className='tx-item'; el.id=id;
-  el.innerHTML = `<div><strong>${text}</strong><span class="tx-status" id="${id}-status">PENDING</span></div>`;
-  ui.overlayList.prepend(el);
-}
-function updateOverlayItem(id,status,extra){
-  const el = document.getElementById(id); if (!el) return;
-  const s = document.getElementById(id+'-status'); if (s) s.textContent = status;
-  if (extra) el.appendChild(document.createElement('div')).textContent = extra;
-  if (status==='CONFIRMED' || status==='FAILED') setTimeout(()=>{ el.remove(); hideOverlayIfEmpty(); },4200);
-}
-async function acquireWalletLock(){ if (walletRequestLock) return false; walletRequestLock = true; showOverlay(); return true; }
-function releaseWalletLock(){ walletRequestLock = false; }
+let walletRequestLock=false;
+function showOverlay(){if(ui.txOverlay)ui.txOverlay.style.display='block';}
+function hideOverlayIfEmpty(){if(!ui.overlayList||ui.overlayList.children.length===0)ui.txOverlay.style.display='none';}
+function pushOverlayItem(text,id){if(!ui.overlayList)return;ui.txOverlay.style.display='block';const el=document.createElement('div');el.className='tx-item';el.id=id;el.innerHTML=`<div><strong>${text}</strong><span class="tx-status" id="${id}-status">PENDING</span></div>`;ui.overlayList.prepend(el);}
+function updateOverlayItem(id,status,extra){const el=document.getElementById(id);if(!el)return;const s=document.getElementById(id+'-status');if(s)s.textContent=status;if(extra)el.appendChild(document.createElement('div')).textContent=extra;if(status==='CONFIRMED'||status==='FAILED')setTimeout(()=>{el.remove();hideOverlayIfEmpty();},4200);}
+async function acquireWalletLock(){if(walletRequestLock)return false;walletRequestLock=true;showOverlay();return true;}
+function releaseWalletLock(){walletRequestLock=false;}
 
-// Web3Auth init & injected fallback
 async function initWeb3Auth(){
-  ui.connectBtn.disabled = true; ui.connectBtn.textContent = 'Initializing...';
-  try {
-    const Web3AuthConstructor = (window.Web3AuthModal && window.Web3AuthModal.Web3Auth) || window.Web3Auth || (window.Web3AuthModal && window.Web3AuthModal.default && window.Web3AuthModal.default.Web3Auth);
-    if (!Web3AuthConstructor) {
-      const msg='Web3Auth modal library not found. Falling back to injected wallet (MetaMask) if available.';
-      console.warn(msg); log('Wallet', msg);
-      ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect (Injected)'; ui.connectBtn.onclick=connectInjectedWallet; ui.debugPanel.style.display='block'; return;
-    }
-    web3auth = new Web3AuthConstructor({ clientId: WEB3AUTH_CLIENT_ID, chainConfig: { chainNamespace: CHAIN.chainNamespace, chainId: CHAIN.chainIdHex, rpcTarget: CHAIN.rpcTarget, displayName: CHAIN.displayName, blockExplorer: CHAIN.blockExplorer, ticker: CHAIN.ticker, tickerName: CHAIN.tickerName }, web3AuthNetwork:"mainnet" });
-    await web3auth.initModal(); log('Web3Auth','initModal finished');
-    ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect (Web3Auth)'; ui.connectBtn.onclick=()=>connectWeb3Auth();
-    if (web3auth.provider){ log('Web3Auth','Auto-connecting with existing Web3Auth session'); await connectWeb3Auth(true); }
-  } catch (err) {
-    console.error('initWeb3Auth error', err); log('Error','initWeb3Auth: '+(err.message||err));
-    ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect (Injected)'; ui.connectBtn.onclick=connectInjectedWallet; ui.debugPanel.style.display='block';
-  }
-}
-async function connectWeb3Auth(isAuto=false){
-  try {
-    if (!web3auth) throw new Error('Web3Auth not initialized');
-    const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-    if (!isSecure && !isAuto){ const w='Web3Auth requires HTTPS or localhost.'; log('Web3Auth',w); alert(w); ui.debugPanel.style.display='block'; return; }
-    ui.connectBtn.disabled=true; ui.connectBtn.textContent='Connecting...';
-    walletProvider = await web3auth.connect();
-    if (!walletProvider) throw new Error('No provider returned from web3auth.connect()');
-    ethersProvider = new ethers.providers.Web3Provider(walletProvider);
-    signer = ethersProvider.getSigner(); currentAddress = (await signer.getAddress()).toLowerCase();
-    log('Wallet','Connected: '+currentAddress);
-    ui.address.textContent = 'Connected: ' + currentAddress; ui.address.title='Click to copy address';
-    vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
-    await afterWalletConnected(); ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connected';
-  } catch (err) {
-    console.error('connectWeb3Auth error', err); log('Error','connectWeb3Auth: '+(err.message||err)); ui.debugPanel.style.display='block'; ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect'; alert('Connect failed: ' + (err.message||err));
-  }
-}
-async function connectInjectedWallet(){
-  try {
-    if (!window.ethereum) { const msg='No injected wallet found (MetaMask).'; alert(msg); log('Wallet', msg); ui.debugPanel.style.display='block'; return; }
-    ui.connectBtn.disabled=true; ui.connectBtn.textContent='Connecting (Injected)...';
-    await window.ethereum.request({ method:'eth_requestAccounts' });
-    walletProvider = window.ethereum; ethersProvider = new ethers.providers.Web3Provider(window.ethereum);
-    signer = ethersProvider.getSigner(); currentAddress = (await signer.getAddress()).toLowerCase();
-    log('Wallet','Connected: '+currentAddress); ui.address.textContent='Connected: '+currentAddress; ui.address.title='Click to copy address';
-    vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
-    await afterWalletConnected(); ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connected (Injected)';
-  } catch (err) { console.error('connectInjectedWallet error', err); log('Error','connectInjectedWallet: '+(err.message||err)); ui.debugPanel.style.display='block'; ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect (Injected)'; alert('Injected connect failed: ' + (err.message||err)); }
-}
-if (ui.address) ui.address.onclick = async () => { if (currentAddress) { try { await navigator.clipboard.writeText(currentAddress); log('Clipboard','Copied address to clipboard'); } catch(e){ log('Clipboard error', e); } } };
-
-// Post-connect logic
-async function afterWalletConnected() {
-  log('Info', 'afterWalletConnected start');
-  try {
-    await loadSupportedTokens();
-    await loadUserBalance();
-    await loadAllowance();
-    await loadPendingRewards();
-    await loadAPY();
-    await loadUserStakes(); // full implementation present below
-    await loadRecentActivity();
-    await loadReferrerRewards();
-    log('Info', 'afterWalletConnected completed');
-  } catch (e) {
-    console.warn('afterWalletConnected failed', e);
-    log('Error', 'afterWalletConnected failed: ' + (e.message || e));
-    ui.debugPanel.style.display = 'block';
-  }
-}
-
-// loadSupportedTokens & updateTokenIcon (unchanged)
-async function loadSupportedTokens() {
-  log('Info', 'loadSupportedTokens');
-  try {
-    const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
-    const tokens = await vaultRead.getSupportedTokens?.().catch(()=>null);
-    const list = tokens && tokens.length ? tokens.map(t=>t.toLowerCase()) : [WMON_ADDRESS.toLowerCase(), USDC_ADDRESS.toLowerCase(), BITCOINFLASH_ADDRESS.toLowerCase()];
-    ui.stakeToken.innerHTML = '';
-    for (const t of list){
-      const token = createTokenContract(t, rpcFallbackProvider);
-      let symbol = t.slice(0,6);
-      try { symbol = await token.symbol(); } catch(e){}
-      const opt = document.createElement('option'); opt.value = t; opt.textContent = symbol; ui.stakeToken.appendChild(opt);
-    }
-    const w = WMON_ADDRESS.toLowerCase();
-    if (Array.from(ui.stakeToken.options).some(o=>o.value===w)) ui.stakeToken.value = w;
-    // update icon
-    updateTokenIcon(ui.stakeToken.value);
-    ui.stakeToken.dispatchEvent(new Event('change'));
-    log('Tokens','Supported tokens loaded: ' + JSON.stringify(list));
-  } catch (e) { console.warn('loadSupportedTokens error', e); log('Error','loadSupportedTokens: '+(e.message||e)); ui.debugPanel.style.display='block'; }
-}
-function updateTokenIcon(addr){
-  try {
-    const url = tokenLogoFor(addr);
-    if (ui.tokenIcon) {
-      if (url) { ui.tokenIcon.src = url; ui.tokenIcon.style.display = 'inline-block'; }
-      else { ui.tokenIcon.src = ''; ui.tokenIcon.style.display = 'none'; }
-    }
-  } catch(e){ console.warn('updateTokenIcon', e); }
-}
-function tokenLogoFor(addr){ if (!addr) return ''; return TOKEN_LOGOS[(addr||'').toLowerCase()] || ''; }
-
-// -----------------------------
-// Improved loadUserBalance + price helper + spinners
-// -----------------------------
-async function loadUserBalance() {
-  log('Info', 'loadUserBalance');
-  // Clear UI quickly if no wallet connected
-  if (!currentAddress) {
-    ui.selectedTokenBalance.textContent = '0.0000';
-    ui.selectedTokenPrice.textContent = 'N/A';
-    ui.selectedTokenUsd.textContent = 'N/A';
-    return;
-  }
-
-  try {
-    const tokenAddr = (ui.stakeToken && ui.stakeToken.value) || WMON_ADDRESS;
-    if (!tokenAddr) {
-      ui.selectedTokenBalance.textContent = '0.0000';
-      ui.selectedTokenPrice.textContent = 'N/A';
-      ui.selectedTokenUsd.textContent = 'N/A';
-      return;
-    }
-
-    // show spinners/placeholders while loading
-    ui.selectedTokenBalance.innerHTML = '<span class="spinner" aria-hidden="true"></span> Loading';
-    ui.selectedTokenPrice.innerHTML = '<span class="spinner" aria-hidden="true"></span>';
-    ui.selectedTokenUsd.innerHTML = '—';
-
-    // Prefer using the connected signer for up-to-date view, otherwise fall back to JSON-RPC
-    const providerOrSigner = signer || rpcFallbackProvider;
-    const token = createTokenContract(tokenAddr, providerOrSigner);
-
-    // read decimals and balance
-    const decimals = await token.decimals().catch(() => 18);
-    const balanceBn = await token.balanceOf(currentAddress).catch(() => ethers.constants.Zero);
-    const formatted = ethers.utils.formatUnits(balanceBn, decimals);
-
-    // Format balance for UI
-    ui.selectedTokenBalance.textContent = Number(formatted).toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 6
-    });
-
-    // Fetch token price (replace fetchTokenPrice with real oracle later)
-    const price = await fetchTokenPrice(tokenAddr);
-    if (price && !Number.isNaN(Number(price))) {
-      ui.selectedTokenPrice.textContent = `$${Number(price).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 6 })}`;
-      const usdValue = Number(formatted) * Number(price);
-      ui.selectedTokenUsd.textContent = `$${usdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    } else {
-      // show tooltip/info when price fetch failed
-      ui.selectedTokenPrice.innerHTML = `<span title="Price unavailable or failed to fetch">N/A <span style="opacity:.85">ℹ️</span></span>`;
-      ui.selectedTokenUsd.textContent = 'N/A';
-    }
-
-    log('Balance', `Loaded ${formatted} (decimals=${decimals}) for ${tokenAddr}`);
-  } catch (e) {
-    console.warn('loadUserBalance error', e);
-    log('Error', 'loadUserBalance: ' + (e && e.message ? e.message : String(e)));
-    ui.selectedTokenBalance.textContent = 'Error';
-    ui.selectedTokenPrice.textContent = 'N/A';
-    ui.selectedTokenUsd.textContent = 'N/A';
-  }
-}
-
-// Simple price lookup (placeholder). Replace with real price oracle/API.
-async function fetchTokenPrice(tokenAddr) {
-  try {
-    const key = (tokenAddr || '').toLowerCase();
-    // Static fallback prices for UI (replace with real API call)
-    const prices = {
-      [WMON_ADDRESS.toLowerCase()]: 2.45,
-      [USDC_ADDRESS.toLowerCase()]: 1.00,
-      [BITCOINFLASH_ADDRESS.toLowerCase()]: 0.85
-    };
-    if (prices[key] !== undefined) return prices[key];
-
-    // Example: try Dexscreener as fallback (best-effort; may fail or be rate-limited)
-    try {
-      const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${tokenAddr}`);
-      if (!res.ok) {
-        log('Price', 'dexscreener returned non-ok: ' + res.status);
-        return null;
+  // Skip Web3Auth — use injected wallet (MetaMask/Rabby) directly
+  ui.connectBtn.disabled=false;
+  ui.connectBtn.textContent='🟢 CONNECT WALLET';
+  ui.connectBtn.onclick=connectInjectedWallet;
+  log('Info','Ready — using injected wallet (MetaMask/Rabby)');
+  // Auto-connect if already authorized
+  if(window.ethereum){
+    try{
+      const accs=await window.ethereum.request({method:'eth_accounts'});
+      if(accs&&accs.length){
+        await connectInjectedWallet();
       }
-      const json = await res.json();
-      const price = json && json.pairs && json.pairs[0] && Number(json.pairs[0].priceUsd);
-      return price || null;
-    } catch (e) {
-      log('Price', 'fetchTokenPrice dexscreener failed: ' + (e && e.message));
-      return null;
-    }
-  } catch (e) {
-    console.warn('fetchTokenPrice error', e);
-    log('Error','fetchTokenPrice: '+(e && e.message));
-    return null;
+    }catch(e){}
   }
 }
+async function connectWeb3Auth(isAuto=false){try{if(!web3auth)throw new Error('Web3Auth not initialized');const isSecure=location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1';if(!isSecure&&!isAuto){const w='Web3Auth requires HTTPS or localhost.';log('Web3Auth',w);alert(w);ui.debugPanel.style.display='block';return;}ui.connectBtn.disabled=true;ui.connectBtn.textContent='Connecting...';walletProvider=await web3auth.connect();if(!walletProvider)throw new Error('No provider returned from web3auth.connect()');ethersProvider=new ethers.providers.Web3Provider(walletProvider);signer=ethersProvider.getSigner();currentAddress=(await signer.getAddress()).toLowerCase();log('Wallet','Connected: '+currentAddress);ui.address.textContent='Connected: '+currentAddress;ui.address.title='Click to copy address';vaultContract=new ethers.Contract(VAULT_ADDRESS,VAULT_ABI,signer);await afterWalletConnected();ui.connectBtn.disabled=false;ui.connectBtn.textContent='Connected';}catch(err){console.error('connectWeb3Auth error',err);log('Error','connectWeb3Auth: '+(err.message||err));ui.debugPanel.style.display='block';ui.connectBtn.disabled=false;ui.connectBtn.textContent='Connect';alert('Connect failed: '+(err.message||err));}}
+async function connectInjectedWallet(){try{if(!window.ethereum){const msg='No wallet found — install MetaMask or Rabby';alert(msg);log('Wallet',msg);return;}ui.connectBtn.disabled=true;ui.connectBtn.textContent='Connecting...';await window.ethereum.request({method:'eth_requestAccounts'});walletProvider=window.ethereum;ethersProvider=new ethers.providers.Web3Provider(window.ethereum);signer=ethersProvider.getSigner();currentAddress=(await signer.getAddress()).toLowerCase();log('Wallet','Connected: '+currentAddress);ui.address.textContent=currentAddress.slice(0,6)+'...'+currentAddress.slice(-4);ui.address.title='Click to copy: '+currentAddress;vaultContract=new ethers.Contract(VAULT_ADDRESS,VAULT_ABI,signer);await afterWalletConnected();ui.connectBtn.disabled=false;ui.connectBtn.textContent='✅ '+currentAddress.slice(0,6)+'...'+currentAddress.slice(-4);window.ethereum.on('accountsChanged',()=>location.reload());window.ethereum.on('chainChanged',()=>location.reload());}catch(err){console.error('connectInjectedWallet error',err);log('Error','connectInjectedWallet: '+(err.message||err));ui.connectBtn.disabled=false;ui.connectBtn.textContent='🟢 CONNECT WALLET';alert('Connect failed: '+(err.message||err));}}
+if(ui.address)ui.address.onclick=async()=>{if(currentAddress){try{await navigator.clipboard.writeText(currentAddress);log('Clipboard','Copied address to clipboard');}catch(e){log('Clipboard error',e);}}};
 
-// Allowance, pending, APY, stakes, activity (unchanged but spinners added)
-async function loadAllowance(){
-  log('Info','loadAllowance');
-  if (!signer || !currentAddress) { ui.allowanceValue.textContent='Connect wallet'; return; }
-  const tokenAddr = ui.stakeToken.value || WMON_ADDRESS;
-  try {
-    const token = createTokenContract(tokenAddr, signer);
-    const dec = await token.decimals().catch(()=>18);
-    const allowance = await token.allowance(currentAddress, VAULT_ADDRESS);
-    ui.allowanceValue.textContent = ethers.utils.formatUnits(allowance, dec);
-    ui.revokeBtn.disabled = false;
-  } catch (e) { console.warn('loadAllowance failed', e); log('Error','loadAllowance: '+(e.message||e)); ui.allowanceValue.textContent='N/A'; ui.revokeBtn.disabled=true; ui.debugPanel.style.display='block'; }
-}
-async function loadPendingRewards(){
-  log('Info','loadPendingRewards');
-  try {
-    // spinner while checking
-    ui.pendingRewards.innerHTML = '<span class="spinner" aria-hidden="true"></span>';
-    const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
-    const pendingNames = ['calculateRewards','pendingRewards','pendingReward','earned','rewardsOf','pending'];
-    let pending = null;
-    for (const fn of pendingNames){ if (vaultRead[fn]) { try { pending = await vaultRead[fn](currentAddress); break; } catch(e){} } }
-    ui.pendingRewards.textContent = pending ? ethers.utils.formatUnits(pending, 18) : 'N/A';
-  } catch (e) { console.warn('loadPendingRewards failed', e); log('Error','loadPendingRewards: '+(e.message||e)); ui.pendingRewards.textContent='N/A'; }
-}
-async function loadAPY(){
-  log('Info','loadAPY');
-  try {
-    // show spinner while calculating
-    ui.apyDisplay.innerHTML = '<span class="spinner" aria-hidden="true"></span>';
-    ui.apyDisplay.classList.remove('apy-green'); ui.apyDisplay.classList.add('apy-neutral');
+async function afterWalletConnected(){log('Info','afterWalletConnected start');try{await loadSupportedTokens();await loadUserBalance();await loadAllowance();await loadPendingRewards();await loadAPY();await loadUserStakes();await loadRecentActivity();await loadReferrerRewards();log('Info','afterWalletConnected completed');}catch(e){console.warn('afterWalletConnected failed',e);log('Error','afterWalletConnected failed: '+(e.message||e));ui.debugPanel.style.display='block';}}
 
-    const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
-    const rateFns = ['rewardRate','rewardPerSecond','rewardsPerSecond','rewardRatePerSecond'];
-    let rate = null;
-    for (const fn of rateFns){ if (vaultRead[fn]) { try { rate = await vaultRead[fn](); break; } catch(e){} } }
-    const tokenAddr = ui.stakeToken.value || WMON_ADDRESS;
-    let totalStaked = null;
-    try { totalStaked = await vaultRead.totalStaked?.(tokenAddr).catch(()=>null); } catch(e){}
-    if (rate && totalStaked && totalStaked.gt && totalStaked.gt(0)) {
-      const SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
-      const apy = (Number(rate.toString()) * SECONDS_PER_YEAR / Number(totalStaked.toString())) * 100;
-      const text = `${apy.toFixed(2)}% (est)`;
-      ui.apyDisplay.textContent = text;
-      if (apy > 0) {
-        ui.apyDisplay.classList.add('apy-green');
-        ui.apyDisplay.classList.remove('apy-neutral');
-      } else {
-        ui.apyDisplay.classList.remove('apy-green');
-        ui.apyDisplay.classList.add('apy-neutral');
-      }
-    } else {
-      ui.apyDisplay.textContent='N/A';
-      ui.apyDisplay.classList.remove('apy-green');
-      ui.apyDisplay.classList.add('apy-neutral');
-    }
-  } catch (e) { console.warn('loadAPY failed', e); log('Error','loadAPY: '+(e.message||e)); ui.apyDisplay.textContent='N/A'; ui.apyDisplay.classList.remove('apy-green'); ui.apyDisplay.classList.add('apy-neutral'); }
-}
+async function loadSupportedTokens(){log('Info','loadSupportedTokens');try{const vaultRead=new ethers.Contract(VAULT_ADDRESS,VAULT_ABI,rpcFallbackProvider);const tokens=await vaultRead.getSupportedTokens?.().catch(()=>null);const list=tokens&&tokens.length?tokens.map(t=>t.toLowerCase()):[WMON_ADDRESS.toLowerCase(),USDC_ADDRESS.toLowerCase(),BITCOINFLASH_ADDRESS.toLowerCase()];ui.stakeToken.innerHTML='';for(const t of list){const token=createTokenContract(t,rpcFallbackProvider);let symbol=t.slice(0,6);try{symbol=await token.symbol();}catch(e){}const opt=document.createElement('option');opt.value=t;opt.textContent=symbol;ui.stakeToken.appendChild(opt);}const w=WMON_ADDRESS.toLowerCase();if(Array.from(ui.stakeToken.options).some(o=>o.value===w))ui.stakeToken.value=w;updateTokenIcon(ui.stakeToken.value);ui.stakeToken.dispatchEvent(new Event('change'));log('Tokens','Supported tokens loaded: '+JSON.stringify(list));}catch(e){console.warn('loadSupportedTokens error',e);log('Error','loadSupportedTokens: '+(e.message||e));ui.debugPanel.style.display='block';}}
+function updateTokenIcon(addr){try{const url=tokenLogoFor(addr);if(ui.tokenIcon){if(url){ui.tokenIcon.src=url;ui.tokenIcon.style.display='inline-block';}else{ui.tokenIcon.src='';ui.tokenIcon.style.display='none';}}}catch(e){console.warn('updateTokenIcon',e);}}
+function tokenLogoFor(addr){if(!addr)return '';return TOKEN_LOGOS[(addr||'').toLowerCase()]||'';}
 
-async function loadRecentActivity(){
-  log('Info','loadRecentActivity');
-  try {
-    const provider = rpcFallbackProvider;
-    let blockNum;
-    try { blockNum = await provider.getBlockNumber(); } catch (e) { log('Error','Could not fetch block number: '+(e.message||e)); ui.txList.textContent='Transaction history unavailable'; return; }
-    ui.txList.innerHTML = '<div class="muted-small">Recent history loaded (if available)</div>';
-  } catch (e) { console.warn('loadRecentActivity failed', e); log('Error','loadRecentActivity: '+(e.message||e)); ui.txList.textContent='Transaction history unavailable'; }
-}
-async function loadReferrerRewards(){
-  try {
-    const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
-    const names = ['referrerRewardsOf','referrerRewards','refRewards','referralRewards'];
-    let val = null;
-    for (const n of names){ if (vaultRead[n]) { try { val = await vaultRead[n](currentAddress); break; } catch(e){} } }
-    log('ReferrerRewards','value:'+String(val||'—'));
-  } catch (e) { log('Error','loadReferrerRewards: '+(e.message||e)); }
-}
+async function loadUserBalance(){log('Info','loadUserBalance');if(!currentAddress){ui.selectedTokenBalance.textContent='0.0000';ui.selectedTokenPrice.textContent='N/A';ui.selectedTokenUsd.textContent='N/A';return;}try{const tokenAddr=(ui.stakeToken&&ui.stakeToken.value)||WMON_ADDRESS;if(!tokenAddr){ui.selectedTokenBalance.textContent='0.0000';ui.selectedTokenPrice.textContent='N/A';ui.selectedTokenUsd.textContent='N/A';return;}ui.selectedTokenBalance.innerHTML='<span class="spinner" aria-hidden="true"></span> Loading';ui.selectedTokenPrice.innerHTML='<span class="spinner" aria-hidden="true"></span>';ui.selectedTokenUsd.innerHTML='—';const providerOrSigner=signer||rpcFallbackProvider;const token=createTokenContract(tokenAddr,providerOrSigner);const decimals=await token.decimals().catch(()=>18);const balanceBn=await token.balanceOf(currentAddress).catch(()=>ethers.constants.Zero);const formatted=ethers.utils.formatUnits(balanceBn,decimals);ui.selectedTokenBalance.textContent=Number(formatted).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:6});const price=await fetchTokenPrice(tokenAddr);if(price&&!Number.isNaN(Number(price))){ui.selectedTokenPrice.textContent=`$${Number(price).toLocaleString(undefined,{minimumFractionDigits:4,maximumFractionDigits:6})}`;const usdValue=Number(formatted)*Number(price);ui.selectedTokenUsd.textContent=`$${usdValue.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;}else{ui.selectedTokenPrice.innerHTML=`<span title="Price unavailable or failed to fetch">N/A <span style="opacity:.85">ℹ️</span></span>`;ui.selectedTokenUsd.textContent='N/A';}log('Balance',`Loaded ${formatted} (decimals=${decimals}) for ${tokenAddr}`);}catch(e){console.warn('loadUserBalance error',e);log('Error','loadUserBalance: '+(e&&e.message?e.message:String(e)));ui.selectedTokenBalance.textContent='Error';ui.selectedTokenPrice.textContent='N/A';ui.selectedTokenUsd.textContent='N/A';}}
 
-// Transaction helper with lock
-async function sendTxAndTrack(txPromiseFactory,label){
-  const acquired = await acquireWalletLock();
-  if (!acquired) { const msg="A wallet request is already pending. Please complete or reject it in your wallet, then try again."; log('WalletLock',msg); alert(msg); return { error:new Error('wallet_request_pending') }; }
-  const id = 'tx-'+Date.now()+'-'+Math.floor(Math.random()*9999);
-  try {
-    pushOverlayItem(label,id); ui.stakeBtn.disabled=true; ui.revokeBtn.disabled=true; log('TX','Submitting: '+label);
-    const tx = await txPromiseFactory();
-    if (!tx) throw new Error('NoTxReturned');
-    updateOverlayItem(id,'SUBMITTED',tx.hash||''); log('TX','Submitted '+(tx.hash||'(no-hash)'));
-    try { const receipt = await tx.wait(); updateOverlayItem(id,'CONFIRMED',receipt.transactionHash); log('TX','Confirmed '+receipt.transactionHash); return { receipt }; }
-    catch (confirmErr) { updateOverlayItem(id,'FAILED', (confirmErr && confirmErr.message) || String(confirmErr)); log('TX','Confirmation failed: '+(confirmErr && confirmErr.message)); return { error: confirmErr }; }
-  } catch (err) {
-    const msg = (err && err.message) || String(err);
-    if (msg.includes('already pending') || (msg.includes('Request of type') && msg.includes('already pending'))) {
-      updateOverlayItem(id,'FAILED','Pending request in wallet. Confirm or reject it.');
-      log('Wallet','Pending signature exists: '+msg);
-      alert('A wallet signature is already pending. Please confirm or reject it in your wallet.');
-    } else {
-      updateOverlayItem(id,'FAILED',msg); log('Error','sendTxAndTrack: '+msg);
-    }
-    return { error: err };
-  } finally { releaseWalletLock(); ui.stakeBtn.disabled=false; ui.revokeBtn.disabled=false; }
-}
+async function fetchTokenPrice(tokenAddr){try{const key=(tokenAddr||'').toLowerCase();const prices={[WMON_ADDRESS.toLowerCase()]:2.45,[USDC_ADDRESS.toLowerCase()]:1.00,[BITCOINFLASH_ADDRESS.toLowerCase()]:0.85};if(prices[key]!==undefined)return prices[key];try{const res=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${tokenAddr}`);if(!res.ok){log('Price','dexscreener returned non-ok: '+res.status);return null;}const json=await res.json();const price=json&&json.pairs&&json.pairs[0]&&Number(json.pairs[0].priceUsd);return price||null;}catch(e){log('Price','fetchTokenPrice dexscreener failed: '+(e&&e.message));return null;}}catch(e){console.warn('fetchTokenPrice error',e);log('Error','fetchTokenPrice: '+(e&&e.message));return null;}}
 
-// Stake & revoke wiring
-// Note: The original (non-validated) stake event listener was removed per cleanup.
-// The validated handler is bound later after validateStakeInputs().
+async function loadAllowance(){log('Info','loadAllowance');if(!signer||!currentAddress){ui.allowanceValue.textContent='Connect wallet';return;}const tokenAddr=ui.stakeToken.value||WMON_ADDRESS;try{const token=createTokenContract(tokenAddr,signer);const dec=await token.decimals().catch(()=>18);const allowance=await token.allowance(currentAddress,VAULT_ADDRESS);ui.allowanceValue.textContent=ethers.utils.formatUnits(allowance,dec);ui.revokeBtn.disabled=false;}catch(e){console.warn('loadAllowance failed',e);log('Error','loadAllowance: '+(e.message||e));ui.allowanceValue.textContent='N/A';ui.revokeBtn.disabled=true;ui.debugPanel.style.display='block';}}
+async function loadPendingRewards(){log('Info','loadPendingRewards');try{ui.pendingRewards.innerHTML='<span class="spinner" aria-hidden="true"></span>';const vaultRead=new ethers.Contract(VAULT_ADDRESS,VAULT_ABI,rpcFallbackProvider);const pendingNames=['calculateRewards','pendingRewards','pendingReward','earned','rewardsOf','pending'];let pending=null;for(const fn of pendingNames){if(vaultRead[fn]){try{pending=await vaultRead[fn](currentAddress);break;}catch(e){}}}ui.pendingRewards.textContent=pending?ethers.utils.formatUnits(pending,18):'N/A';}catch(e){console.warn('loadPendingRewards failed',e);log('Error','loadPendingRewards: '+(e.message||e));ui.pendingRewards.textContent='N/A';}}
+async function loadAPY(){log('Info','loadAPY');try{ui.apyDisplay.innerHTML='<span class="spinner" aria-hidden="true"></span>';ui.apyDisplay.classList.remove('apy-green');ui.apyDisplay.classList.add('apy-neutral');const vaultRead=new ethers.Contract(VAULT_ADDRESS,VAULT_ABI,rpcFallbackProvider);const rateFns=['rewardRate','rewardPerSecond','rewardsPerSecond','rewardRatePerSecond'];let rate=null;for(const fn of rateFns){if(vaultRead[fn]){try{rate=await vaultRead[fn]();break;}catch(e){}}}const tokenAddr=ui.stakeToken.value||WMON_ADDRESS;let totalStaked=null;try{totalStaked=await vaultRead.totalStaked?.(tokenAddr).catch(()=>null);}catch(e){}if(rate&&totalStaked&&totalStaked.gt&&totalStaked.gt(0)){const SECONDS_PER_YEAR=365*24*60*60;const apy=(Number(rate.toString())*SECONDS_PER_YEAR/Number(totalStaked.toString()))*100;const text=`${apy.toFixed(2)}% (est)`;ui.apyDisplay.textContent=text;if(apy>0){ui.apyDisplay.classList.add('apy-green');ui.apyDisplay.classList.remove('apy-neutral');}else{ui.apyDisplay.classList.remove('apy-green');ui.apyDisplay.classList.add('apy-neutral');}}else{ui.apyDisplay.textContent='N/A';ui.apyDisplay.classList.remove('apy-green');ui.apyDisplay.classList.add('apy-neutral');}}catch(e){console.warn('loadAPY failed',e);log('Error','loadAPY: '+(e.message||e));ui.apyDisplay.textContent='N/A';ui.apyDisplay.classList.remove('apy-green');ui.apyDisplay.classList.add('apy-neutral');}}
+async function loadRecentActivity(){log('Info','loadRecentActivity');try{const provider=rpcFallbackProvider;let blockNum;try{blockNum=await provider.getBlockNumber();}catch(e){log('Error','Could not fetch block number: '+(e.message||e));ui.txList.textContent='Transaction history unavailable';return;}ui.txList.innerHTML='<div class="muted-small">Recent history loaded (if available)</div>';}catch(e){console.warn('loadRecentActivity failed',e);log('Error','loadRecentActivity: '+(e.message||e));ui.txList.textContent='Transaction history unavailable';}}
+async function loadReferrerRewards(){try{const vaultRead=new ethers.Contract(VAULT_ADDRESS,VAULT_ABI,rpcFallbackProvider);const names=['referrerRewardsOf','referrerRewards','refRewards','referralRewards'];let val=null;for(const n of names){if(vaultRead[n]){try{val=await vaultRead[n](currentAddress);break;}catch(e){}}}log('ReferrerRewards','value:'+String(val||'—'));}catch(e){log('Error','loadReferrerRewards: '+(e.message||e));}}
 
-if (ui.revokeBtn) ui.revokeBtn.addEventListener('click', async ()=>{
-  if (!signer) return alert('Connect wallet first!');
-  const tokenAddr = ui.stakeToken.value || WMON_ADDRESS;
-  try {
-    const token = createTokenContract(tokenAddr, signer);
-    const revokeResult = await sendTxAndTrack(()=> token.approve(VAULT_ADDRESS, 0), 'Revoke allowance');
-    if (revokeResult.error) throw revokeResult.error;
-    alert('Allowance revoked');
-    await loadAllowance();
-  } catch (e) { console.error('revoke failed', e); log('Error','revoke failed: '+(e.message||e)); ui.debugPanel.style.display='block'; alert('Revoke failed: ' + (e.message||e)); }
-});
+async function sendTxAndTrack(txPromiseFactory,label){const acquired=await acquireWalletLock();if(!acquired){const msg="A wallet request is already pending. Please complete or reject it in your wallet, then try again.";log('WalletLock',msg);alert(msg);return{error:new Error('wallet_request_pending')};}const id='tx-'+Date.now()+'-'+Math.floor(Math.random()*9999);try{pushOverlayItem(label,id);ui.stakeBtn.disabled=true;ui.revokeBtn.disabled=true;log('TX','Submitting: '+label);const tx=await txPromiseFactory();if(!tx)throw new Error('NoTxReturned');updateOverlayItem(id,'SUBMITTED',tx.hash||'');log('TX','Submitted '+(tx.hash||'(no-hash)'));try{const receipt=await tx.wait();updateOverlayItem(id,'CONFIRMED',receipt.transactionHash);log('TX','Confirmed '+receipt.transactionHash);return{receipt};}catch(confirmErr){updateOverlayItem(id,'FAILED',(confirmErr&&confirmErr.message)||String(confirmErr));log('TX','Confirmation failed: '+(confirmErr&&confirmErr.message));return{error:confirmErr};}}catch(err){const msg=(err&&err.message)||String(err);if(msg.includes('already pending')||(msg.includes('Request of type')&&msg.includes('already pending'))){updateOverlayItem(id,'FAILED','Pending request in wallet. Confirm or reject it.');log('Wallet','Pending signature exists: '+msg);alert('A wallet signature is already pending. Please confirm or reject it in your wallet.');}else{updateOverlayItem(id,'FAILED',msg);log('Error','sendTxAndTrack: '+msg);}return{error:err};}finally{releaseWalletLock();ui.stakeBtn.disabled=false;ui.revokeBtn.disabled=false;}}
 
-if (ui.tokenIcon) {
-  ui.tokenIcon.style.display = 'none';
-  ui.tokenIcon.alt = 'token';
-  ui.tokenIcon.onerror = () => { ui.tokenIcon.src = 'https://files.catbox.moe/hwlhih.png'; ui.tokenIcon.style.display='inline-block'; };
-}
+if(ui.revokeBtn)ui.revokeBtn.addEventListener('click',async()=>{if(!signer)return alert('Connect wallet first!');const tokenAddr=ui.stakeToken.value||WMON_ADDRESS;try{const token=createTokenContract(tokenAddr,signer);const revokeResult=await sendTxAndTrack(()=>token.approve(VAULT_ADDRESS,0),'Revoke allowance');if(revokeResult.error)throw revokeResult.error;alert('Allowance revoked');await loadAllowance();}catch(e){console.error('revoke failed',e);log('Error','revoke failed: '+(e.message||e));ui.debugPanel.style.display='block';alert('Revoke failed: '+(e.message||e));}});
+if(ui.tokenIcon){ui.tokenIcon.style.display='none';ui.tokenIcon.alt='token';ui.tokenIcon.onerror=()=>{ui.tokenIcon.src='https://files.catbox.moe/hwlhih.png';ui.tokenIcon.style.display='inline-block';};}
+if(ui.debugClearBtn)ui.debugClearBtn.onclick=()=>{if(ui.debugLog)ui.debugLog.innerHTML='';};
+if(ui.debugToggleBtn)ui.debugToggleBtn.onclick=()=>{if(ui.debugPanel.style.display==='none'){ui.debugPanel.style.display='block';ui.debugToggleBtn.textContent='Hide';}else{ui.debugPanel.style.display='none';ui.debugToggleBtn.textContent='Show';}};
+if(ui.stakeToken){ui.stakeToken.addEventListener('change',async()=>{updateTokenIcon(ui.stakeToken.value);await Promise.all([loadUserBalance(),loadAllowance(),loadPendingRewards(),loadAPY()]);});}
 
-// Debug controls
-if (ui.debugClearBtn) ui.debugClearBtn.onclick = ()=> { if (ui.debugLog) ui.debugLog.innerHTML=''; };
-if (ui.debugToggleBtn) ui.debugToggleBtn.onclick = ()=> { if (ui.debugPanel.style.display === 'none') { ui.debugPanel.style.display='block'; ui.debugToggleBtn.textContent='Hide'; } else { ui.debugPanel.style.display='none'; ui.debugToggleBtn.textContent='Show'; } };
+function getUserFriendlyError(error){const msg=(error&&(error.message||String(error)))||'';const lower=msg.toLowerCase();if(lower.includes('insufficient funds'))return 'Insufficient balance to complete this transaction';if(lower.includes('user rejected')||lower.includes('user denied')||lower.includes('signature'))return 'Transaction was cancelled by the user';if(lower.includes('gas required exceeds'))return 'Transaction would fail — check your balance or try a smaller amount';if(lower.includes('nonce'))return 'Transaction conflict detected. Please refresh and try again';if(lower.includes('already pending'))return 'A transaction is already pending in your wallet';if(lower.includes('execution reverted'))return 'Contract rejected the transaction — check stake rules';return msg?('Error: '+msg.substring(0,140)):'Unknown error';}
 
-// Ensure token icon updates and fallback are used right after loading tokens
-if (ui.stakeToken) {
-  ui.stakeToken.addEventListener('change', async () => {
-    updateTokenIcon(ui.stakeToken.value);
-    await Promise.all([ loadUserBalance(), loadAllowance(), loadPendingRewards(), loadAPY() ]);
-  });
-}
+async function withdrawStake(stakeId){if(!vaultContract){alert('Connect wallet first!');return;}if(!confirm(`Withdraw stake #${stakeId}?`))return;try{const res=await sendTxAndTrack(()=>vaultContract.withdraw(stakeId),`Withdraw Stake #${stakeId}`);if(res.error)throw res.error;alert('Withdrawal successful!');await Promise.all([loadUserBalance(),loadUserStakes(),loadPendingRewards(),loadRecentActivity()]);}catch(err){const friendly=getUserFriendlyError(err);alert(friendly);log('Error','withdrawStake failed: '+(err&&err.message||String(err)));}}
 
-// ============================================
-// MISSING FUNCTIONS - ADDED HERE (cleaned)
-// ============================================
+function createStakeRow(stake){const now=Math.floor(Date.now()/1000);const unlockTime=Number(stake.unlockTime||0);const isUnlocked=now>=unlockTime;const timeRemaining=isUnlocked?'🔓 Unlocked':formatTimeRemaining(unlockTime-now);let tokenSymbol='UNKNOWN';const tokenLower=(stake.token||'').toLowerCase();if(tokenLower===WMON_ADDRESS.toLowerCase())tokenSymbol='WMON';else if(tokenLower===USDC_ADDRESS.toLowerCase())tokenSymbol='USDC';else if(tokenLower===BITCOINFLASH_ADDRESS.toLowerCase())tokenSymbol='BTCF';let amountDisplay='—';try{amountDisplay=Number(ethers.utils.formatUnits(stake.amount||'0',18)).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:6});}catch(e){amountDisplay=String(stake.amount||'0');}const statusColor=stake.withdrawn?'var(--text-muted)':(isUnlocked?'var(--success)':'var(--warning)');return`<tr style="border-bottom:1px solid rgba(0,255,179,0.08);"><td style="padding:12px 10px;color:var(--text-primary);">#${stake.id}</td><td style="padding:12px 10px;color:var(--accent-primary);font-weight:700;">${tokenSymbol}</td><td style="padding:12px 10px;text-align:right;color:var(--text-primary);">${amountDisplay}</td><td style="padding:12px 10px;color:var(--text-secondary);font-size:12px;">${unlockTime?new Date(unlockTime*1000).toLocaleDateString():'—'}</td><td style="padding:12px 10px;color:${statusColor};font-weight:700;font-size:13px;">${stake.withdrawn?'✅ Withdrawn':timeRemaining}</td><td style="padding:12px 10px;text-align:center;">${stake.canWithdraw&&!stake.withdrawn?`<button id="withdraw-${stake.id}" class="btn secondary" style="padding:8px 16px;font-size:11px;">Withdraw</button>`:'<span style="color:var(--text-muted);font-size:12px;">—</span>'}</td></tr>`;}
 
-// Helper: user friendly error messages
-function getUserFriendlyError(error) {
-  const msg = (error && (error.message || String(error))) || '';
-  const lower = msg.toLowerCase();
-  if (lower.includes('insufficient funds')) return 'Insufficient balance to complete this transaction';
-  if (lower.includes('user rejected') || lower.includes('user denied') || lower.includes('signature')) return 'Transaction was cancelled by the user';
-  if (lower.includes('gas required exceeds')) return 'Transaction would fail — check your balance or try a smaller amount';
-  if (lower.includes('nonce')) return 'Transaction conflict detected. Please refresh and try again';
-  if (lower.includes('already pending')) return 'A transaction is already pending in your wallet';
-  if (lower.includes('execution reverted')) return 'Contract rejected the transaction — check stake rules';
-  // fallback
-  return msg ? ('Error: ' + msg.substring(0, 140)) : 'Unknown error';
-}
+function formatTimeRemaining(seconds){if(!seconds||seconds<=0)return'🔓 Unlocked';const days=Math.floor(seconds/86400);const hours=Math.floor((seconds%86400)/3600);const minutes=Math.floor((seconds%3600)/60);if(days>0)return`🔒 ${days}d ${hours}h remaining`;if(hours>0)return`🔒 ${hours}h ${minutes}m remaining`;return`🔒 ${minutes}m remaining`;}
 
-// Withdraw function (uses sendTxAndTrack)
-async function withdrawStake(stakeId) {
-  if (!vaultContract) {
-    alert('Connect wallet first!');
-    return;
-  }
-  if (!confirm(`Withdraw stake #${stakeId}?`)) return;
-  try {
-    const res = await sendTxAndTrack(() => vaultContract.withdraw(stakeId), `Withdraw Stake #${stakeId}`);
-    if (res.error) throw res.error;
-    alert('Withdrawal successful!');
-    await Promise.all([ loadUserBalance(), loadUserStakes(), loadPendingRewards(), loadRecentActivity() ]);
-  } catch (err) {
-    const friendly = getUserFriendlyError(err);
-    alert(friendly);
-    log('Error', 'withdrawStake failed: ' + (err && err.message || String(err)));
-  }
-}
+function displayStakes(stakes){let container=document.getElementById('myStakesCard');if(!container){container=document.createElement('div');container.id='myStakesCard';container.className='card';document.querySelector('.container').insertBefore(container,document.getElementById('activityCard'));}container.innerHTML=`<h4>📊 MY STAKES</h4><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;margin-top:12px;"><thead><tr><th style="text-align:left;padding:10px;color:var(--accent-primary);font-weight:700;border-bottom:1px solid rgba(0,255,179,0.15);">ID</th><th style="text-align:left;padding:10px;color:var(--accent-primary);font-weight:700;border-bottom:1px solid rgba(0,255,179,0.15);">Token</th><th style="text-align:right;padding:10px;color:var(--accent-primary);font-weight:700;border-bottom:1px solid rgba(0,255,179,0.15);">Amount</th><th style="text-align:left;padding:10px;color:var(--accent-primary);font-weight:700;border-bottom:1px solid rgba(0,255,179,0.15);">Unlock</th><th style="text-align:left;padding:10px;color:var(--accent-primary);font-weight:700;border-bottom:1px solid rgba(0,255,179,0.15);">Status</th><th style="text-align:center;padding:10px;color:var(--accent-primary);font-weight:700;border-bottom:1px solid rgba(0,255,179,0.15);">Action</th></tr></thead><tbody>${stakes.map(stake=>createStakeRow(stake)).join('')}</tbody></table></div>`;stakes.forEach(stake=>{const btn=document.getElementById(`withdraw-${stake.id}`);if(btn){btn.onclick=()=>withdrawStake(stake.id);}});}
 
-// Stakes UI: display, helpers
-function createStakeRow(stake) {
-  const now = Math.floor(Date.now() / 1000);
-  const unlockTime = Number(stake.unlockTime || 0);
-  const isUnlocked = now >= unlockTime;
-  const timeRemaining = isUnlocked ? '🔓 Unlocked' : formatTimeRemaining(unlockTime - now);
+function displayNoStakes(){let container=document.getElementById('myStakesCard');if(!container){container=document.createElement('div');container.id='myStakesCard';container.className='card';document.querySelector('.container').insertBefore(container,document.getElementById('activityCard'));}container.innerHTML=`<h4>📊 MY STAKES</h4><div class="muted-small" style="text-align:center;padding:40px 20px;">No active stakes found. Start staking to earn rewards!</div>`;}
 
-  // token symbol fallback
-  let tokenSymbol = 'UNKNOWN';
-  const tokenLower = (stake.token || '').toLowerCase();
-  if (tokenLower === WMON_ADDRESS.toLowerCase()) tokenSymbol = 'WMON';
-  else if (tokenLower === USDC_ADDRESS.toLowerCase()) tokenSymbol = 'USDC';
-  else if (tokenLower === BITCOINFLASH_ADDRESS.toLowerCase()) tokenSymbol = 'BTCF';
+async function loadUserStakes(){log('Info','loadUserStakes (UI)');try{if(!currentAddress){displayNoStakes();return;}const vaultRead=new ethers.Contract(VAULT_ADDRESS,VAULT_ABI,rpcFallbackProvider);const stakeIds=await vaultRead.getUserStakes?.(currentAddress).catch(()=>[]);if(!stakeIds||stakeIds.length===0){displayNoStakes();return;}const stakes=await Promise.all(stakeIds.map(async(idRaw)=>{try{const id=idRaw.toString?idRaw.toString():String(idRaw);const info=await vaultRead.getStakeInfo(currentAddress,idRaw);return{id,token:info.token,amount:info.amount,stakedAt:info.stakedAt,unlockTime:info.unlockTime,withdrawn:info.withdrawn,canWithdraw:info.canWithdraw};}catch(err){log('Error',`Failed to fetch stake ${String(idRaw)}: ${err&&err.message||err}`);return null;}}));const filtered=stakes.filter(s=>s!==null);if(!filtered||filtered.length===0){displayNoStakes();return;}displayStakes(filtered);log('UserStakes',`Displayed ${filtered.length} stakes`);}catch(e){console.warn('loadUserStakes failed',e);log('Error','loadUserStakes: '+(e&&e.message||e));displayNoStakes();}}
 
-  // Format amount (assume 18 decimals if unknown)
-  let amountDisplay = '—';
-  try {
-    amountDisplay = Number(ethers.utils.formatUnits(stake.amount || '0', 18)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 });
-  } catch (e) {
-    amountDisplay = String(stake.amount || '0');
-  }
+function validateStakeInputs(){const amount=ui.stakeAmount.value;const token=ui.stakeToken.value;if(!amount||isNaN(amount)||Number(amount)<=0){return{valid:false,error:'Please enter a valid amount greater than 0'};}if(!token){return{valid:false,error:'Please select a token'};}const balanceText=(ui.selectedTokenBalance&&ui.selectedTokenBalance.textContent)?ui.selectedTokenBalance.textContent.replace(/[,\s]/g,''):'0';const balanceVal=Number(balanceText)||0;if(Number(amount)>balanceVal){return{valid:false,error:'Amount exceeds your balance'};}return{valid:true};}
 
-  const statusColor = stake.withdrawn ? 'var(--text-muted)' : (isUnlocked ? 'var(--success)' : 'var(--warning)');
+if(ui.stakeBtn){ui.stakeBtn.onclick=async()=>{if(!signer||!vaultContract)return alert('Connect wallet first!');const validation=validateStakeInputs();if(!validation.valid){alert(validation.error);return;}const tokenAddr=ui.stakeToken.value||WMON_ADDRESS;const amountRaw=ui.stakeAmount.value;const durationDays=Number(ui.lockDuration.value||30);try{const token=createTokenContract(tokenAddr,signer);const dec=await token.decimals().catch(()=>18);const amountWei=ethers.utils.parseUnits(String(amountRaw),dec);const allowance=await token.allowance(currentAddress,VAULT_ADDRESS);if(allowance.lt(amountWei)){log('Approve','Approving token for vault...');const approveResult=await sendTxAndTrack(()=>token.approve(VAULT_ADDRESS,amountWei),'Approve');if(approveResult.error)throw approveResult.error;}const durationSec=durationDays*24*60*60;const stakeResult=await sendTxAndTrack(()=>vaultContract.stake(tokenAddr,amountWei,durationSec),'Stake '+amountRaw);if(stakeResult.error)throw stakeResult.error;alert('Stake confirmed');await Promise.all([loadUserBalance(),loadUserStakes(),loadAllowance(),loadPendingRewards(),loadRecentActivity()]);}catch(e){console.error('stake failed',e);log('Error','stake failed: '+(e.message||e));ui.debugPanel.style.display='block';alert(getUserFriendlyError(e));}};}
 
-  return `
-    <tr style="border-bottom:1px solid rgba(99,102,241,0.08);">
-      <td style="padding:12px 10px;color:var(--text-primary);">#${stake.id}</td>
-      <td style="padding:12px 10px;color:var(--text-primary);font-weight:600;">${tokenSymbol}</td>
-      <td style="padding:12px 10px;text-align:right;color:var(--text-primary);">${amountDisplay}</td>
-      <td style="padding:12px 10px;color:var(--text-secondary);font-size:13px;">${unlockTime ? new Date(unlockTime * 1000).toLocaleDateString() : '—'}</td>
-      <td style="padding:12px 10px;color:${statusColor};font-weight:600;font-size:14px;">
-        ${stake.withdrawn ? '✅ Withdrawn' : timeRemaining}
-      </td>
-      <td style="padding:12px 10px;text-align:center;">
-        ${stake.canWithdraw && !stake.withdrawn 
-          ? `<button id="withdraw-${stake.id}" class="btn secondary" style="padding:8px 16px;font-size:13px;">Withdraw</button>`
-          : '<span style="color:var(--text-muted);font-size:13px;">—</span>'
-        }
-      </td>
-    </tr>
-  `;
-}
+(async function boot(){try{log('Info','Booting...');await initWeb3Auth();await loadSupportedTokens();log('Info','Boot complete');}catch(e){console.error('boot/init failed',e);log('Error','boot init failed: '+(e.message||e));ui.debugPanel.style.display='block';if(!ui.connectBtn.onclick){ui.connectBtn.disabled=false;ui.connectBtn.textContent='Connect (Injected)';ui.connectBtn.onclick=connectInjectedWallet;}}})();
 
-function formatTimeRemaining(seconds) {
-  if (!seconds || seconds <= 0) return '🔓 Unlocked';
-  const days = Math.floor(seconds / 86400);
-  const hours = Math.floor((seconds % 86400) / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  if (days > 0) return `🔒 ${days}d ${hours}h remaining`;
-  if (hours > 0) return `🔒 ${hours}h ${minutes}m remaining`;
-  return `🔒 ${minutes}m remaining`;
-}
+setInterval(async()=>{try{if(currentAddress&&signer){await loadUserBalance();}}catch(e){log('Error','liveUpdate: '+(e&&e.message));}},10000);
 
-function displayStakes(stakes) {
-  let container = document.getElementById('myStakesCard');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'myStakesCard';
-    container.className = 'card';
-    document.querySelector('.container').insertBefore(container, document.getElementById('activityCard'));
-  }
-
-  container.innerHTML = `
-    <h4>My Stakes</h4>
-    <div style="overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;margin-top:12px;">
-        <thead>
-          <tr>
-            <th style="text-align:left;padding:10px;color:var(--accent-primary);font-weight:700;border-bottom:1px solid rgba(99,102,241,0.2);">ID</th>
-            <th style="text-align:left;padding:10px;color:var(--accent-primary);font-weight:700;border-bottom:1px solid rgba(99,102,241,0.2);">Token</th>
-            <th style="text-align:right;padding:10px;color:var(--accent-primary);font-weight:700;border-bottom:1px solid rgba(99,102,241,0.2);">Amount</th>
-            <th style="text-align:left;padding:10px;color:var(--accent-primary);font-weight:700;border-bottom:1px solid rgba(99,102,241,0.2);">Unlock Time</th>
-            <th style="text-align:left;padding:10px;color:var(--accent-primary);font-weight:700;border-bottom:1px solid rgba(99,102,241,0.2);">Status</th>
-            <th style="text-align:center;padding:10px;color:var(--accent-primary);font-weight:700;border-bottom:1px solid rgba(99,102,241,0.2);">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${stakes.map(stake => createStakeRow(stake)).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
-
-  // Attach withdraw handlers
-  stakes.forEach(stake => {
-    const btn = document.getElementById(`withdraw-${stake.id}`);
-    if (btn) {
-      btn.onclick = () => withdrawStake(stake.id);
-    }
-  });
-}
-
-function displayNoStakes() {
-  let container = document.getElementById('myStakesCard');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'myStakesCard';
-    container.className = 'card';
-    document.querySelector('.container').insertBefore(container, document.getElementById('activityCard'));
-  }
-  container.innerHTML = `
-    <h4>My Stakes</h4>
-    <div class="muted-small" style="text-align:center;padding:40px 20px;">
-      No active stakes found. Start staking to earn rewards!
-    </div>
-  `;
-}
-
-// Replace loadUserStakes with an implementation that displays stakes in UI
-async function loadUserStakes() {
-  log('Info', 'loadUserStakes (UI)');
-  try {
-    if (!currentAddress) {
-      displayNoStakes();
-      return;
-    }
-    const vaultRead = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, rpcFallbackProvider);
-    const stakeIds = await vaultRead.getUserStakes?.(currentAddress).catch(() => []);
-    if (!stakeIds || stakeIds.length === 0) {
-      displayNoStakes();
-      return;
-    }
-
-    // Ensure we map numeric/BN ids correctly
-    const stakes = await Promise.all(stakeIds.map(async (idRaw) => {
-      try {
-        const id = idRaw.toString ? idRaw.toString() : String(idRaw);
-        const info = await vaultRead.getStakeInfo(currentAddress, idRaw);
-        return {
-          id,
-          token: info.token,
-          amount: info.amount,
-          stakedAt: info.stakedAt,
-          unlockTime: info.unlockTime,
-          withdrawn: info.withdrawn,
-          canWithdraw: info.canWithdraw
-        };
-      } catch (err) {
-        log('Error', `Failed to fetch stake ${String(idRaw)}: ${err && err.message || err}`);
-        return null;
-      }
-    }));
-
-    const filtered = stakes.filter(s => s !== null);
-    if (!filtered || filtered.length === 0) {
-      displayNoStakes();
-      return;
-    }
-    displayStakes(filtered);
-    log('UserStakes', `Displayed ${filtered.length} stakes`);
-  } catch (e) {
-    console.warn('loadUserStakes failed', e);
-    log('Error', 'loadUserStakes: ' + (e && e.message || e));
-    displayNoStakes();
-  }
-}
-
-// Input validation for stake form
-function validateStakeInputs() {
-  const amount = ui.stakeAmount.value;
-  const token = ui.stakeToken.value;
-  if (!amount || isNaN(amount) || Number(amount) <= 0) {
-    return { valid: false, error: 'Please enter a valid amount greater than 0' };
-  }
-  if (!token) {
-    return { valid: false, error: 'Please select a token' };
-  }
-  // parse displayed balance safely
-  const balanceText = (ui.selectedTokenBalance && ui.selectedTokenBalance.textContent) ? ui.selectedTokenBalance.textContent.replace(/[,\s]/g,'') : '0';
-  const balanceVal = Number(balanceText) || 0;
-  if (Number(amount) > balanceVal) {
-    return { valid: false, error: 'Amount exceeds your balance' };
-  }
-  return { valid: true };
-}
-
-// Rebind stake button to include validation (validated handler)
-if (ui.stakeBtn) {
-  ui.stakeBtn.onclick = async () => {
-    if (!signer || !vaultContract) return alert('Connect wallet first!');
-    const validation = validateStakeInputs();
-    if (!validation.valid) {
-      alert(validation.error);
-      return;
-    }
-    // reuse existing stake flow
-    const tokenAddr = ui.stakeToken.value || WMON_ADDRESS;
-    const amountRaw = ui.stakeAmount.value;
-    const durationDays = Number(ui.lockDuration.value || 30);
-    try {
-      const token = createTokenContract(tokenAddr, signer);
-      const dec = await token.decimals().catch(()=>18);
-      const amountWei = ethers.utils.parseUnits(String(amountRaw), dec);
-      const allowance = await token.allowance(currentAddress, VAULT_ADDRESS);
-      if (allowance.lt(amountWei)) {
-        log('Approve','Approving token for vault...');
-        const approveResult = await sendTxAndTrack(()=> token.approve(VAULT_ADDRESS, amountWei), 'Approve');
-        if (approveResult.error) throw approveResult.error;
-      }
-      const durationSec = durationDays * 24 * 60 * 60;
-      const stakeResult = await sendTxAndTrack(()=> vaultContract.stake(tokenAddr, amountWei, durationSec), 'Stake '+amountRaw);
-      if (stakeResult.error) throw stakeResult.error;
-      alert('Stake confirmed');
-      await Promise.all([ loadUserBalance(), loadUserStakes(), loadAllowance(), loadPendingRewards(), loadRecentActivity() ]);
-    } catch (e) { console.error('stake failed', e); log('Error','stake failed: '+(e.message||e)); ui.debugPanel.style.display='block'; alert(getUserFriendlyError(e)); }
-  };
-}
-
-// ============================================
-// End of added functions
-// ============================================
-
-// Boot
-(async function boot(){
-  try { log('Info','Booting...'); await initWeb3Auth(); await loadSupportedTokens(); log('Info','Boot complete'); }
-  catch(e){ console.error('boot/init failed', e); log('Error','boot init failed: '+(e.message||e)); ui.debugPanel.style.display='block'; if (!ui.connectBtn.onclick) { ui.connectBtn.disabled=false; ui.connectBtn.textContent='Connect (Injected)'; ui.connectBtn.onclick=connectInjectedWallet; } }
-})();
-
-// Live balance updater (every 10 seconds)
-// This will refresh the balance, price, and USD value for the selected token.
-setInterval(async () => {
-  try {
-    if (currentAddress && signer) {
-      await loadUserBalance();
-      // optionally refresh APY/pending less frequently if desired:
-      // await loadAPY();
-      // await loadPendingRewards();
-    }
-  } catch (e) { log('Error','liveUpdate: '+(e && e.message)); }
-}, 10000); // 10 seconds
-
-log('Info','Page booted. Token logos and ABIs applied.');
+log('Info','Page booted. Dragon Lock theme applied.');
 </script>
 </body>
 </html>
